@@ -199,7 +199,10 @@ def main():
     site = ['# Erzeugt von konfig-erzeugen.py. Nicht von Hand aendern.']
     for pfad, titel, fqdn, seine in ziele:
         verz = f'{WEB}/sites/{pfad}'
-        os.makedirs(verz, exist_ok=True)
+        # data/ gleich mit anlegen: yanic legt fehlende Verzeichnisse nicht
+        # selbst an und schreibt dann still nichts (20.09.2026). Die Rechte
+        # setzt das Einrichtungsskript danach auf yanic:www-data.
+        os.makedirs(f'{verz}/data', exist_ok=True)
         with open(f'{verz}/config.json', 'w', encoding='utf-8') as f:
             json.dump(konfig(titel, pfad, seine), f, ensure_ascii=False, indent=1)
         site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'host': pfad,

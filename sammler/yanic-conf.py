@@ -19,6 +19,16 @@ WEB = '/var/www/karte-en/sites'
 TAKT = '5m'
 OFFLINE = '20m'
 
+# Abfrageadresse je Gemeinschaft. Vorgabe ist ff05::2:1001, die Gruppe, die
+# Stock-Gluon auf br-client bedient.
+#
+# Im eigenen Netz antwortet darauf gemessen nur der Supernode, eine Antwort je
+# Domain. Auf ff02::1 antworten dagegen alle Knoten: genau diese Gruppe oeffnet
+# unser Patch fix-respondd-rsk zusaetzlich, die Rueckkehr zum Verhalten von
+# Gluon 2016. Ueber batman ist ff02::1 kein Nachteil, das ganze Mesh ist eine
+# Broadcast-Domain (gemessen 20.09.2026: ff05 eine Antwort, ff02::1 alle).
+ABFRAGE = {'neander': 'ff02::1'}
+
 
 FELDER = ('gem', 'code', 'ordner', 'port', 'id', 'host', 'mtu', 'broker',
           'prefix6', 'prefix4', 'name')
@@ -77,6 +87,8 @@ def main():
         t.append(f'# {x["name"]}')
         t.append('[[respondd.interfaces]]')
         t.append(f'ifname = "bat-{x["code"]}"')
+        if x['gem'] in ABFRAGE:
+            t.append(f'multicast_address = "{ABFRAGE[x["gem"]]}"')
 
     t.append('')
     t.append('[webserver]')

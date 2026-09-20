@@ -33,8 +33,15 @@ ID=$(echo "$zeile" | awk '{ print $4 }')
 # ASCII. Die MAC der L2TP-Schnittstelle ist unsere Originator-Adresse in ihrem
 # batman, die soll ueber Neustarts gleich bleiben und erkennbar keine
 # Hersteller-MAC sein.
-MAC_IF=$(printf '02:45:4e:00:00:%02x' "$ID")
-MAC_BAT=$(printf '02:45:4e:00:01:%02x' "$ID")
+#
+# Das vierte Byte ist die Kennungsserie aus /etc/karte-en/kennung. Sie wird
+# nur dann hochgezaehlt, wenn wir eine neue Identitaet im fremden Netz
+# brauchen, etwa um zu pruefen, ob eine Sperre oder ein Limit an unserer
+# bisherigen Kennung haengt (kennung-wechseln.sh). Mit ihr wechseln beide
+# MACs und der Name am Broker gemeinsam, sonst waere die Probe nichts wert.
+SERIE=$(cat /etc/karte-en/kennung 2>/dev/null || echo 0)
+MAC_IF=$(printf '02:45:4e:%02x:00:%02x' "$SERIE" "$ID")
+MAC_BAT=$(printf '02:45:4e:%02x:01:%02x' "$SERIE" "$ID")
 
 setze() {
 	[ -e "/proc/sys/$1" ] && printf '%s' "$2" > "/proc/sys/$1" || true

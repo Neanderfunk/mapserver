@@ -17,12 +17,16 @@ PORT=$(echo "$zeile" | awk '{ print $3 }')
 ID=$(echo "$zeile" | awk '{ print $4 }')
 
 # -u ist der Name, unter dem der Broker uns fuehrt. Wer bei EN ins Log oder in
-# batctl o schaut, soll uns zuordnen koennen, statt zu raetseln.
+# batctl o schaut, soll uns zuordnen koennen, statt zu raetseln. Die
+# Kennungsserie haengt hinten dran, damit ein Wechsel der MACs auch am Broker
+# sichtbar eine neue Kennung ist und nicht dieselbe mit anderer Adresse.
 # -g nimmt den ersten erreichbaren Broker; broker2 steht schon drin, wird also
 # automatisch genutzt, sobald dort wieder ein Tunneldigger antwortet
 # (20.09.2026: nur broker1 antwortet).
+SERIE=$(cat /etc/karte-en/kennung 2>/dev/null || echo 0)
+
 exec /usr/local/bin/tunneldigger -f \
-	-u "map-neanderfunk-$CODE" \
+	-u "map-neanderfunk-$CODE-$SERIE" \
 	-i "td-$CODE" \
 	-t "$ID" \
 	-b "broker1.ff-en.de:$PORT" \

@@ -30,18 +30,37 @@ OFFLINE = '20m'
 # Broadcast-Domain (gemessen 20.09.2026: ff05 eine Antwort, ff02::1 alle).
 ABFRAGE = {'neander': 'ff02::1'}
 
-# Was die Knoten als site_code melden, ist nicht immer der Code, unter dem die
-# Domain gebaut wird. Im Neanderfunk heisst die Domain 10_wlf, die Knoten
-# melden aber "nef-10_wlf", und Geraete am Ende ihrer Unterstuetzung zusaetzlich
-# "nef-10_wlf_EOL". Ohne diese Uebersetzung filtert yanic jeden Knoten weg und
-# die Karten bleiben leer (gemessen 20.09.2026).
-SITE_PRAEFIX = {'neander': 'nef-'}
-SITE_ANHANG = ('', '_EOL')
+# Was die Knoten als site_code melden, ist nicht der Code, unter dem die Domain
+# gebaut wird, und die Praefixe unterscheiden sich je Domain: 10_wlf meldet
+# nef-10_wlf, 30_sol meldet dus-30_sol, 43_bggl meldet bgl-43_bggl, dazu jeweils
+# eine Variante auf _EOL. Raten hilft da nicht, deshalb erhebt
+# sitecodes-ermitteln.py die Codes im Netz und legt sie hier ab.
+SITE_KONF = '/etc/karte-en/sitecodes.conf'
+
+
+def gemeldete_codes():
+    try:
+        z = {}
+        for zeile in open(SITE_KONF, encoding='utf-8'):
+            zeile = zeile.strip()
+            if zeile and not zeile.startswith('#'):
+                code, _, liste = zeile.partition(' ')
+                z[code] = [c for c in liste.replace(' ', '').split(',') if c]
+        return z
+    except OSError:
+        return {}
+
+
+GEMELDET = gemeldete_codes()
 
 
 def site_codes(x):
-    p = SITE_PRAEFIX.get(x['gem'], '')
-    return [f'{p}{x["code"]}{a}' for a in SITE_ANHANG] if p else [x['code']]
+    # Der blanke Code bleibt immer dabei: einzelne Knoten melden ihn so, und
+    # eine Domain ohne Erhebung soll nicht ganz ohne Filter dastehen.
+    codes = list(GEMELDET.get(x['code'], []))
+    if x['code'] not in codes:
+        codes.append(x['code'])
+    return codes
 
 
 FELDER = ('gem', 'code', 'ordner', 'port', 'id', 'host', 'mtu', 'broker',

@@ -13,7 +13,7 @@ export LANG=C.UTF-8
 [ "${BASH_SOURCE[0]: -1}" = "~" ] && exit 99
 
 KONF=${KARTE_EN_KONF:-/etc/karte-en/domains.conf}
-BASIS=${KARTE_EN_BASIS:-en.map.freifunk.space}
+SUFFIX=${KARTE_BASIS:-map.freifunk.space}
 
 if [ ! -r "$KONF" ]; then
     echo "3 mapserver-Web - $KONF nicht lesbar"
@@ -38,8 +38,13 @@ pruefe_host() {
     done
 }
 
-pruefe_host "$BASIS"
-for h in $(awk '!/^#/ && NF { print $5 }' "$KONF"); do pruefe_host "$h.$BASIS"; done
+# Je Gemeinschaft eine Gesamtkarte und je Domain eine Ortskarte.
+for g in $(awk '!/^#/ && NF { print $1 }' "$KONF" | sort -u); do
+    pruefe_host "$g.$SUFFIX"
+    for h in $(awk -v g="$g" '!/^#/ && NF && $1 == g { print $6 }' "$KONF"); do
+        pruefe_host "$h.$g.$SUFFIX"
+    done
+done
 
 karten=$((erwartet / 2))
 if [ "$ok" -lt "$erwartet" ]; then

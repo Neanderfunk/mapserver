@@ -14,7 +14,7 @@
 #   mapserver-Sammler     yanic, Alter und Umfang der Gesamtausgabe
 #   mapserver-Abschottung kein Standardweg und kein Forwarding in ihr Netz
 #   mapserver-Batman      Version von Modul und Werkzeug, L2TP-Schnittstellen
-#   mapserver-EN-<ort>    je Domain: Originatoren, Gateways, Clients, Knoten
+#   mapserver-<gem>-<ort> je Domain: Originatoren, Gateways, Clients, Knoten
 #
 # Die wichtigste Groesse je Domain ist nicht die Knotenzahl, sondern die Zahl
 # der Originatoren: sie faellt sofort, wenn der Tunnel abreisst, waehrend die
@@ -37,7 +37,7 @@ if [ ! -r "$KONF" ]; then
 fi
 
 jetzt=$(date +%s)
-codes=$(awk '!/^#/ && NF { print $1 }' "$KONF")
+codes=$(awk '!/^#/ && NF { print $2 }' "$KONF")
 anzahl=$(echo "$codes" | grep -c .)
 
 alter_von() {           # Alter einer Datei in Sekunden, -1 wenn es sie nicht gibt
@@ -73,6 +73,21 @@ fi
 echo "$zustand mapserver-Tunnel tunnel_aktiv=$aktiv;$anzahl:;$anzahl:|neustarts=$neustarts;20;60 $text"
 
 # --- Sammler -----------------------------------------------------------------
+# Wie lange laeuft yanic schon? Direkt nach einem Neustart steht in der
+# frisch geschriebenen Datei zu Recht noch niemand online: der erste
+# Sammellauf kommt erst zur naechsten vollen Minute. Ohne diese Schonfrist
+# meldet der Check nach jedem Neustart der Maschine einmal CRIT.
+seit=$(systemctl show -p ActiveEnterTimestampMonotonic --value yanic.service 2>/dev/null)
+laeuft=$(( ( $(cut -d' ' -f1 /proc/uptime | cut -d. -f1) ) - ${seit:-0} / 1000000 ))
+[ "$laeuft" -lt 0 ] && laeuft=0
+SCHONFRIST=180
+# Nach einem Neustart der Maschine braucht die Tunnelschicht laenger als man
+# denkt: der Tunneldigger-Client setzt die MTU erst etwa zwanzig Sekunden nach
+# dem Verbindungsaufbau, danach sortiert batman sich neu. Drei Minuten nach
+# dem Start eines Tunnels ist ein leeres Mesh deshalb noch kein Fehler
+# (gemessen am 20.09.2026).
+hoch=$(cut -d' ' -f1 /proc/uptime | cut -d. -f1)
+
 datei=$WEB/sites/alle/data/meshviewer.json
 alter=$(alter_von "$datei")
 set -- $(knoten_in "$datei")
@@ -80,6 +95,8 @@ ges=$1 on=$2
 lebt=$(systemctl is-active yanic.service 2>/dev/null)
 if [ "$lebt" != active ];                     then zustand=2; text="yanic ist $lebt"
 elif [ "$alter" -lt 0 ];                      then zustand=2; text="keine Ausgabedatei"
+elif [ "$on" -eq 0 ] && [ "$laeuft" -lt "$SCHONFRIST" ]; then
+    zustand=0; text="frisch gestartet (${laeuft}s), erster Sammellauf steht aus"
 elif [ "$alter" -gt 600 ] || [ "$on" -eq 0 ]; then zustand=2; text="Ausgabe ${alter}s alt, $on online"
 elif [ "$alter" -gt 180 ];                    then zustand=1; text="Ausgabe ${alter}s alt"
 else zustand=0; text="$on von $ges Knoten online, Ausgabe ${alter}s alt"
@@ -127,8 +144,12 @@ echo "$zustand mapserver-Batman l2tp_if=$l2tp;$anzahl:;$anzahl:|version_gleich=$
 # Originatoren mit Stern sind die ausgewaehlten Wege, also die Knoten selbst.
 # Gateways kommen aus gwl: faellt das auf 0, ist ihr Supernode in dieser Domain
 # verschwunden, auch wenn der Tunnel noch steht.
-grep -v '^#' "$KONF" | grep . | while read -r code _ _ _ host _; do
+grep -v '^#' "$KONF" | grep . | while read -r gem code _ _ _ host _; do
     [ -n "$code" ] || continue
+    seit_t=$(systemctl show -p ActiveEnterTimestampMonotonic --value \
+             "karte-en-tunnel@$code.service" 2>/dev/null)
+    tlaeuft=$(( hoch - ${seit_t:-0} / 1000000 ))
+    [ "$tlaeuft" -lt 0 ] && tlaeuft=0
     orig=$(batctl meshif "bat-$code" originators 2>/dev/null | grep -c '^ \*')
     nachbarn=$(batctl meshif "bat-$code" neighbors 2>/dev/null | tail -n +3 | grep -c .)
     gws=$(batctl meshif "bat-$code" gwl 2>/dev/null | tail -n +3 | grep -c .)
@@ -137,8 +158,12 @@ grep -v '^#' "$KONF" | grep . | while read -r code _ _ _ host _; do
     alter=$(alter_von "$datei")
     set -- $(knoten_in "$datei")
     ges=$1 on=$2
-    if [ "$nachbarn" -eq 0 ] || [ "$orig" -eq 0 ]; then
+    if { [ "$nachbarn" -eq 0 ] || [ "$orig" -eq 0 ]; } && [ "$tlaeuft" -lt "$SCHONFRIST" ]; then
+        zustand=0; text="Tunnel frisch gestartet (${tlaeuft}s), Mesh noch nicht beisammen"
+    elif [ "$nachbarn" -eq 0 ] || [ "$orig" -eq 0 ]; then
         zustand=2; text="kein Mesh: $nachbarn Nachbarn, $orig Originatoren"
+    elif [ "$on" -eq 0 ] && [ "$laeuft" -lt "$SCHONFRIST" ]; then
+        zustand=0; text="$orig Originatoren, Sammler frisch gestartet (${laeuft}s)"
     elif [ "$alter" -gt 600 ] || [ "$on" -eq 0 ]; then
         zustand=2; text="$orig Originatoren, aber $on Knoten online (Datei ${alter}s)"
     elif [ "$gws" -eq 0 ]; then
@@ -148,5 +173,5 @@ grep -v '^#' "$KONF" | grep . | while read -r code _ _ _ host _; do
     else
         zustand=0; text="$orig Originatoren, $gws Gateway, $clients Clients, $on von $ges Knoten online"
     fi
-    echo "$zustand mapserver-EN-$host originatoren=$orig;5:;1:|nachbarn=$nachbarn;1:;1:|gateways=$gws;1:;1:|clients=$clients|knoten_online=$on;1:;1:|alter_s=$alter;180;600 $text"
+    echo "$zustand mapserver-$gem-$host originatoren=$orig;5:;1:|nachbarn=$nachbarn;1:;1:|gateways=$gws;1:;1:|clients=$clients|knoten_online=$on;1:;1:|alter_s=$alter;180;600 $text"
 done

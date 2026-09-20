@@ -179,7 +179,18 @@ def main():
     ziele = []
     for g in sorted({d['gem'] for d in alle}):
         seine = [d for d in alle if d['gem'] == g]
-        ziele.append((f'{g}/alle', f'{g.upper()}, alle {len(seine)} Domains',
+        # Titel der Gesamtkarte: der gemeinsame Anfang der Domainnamen, sonst
+        # das Kuerzel. "Freifunk Hagen" und "Freifunk Witten" ergeben so
+        # "Freifunk", nicht "EN".
+        teile = [d['name'].split() for d in seine]
+        gemeinsam = []
+        for i in range(min(len(x) for x in teile)):
+            if len({x[i] for x in teile}) == 1:
+                gemeinsam.append(teile[0][i])
+            else:
+                break
+        kopf = ' '.join(gemeinsam) or g
+        ziele.append((f'{g}/alle', f'{kopf}, alle {len(seine)} Domains',
                       f'{g}.{SUFFIX}', seine))
         for d in seine:
             ziele.append((f'{g}/{d["host"]}', d['name'],

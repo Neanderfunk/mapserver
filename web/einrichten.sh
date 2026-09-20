@@ -33,6 +33,22 @@ echo "  Stand: $(git -C "$BAU" log -1 --format='%h %ad %s' --date=short)"
 install -d -m 0755 "$WEB/meshviewer"
 rsync -rlt --delete "$BAU/build/" "$WEB/meshviewer/"
 
+# Eigene Regeln in die gebaute Seite einfuegen. Der Build wird dabei nicht
+# angefasst, die Ergaenzung ueberlebt also jeden Neubau, und sie steht inline,
+# damit kein zweiter Abruf noetig ist.
+python3 - "$HIER/eigenes.css" "$WEB/meshviewer/index.html" <<'PY'
+import sys
+css, seite = open(sys.argv[1], encoding='utf-8').read(), sys.argv[2]
+t = open(seite, encoding='utf-8').read()
+marke = '<!-- mapserver:eigenes -->'
+if marke not in t and '</head>' in t:
+    t = t.replace('</head>', f'{marke}\n<style>\n{css}</style>\n</head>', 1)
+    open(seite, 'w', encoding='utf-8').write(t)
+    print('  eigene CSS-Regeln eingefuegt')
+else:
+    print('  eigene CSS-Regeln schon vorhanden oder kein </head>')
+PY
+
 echo "== Geraetebilder =="
 # Lokal ausliefern statt von github.io: keine fremden Anfragen aus dem Browser.
 if [ ! -d "$BILDER/.git" ]; then

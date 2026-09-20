@@ -75,9 +75,11 @@ def konfig(titel, pfad, alle):
              'url': KACHEL + '/carto/light_all/{z}/{x}/{y}.png',
              'config': {'maxZoom': 19,
                         'attribution': OSM_ATTR + ', &copy; <a href="https://carto.com/attributions">CARTO</a>'}},
-            {'name': 'OpenStreetMap (deutsch)',
+            {'name': 'OpenStreetMap (deutsch, blass)',
              'url': KACHEL + '/tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png',
-             'config': {'type': 'osm', 'maxZoom': 19,
+             # className landet auf der Kachelebene; die Regel dazu steht in
+             # web/eigenes.css und wird beim Bau in die index.html eingefuegt.
+             'config': {'type': 'osm', 'maxZoom': 19, 'className': 'entsaettigt',
                         'attribution': OSM_ATTR + ', Kacheln: <a href="https://www.openstreetmap.de/">OpenStreetMap Deutschland</a>'}},
         ],
         'fixedCenter': rahmen(f'{WEB}/sites/{pfad}/data/meshviewer.json'),

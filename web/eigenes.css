@@ -1,0 +1,15 @@
+/* SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Eigene Ergaenzungen zum meshviewer-Build. Wird von web/einrichten.sh in die
+ * gebaute index.html eingefuegt, damit sie einen Neubau ueberlebt, ohne dass
+ * wir den Build selbst anfassen muessen.
+ */
+
+/* Entsaettigte Grundkarte: die Knoten sind farbig, die Karte darunter soll es
+ * nicht sein. Zehn Prozent Restfarbe genuegen, damit Wald, Wasser und Bebauung
+ * noch unterscheidbar bleiben, ohne mit den Knotenfarben zu konkurrieren
+ * (adorfer 20.09.2026). Fuer voellig grau: saturate(0).
+ */
+.entsaettigt {
+	filter: saturate(0.1);
+}

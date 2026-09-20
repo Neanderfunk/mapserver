@@ -1,0 +1,25 @@
+[Unit]
+Description=yanic, respondd-Sammler fuer die acht Domains von Freifunk EN
+Documentation=https://codeberg.org/FreifunkBremen/yanic
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=yanic
+Group=www-data
+UMask=0022
+ExecStart=/usr/local/bin/yanic serve --config /etc/yanic.conf
+Restart=always
+RestartSec=30
+StateDirectory=yanic
+# yanic fragt nur ueber UDP und schreibt JSON, mehr braucht es nicht.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ReadWritePaths=/var/www/karte-en/sites
+
+[Install]
+WantedBy=multi-user.target

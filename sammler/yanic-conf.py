@@ -14,6 +14,10 @@ import sys
 
 KONF = '/etc/karte-en/domains.conf'
 WEB = '/var/www/karte-en/sites'
+# Abfragetakt und Offline-Schwelle. Bewusst schonender als ueblich, siehe
+# Begruendung im erzeugten Kopf.
+TAKT = '5m'
+OFFLINE = '20m'
 
 
 def domains(pfad):
@@ -51,9 +55,14 @@ def main():
          '',
          '[respondd]',
          'enable = true',
-         '# Startversatz, damit die Abfragen nicht alle auf dieselbe Sekunde fallen.',
-         'synchronize = "1m"',
-         'collect_interval = "1m"',
+         '# Wir sind Gast in fremden Domains. Die verbreitete Minute waere fuer',
+         '# eine eigene Karte in Ordnung, hier heisst sie: acht Multicast-Rufe je',
+         '# Minute in fremde Netze, dazu die Unicast-Nachfragen an Knoten, die',
+         f'# nicht geantwortet haben. Deshalb {TAKT} statt einer Minute',
+         '# (adorfer 20.09.2026). Eine Karte, die alle paar Minuten nachfuehrt,',
+         '# ist immer noch aktueller als die meisten Freifunk-Karten.',
+         f'synchronize = "{TAKT}"',
+         f'collect_interval = "{TAKT}"',
          '']
     for x in d:
         t.append(f'[respondd.sites.{x["code"]}]')
@@ -75,8 +84,10 @@ def main():
     t.append('state_path = "/var/lib/yanic/state.json"')
     t.append('# Offline-Knoten bleiben ein Vierteljahr sichtbar, danach fallen sie raus.')
     t.append('prune_after = "90d"')
-    t.append('save_interval = "30s"')
-    t.append('offline_after = "5m"')
+    t.append('save_interval = "1m"')
+    t.append('# Muss deutlich groesser sein als collect_interval, sonst flackern')
+    t.append('# Knoten nach einer einzigen verpassten Runde auf offline.')
+    t.append(f'offline_after = "{OFFLINE}"')
 
     t.append(ausgabe(f'{WEB}/alle/data', None, 'Alle acht Domains zusammen: en.map.freifunk.space'))
     for x in d:

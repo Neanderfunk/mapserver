@@ -17,8 +17,13 @@ import sys
 
 KONF = '/etc/karte-en/domains.conf'
 WEB = '/var/www/karte-en'
-BASIS = 'en.map.freifunk.space'
+# Eine Gemeinschaft je Ebene unter map.freifunk.space, darunter ihre Orte.
+# Kommt eine zweite dazu, aendert sich hier ein Wort, und der Vorgabe-Vhost
+# listet sie mit auf (adorfer 20.09.2026: Platz fuer weitere Communities).
+GEMEINSCHAFT = 'en'
+BASIS = f'{GEMEINSCHAFT}.map.freifunk.space'
 EIGEN = 'map6.freifunk.space'
+INDEX = '/var/www/karte-index'
 KACHEL = 'https://tiles.ffdus.de'
 OSM_ATTR = ('&copy; <a href="https://www.openstreetmap.org/copyright">'
             'OpenStreetMap</a>-Mitwirkende')
@@ -115,6 +120,51 @@ server {
 """
 
 
+VORGABE = """
+# Vorgabe: alles, was keinen eigenen Vhost hat, landet hier. Die Karte einer
+# Gemeinschaft soll nicht zufaellig unter dem Namen der VM erscheinen.
+server {
+	listen 80 default_server;
+	listen [::]:80 default_server;
+	server_name %(eigen)s _;
+
+	root %(index)s;
+	index index.html;
+	charset utf-8;
+	add_header Cache-Control "no-cache";
+}
+"""
+
+
+def startseite(ziele):
+    zeilen = []
+    for host, titel in ziele:
+        fqdn = BASIS if host == 'alle' else f'{host}.{BASIS}'
+        zeilen.append(f'    <li><a href="https://{fqdn}/">{titel}</a> '
+                      f'<span class="n">{fqdn}</span></li>')
+    return """<!doctype html>
+<html lang="de">
+<meta charset="utf-8">
+<title>Karten</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+ body { font: 16px/1.5 system-ui, sans-serif; margin: 2rem auto; max-width: 42rem;
+        padding: 0 1rem; color: #222; }
+ h1 { font-size: 1.3rem; }
+ ul { list-style: none; padding: 0; }
+ li { padding: .35rem 0; border-bottom: 1px solid #eee; }
+ .n { color: #888; font-size: .85em; display: block; }
+ p { color: #555; }
+</style>
+<h1>Freifunk-Karten</h1>
+<ul>
+""" + chr(10).join(zeilen) + """
+</ul>
+<p>Betrieben vom Freifunk im Neanderland e.V.</p>
+</html>
+"""
+
+
 def main():
     alle = list(domains())
     if not alle:
@@ -129,20 +179,20 @@ def main():
         os.makedirs(verz, exist_ok=True)
         with open(f'{verz}/config.json', 'w', encoding='utf-8') as f:
             json.dump(konfig(titel, host, alle), f, ensure_ascii=False, indent=1)
-        # Die Gesamtkarte ist zugleich Vorgabe-Vhost: dann zeigt auch der
-        # blanke Aufruf der VM etwas Sinnvolles, solange die Namen noch nicht
-        # ueber twin2 aufgeloest werden.
-        if host == 'alle':
-            fqdn, vorgabe = f'{BASIS} {EIGEN}', ' default_server'
-        else:
-            fqdn, vorgabe = f'{host}.{BASIS}', ''
+        fqdn = BASIS if host == 'alle' else f'{host}.{BASIS}'
         site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'host': host,
-                             'web': WEB, 'vorgabe': vorgabe})
+                             'web': WEB, 'vorgabe': ''})
         print(f'  {fqdn:38} {titel}')
 
+    site.append(VORGABE % {'eigen': EIGEN, 'index': INDEX})
     with open('/etc/nginx/sites-available/karte-en.conf', 'w', encoding='utf-8') as f:
         f.write('\n'.join(site) + '\n')
     print(f'\n  /etc/nginx/sites-available/karte-en.conf mit {len(ziele)} Vhosts')
+
+    os.makedirs(INDEX, exist_ok=True)
+    with open(f'{INDEX}/index.html', 'w', encoding='utf-8') as f:
+        f.write(startseite(ziele))
+    print(f'  {INDEX}/index.html als Vorgabe-Vhost')
     return 0
 
 

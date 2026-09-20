@@ -1,5 +1,5 @@
 [Unit]
-Description=yanic, respondd-Sammler der Gemeinschaft %i
+Description=yanic, respondd-Sammler der Community %i
 Documentation=https://codeberg.org/FreifunkBremen/yanic
 After=network-online.target
 Wants=network-online.target

@@ -17,11 +17,11 @@ import sys
 
 KONF = '/etc/karte-en/domains.conf'
 WEB = '/var/www/karte-en'
-# Eine Gemeinschaft je Ebene unter map.freifunk.space, darunter ihre Orte.
+# Eine Community je Ebene unter map.freifunk.space, darunter ihre Orte.
 # Kommt eine zweite dazu, aendert sich hier ein Wort, und der Vorgabe-Vhost
 # listet sie mit auf (adorfer 20.09.2026: Platz fuer weitere Communities).
 SUFFIX = 'map.freifunk.space'
-# Klarname je Gemeinschaft, fuer den Titel der Gesamtkarte.
+# Klarname je Community, fuer den Titel der Gesamtkarte.
 NAMEN = {'en': 'Freifunk EN', 'neander': 'Neanderfunk'}
 EIGEN = 'map6.freifunk.space'
 INDEX = '/var/www/karte-index'
@@ -30,7 +30,7 @@ OSM_ATTR = ('&copy; <a href="https://www.openstreetmap.org/copyright">'
             'OpenStreetMap</a>-Mitwirkende')
 
 
-FELDER = ('gem', 'code', 'ordner', 'port', 'id', 'host', 'mtu', 'broker',
+FELDER = ('community', 'code', 'ordner', 'port', 'id', 'host', 'mtu', 'broker',
           'prefix6', 'prefix4', 'name')
 
 
@@ -135,7 +135,7 @@ server {
 
 VORGABE = """
 # Vorgabe: alles, was keinen eigenen Vhost hat, landet hier. Die Karte einer
-# Gemeinschaft soll nicht zufaellig unter dem Namen der VM erscheinen.
+# Community soll nicht zufaellig unter dem Namen der VM erscheinen.
 server {
 	listen 80 default_server;
 	listen [::]:80 default_server;
@@ -183,12 +183,12 @@ def main():
         print(f'keine Domains in {KONF}', file=sys.stderr)
         return 1
 
-    # Je Gemeinschaft eine Gesamtkarte und je Domain eine Ortskarte. Der Pfad
-    # unter sites/ spiegelt den Namen: sites/<gem>/alle und sites/<gem>/<ort>.
+    # Je Community eine Gesamtkarte und je Domain eine Ortskarte. Der Pfad
+    # unter sites/ spiegelt den Namen: sites/<community>/alle und sites/<community>/<ort>.
     ziele = []
-    for g in sorted({d['gem'] for d in alle}):
-        seine = [d for d in alle if d['gem'] == g]
-        # Titel der Gesamtkarte. Wie eine Gemeinschaft heissen will, laesst
+    for g in sorted({d['community'] for d in alle}):
+        seine = [d for d in alle if d['community'] == g]
+        # Titel der Gesamtkarte. Wie eine Community heissen will, laesst
         # sich aus den Domainnamen nicht ableiten: "Freifunk Hagen" und
         # "Freifunk Witten" ergaeben "Freifunk", nicht "Freifunk EN".
         kopf = NAMEN.get(g, g)

@@ -36,9 +36,9 @@ sinnvoll, sobald die Ueberwachung kommt.
 | `map6.freifunk.space` | die VM selbst, Vorgabeseite mit der Liste |
 | `map.freifunk.space` | **nicht dieses Projekt**, zeigt auf `map.eulenfunk.de` |
 
-Das Schema ist `<gemeinschaft>.map.freifunk.space` fuer die Gesamtsicht und
-`<ort>.<gemeinschaft>.map.freifunk.space` darunter, damit weitere
-Gemeinschaften danebenpassen.
+Das Schema ist `<community>.map.freifunk.space` fuer die Gesamtsicht und
+`<ort>.<community>.map.freifunk.space` darunter, damit weitere
+Communities danebenpassen.
 
 Alle neun Namen stehen als SANs in einem Let's-Encrypt-Zertifikat auf twin2.
 Ein Wildcard ist dort nicht noetig und waere ueber DNS-01 umstaendlicher.
@@ -92,8 +92,8 @@ verliert die Aenderung beim naechsten Lauf. Quelle ist immer
 - **Melder.** Die Checkmk-Local-Checks stehen (siehe betrieb.md), der Host
   muss in der Checkmk-Instanz noch angelegt werden. Eine Mailbenachrichtigung
   wie bei mitfunken gibt es hier noch nicht; `nullmailer` liegt bereit.
-- **Zweite Gemeinschaft.** Vorbereitet, aber nicht belegt. Vorher sollten
-  `/etc/karte-en` und `/var/www/karte-en` je Gemeinschaft benannt werden.
+- **Zweite Community.** Vorbereitet, aber nicht belegt. Vorher sollten
+  `/etc/karte-en` und `/var/www/karte-en` je Community benannt werden.
 - **Andere VPN-Arten.** Die Tunnelschicht kann nur Tunneldigger. fastd
   braucht zusaetzlich eine Schluesselfreischaltung und geht damit nicht
   einseitig.

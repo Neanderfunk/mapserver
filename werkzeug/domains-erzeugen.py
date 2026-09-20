@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
-"""Macht aus dem Uebergabeformat (gemeinschaft.json) eine domains.conf.
+"""Macht aus dem Uebergabeformat (community.json) eine domains.conf.
 
-  ./site-lesen.py https://images.example.net/ --kuerzel xy > gemeinschaft.json
-  ./domains-erzeugen.py gemeinschaft.json > ../tunnel/domains.conf
+  ./site-lesen.py https://images.example.net/ --kuerzel xy > community.json
+  ./domains-erzeugen.py community.json > ../tunnel/domains.conf
 
 Die Namensteile fuer die Hostnamen sind ein Vorschlag aus dem Ordnernamen und
 gehoeren vor dem Einsatz durchgesehen: sie stehen spaeter in den oeffentlichen
@@ -45,7 +45,7 @@ def main():
               for i, x in enumerate(sorted(d, key=lambda y: str(y.get('code'))), 1)]
     breite = [max(len(z[s]) for z in zeilen) for s in range(7)]
 
-    print(f'# Domains von {g.get("name") or g.get("gemeinschaft")}, gelesen aus den '
+    print(f'# Domains von {g.get("name") or g.get("community")}, gelesen aus den '
           f'site.json ihrer Images.')
     print(f'# Quelle: {g.get("quelle") or "?"}')
     print('# Erzeugt von werkzeug/domains-erzeugen.py, Hostnamen bitte durchsehen.')

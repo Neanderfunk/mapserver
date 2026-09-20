@@ -35,7 +35,7 @@ for h in $hosts; do
 	install -d -m 0755 -o yanic -g www-data "$WEB/$h" "$WEB/$h/data"
 done
 
-echo "== Konfiguration und Dienste, je Gemeinschaft einer =="
+echo "== Konfiguration und Dienste, je Community einer =="
 install -m 0755 "$HIER/yanic-conf.py" /usr/local/sbin/karte-en-yanic-conf
 install -m 0755 "$HIER/sitecodes-ermitteln.py" /usr/local/sbin/karte-en-sitecodes
 install -m 0755 "$HIER/warten.sh" /usr/local/sbin/karte-en-warten
@@ -43,14 +43,14 @@ install -m 0644 "$HIER/systemd/yanic@.service" /etc/systemd/system/
 [ -f /etc/karte-en/sitecodes.conf ] || install -m 0644 "$HIER/sitecodes.conf" /etc/karte-en/sitecodes.conf
 systemctl daemon-reload
 
-gemeinschaften=$(awk '!/^#/ && NF { print $1 }' /etc/karte-en/domains.conf | sort -u)
-for g in $gemeinschaften; do
+communities=$(awk '!/^#/ && NF { print $1 }' /etc/karte-en/domains.conf | sort -u)
+for g in $communities; do
 	/usr/local/sbin/karte-en-yanic-conf "$g" > "/etc/yanic-$g.conf"
 	chmod 0644 "/etc/yanic-$g.conf"
 	systemctl enable --now "yanic@$g.service"
 done
 sleep 20
-for g in $gemeinschaften; do
+for g in $communities; do
 	printf '  %-10s %s, %s Schnittstellen\n' "$g" \
 		"$(systemctl is-active "yanic@$g.service")" \
 		"$(grep -c 'respondd.interfaces' "/etc/yanic-$g.conf")"

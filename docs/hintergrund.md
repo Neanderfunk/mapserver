@@ -154,8 +154,8 @@ fremder Server, wer unsere Karten ansieht.
 
 Der blanke Name der VM und alles ohne eigenen Vhost landen auf einer
 Uebersichtsseite, die nur auflistet, welche Karten es gibt. Die Karte einer
-Gemeinschaft soll nicht zufaellig unter dem Namen der Maschine erscheinen, und
-`map.freifunk.space` bleibt fuer weitere Gemeinschaften frei.
+Community soll nicht zufaellig unter dem Namen der Maschine erscheinen, und
+`map.freifunk.space` bleibt fuer weitere Communities frei.
 
 ## Verhaeltnis zum Community-Finder
 

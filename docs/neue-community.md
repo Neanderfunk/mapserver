@@ -1,4 +1,4 @@
-# Eine neue Gemeinschaft aufnehmen
+# Eine neue Community aufnehmen
 
 Der Weg von "die haben keine Karte" bis zur laufenden Karte. Er beginnt nicht
 bei uns, sondern bei ihren Firmware-Images: dort steht alles, was wir zum
@@ -21,7 +21,7 @@ Repo belegt nicht, dass ein Netz so laeuft; das Image belegt es.
 
 ```bash
 werkzeug/site-lesen.py https://images.example.net/ \
-    --kuerzel xy --name "Freifunk Beispiel" > gemeinschaft-xy.json
+    --kuerzel xy --name "Freifunk Beispiel" > community-xy.json
 ```
 
 Das Werkzeug geht den Imageserver durch, erkennt schlichte Verzeichnisse
@@ -40,13 +40,13 @@ Voraussetzung ist `unsquashfs` (Paket `squashfs-tools`).
 
 ## Das Uebergabeformat
 
-`gemeinschaft-<kuerzel>.json` ist bewusst schlicht und soll auch dann lesbar
+`community-<kuerzel>.json` ist bewusst schlicht und soll auch dann lesbar
 sein, wenn zwischen Erhebung und Aufbau Wochen liegen oder jemand anders
 weitermacht. Ein Kopf, darunter eine Liste von Domains:
 
 ```json
 {
- "gemeinschaft": "en",
+ "community": "en",
  "name": "Freifunk im Ennepe-Ruhr-Kreis",
  "quelle": "https://images.freifunk-en.de/",
  "domains": [
@@ -112,7 +112,7 @@ Bei Freifunk EN sah das so aus: `broker1` antwortet auf allen acht Ports,
 ## Schritt 3: Domaintabelle
 
 ```bash
-werkzeug/domains-erzeugen.py gemeinschaft-xy.json > tunnel/domains.conf
+werkzeug/domains-erzeugen.py community-xy.json > tunnel/domains.conf
 ```
 
 Zwei Dinge danach von Hand durchsehen:

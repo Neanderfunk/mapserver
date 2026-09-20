@@ -81,7 +81,7 @@ def main():
     print('#')
     print('# code       site_codes (Komma), haeufigster zuerst')
     leer = []
-    for gem, code, name in domains():
+    for community, code, name in domains():
         c = codes_von(f'bat-{code}')
         if not c:
             leer.append((code, name))

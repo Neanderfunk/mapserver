@@ -89,7 +89,7 @@ ffha     hagen         10161   7 hagen         2a11:6c6:7000:feed::/64    10.61.
   Instanzname der Unit sowie der Filter in der yanic-Ausgabe.
 - `id` muss eindeutig sein. Sie wird zur lokalen Tunnel-ID und zum letzten
   Byte der beiden MACs.
-- `host` ist der Namensteil unter `<gemeinschaft>.map.freifunk.space`.
+- `host` ist der Namensteil unter `<community>.map.freifunk.space`.
 - `prefix6` und `prefix4` sind reine Dokumentation, wir belegen daraus nichts.
 
 ### Eine Domain hinzufügen
@@ -105,20 +105,20 @@ ffha     hagen         10161   7 hagen         2a11:6c6:7000:feed::/64    10.61.
    ```
 3. DNS-Name anlegen und ins Zertifikat aufnehmen.
 
-### Eine weitere Gemeinschaft
+### Eine weitere Community
 
 Der Aufbau ist darauf vorbereitet, aber noch nicht mehrfach belegt. Nötig
 wären: eine zweite Domaintabelle, ein zweiter yanic-Abschnitt (oder ein
 zweiter Prozess), und in `web/konfig-erzeugen.py` die Konstante
 
 ```python
-GEMEINSCHAFT = 'en'
-BASIS = f'{GEMEINSCHAFT}.map.freifunk.space'
+COMMUNITY = 'en'
+BASIS = f'{COMMUNITY}.map.freifunk.space'
 ```
 
 Die Vorgabeseite unter dem VM-Namen listet dann beide auf. Wer das zuerst
 anfasst, sollte die Pfade `/etc/karte-en` und `/var/www/karte-en` vorher auf
-einen Namen je Gemeinschaft umstellen, sonst vermischt sich das.
+einen Namen je Community umstellen, sonst vermischt sich das.
 
 ## Proxy und Zertifikat
 

@@ -9,7 +9,7 @@
 Der Kontrollrahmen ist 80 73 A7 01 <typ> <laenge> <nutzlast>, auf zwoelf Byte
 aufgefuellt. COOKIE (0x01) ist zustandslos: der Broker antwortet mit einem
 Cookie und legt nichts an. Das ist die hoeflichste Art zu pruefen, ob dort
-ueberhaupt ein Broker laeuft, und der erste Test bei einer neuen Gemeinschaft.
+ueberhaupt ein Broker laeuft, und der erste Test bei einer neuen Community.
 """
 import argparse
 import socket

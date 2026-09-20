@@ -7,7 +7,7 @@ Verzeichniseintrag hat, trotzdem vollstaendig beschreibbar wird: ihre Images
 tragen alles, was wir zum Mitmessen brauchen, naemlich Domainnamen, Praefixe,
 VPN-Art und Brokerports.
 
-  ./site-lesen.py https://images.freifunk-en.de/ > gemeinschaft.json
+  ./site-lesen.py https://images.freifunk-en.de/ > community.json
 
 Ohne Argumente liest es Image-URLs zeilenweise von der Standardeingabe. Der
 Kopf des Ergebnisses ist von Hand nachzupflegen (Name, Kuerzel), alles unter
@@ -169,8 +169,8 @@ def eintrag(ordner, url, site, doms):
 def main():
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument('basis', nargs='?', help='Startseite des Imageservers')
-    p.add_argument('--kuerzel', default='?', help='Kuerzel der Gemeinschaft, z.B. en')
-    p.add_argument('--name', default='?', help='Klarname der Gemeinschaft')
+    p.add_argument('--kuerzel', default='?', help='Kuerzel der Community, z.B. en')
+    p.add_argument('--name', default='?', help='Klarname der Community')
     a = p.parse_args()
 
     if a.basis:
@@ -197,7 +197,7 @@ def main():
         domains.append(eintrag(ordner, url, site, doms))
         print(f'    {domains[-1]["code"]}  {domains[-1]["name"]}', file=sys.stderr)
 
-    json.dump({'gemeinschaft': a.kuerzel, 'name': a.name,
+    json.dump({'community': a.kuerzel, 'name': a.name,
                'quelle': a.basis, 'domains': domains},
               sys.stdout, ensure_ascii=False, indent=1)
     print()

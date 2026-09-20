@@ -52,7 +52,7 @@ case "$HOOK" in
 session.up)
 	ip link set dev "$IF" down
 	ip link set dev "$IF" address "$MAC_IF"
-	# MTU aus ihrer site.json (mesh_vpn.<art>.mtu), je Gemeinschaft anders.
+	# MTU aus ihrer site.json (mesh_vpn.<art>.mtu), je Community anders.
 	ip link set dev "$IF" mtu "${MTU:-1420}"
 	setze "net/ipv6/conf/$IF/accept_ra" 0
 	setze "net/ipv6/conf/$IF/autoconf" 0

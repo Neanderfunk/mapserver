@@ -1,8 +1,8 @@
 #!/bin/sh
 # SPDX-License-Identifier: BSD-3-Clause
 #
-# Wartet, bis die batman-Instanzen einer Gemeinschaft da sind. Laeuft als
-# ExecStartPre von yanic@<gemeinschaft>.
+# Wartet, bis die batman-Instanzen einer Community da sind. Laeuft als
+# ExecStartPre von yanic@<community>.
 #
 # yanic loest die Schnittstellennamen beim Start auf und beendet sich mit
 # einem Panic, wenn eine fehlt (respond/collector.go: log.Panic). Nach einem
@@ -13,8 +13,8 @@ set -e
 KONF=/etc/karte-en/domains.conf
 GEDULD=${KARTE_EN_GEDULD:-180}
 
-GEM=${1:?Gemeinschaft fehlt}
-codes=$(awk -v g="$GEM" '!/^#/ && NF && $1 == g { print $2 }' "$KONF")
+COMMUNITY=${1:?Community fehlt}
+codes=$(awk -v g="$COMMUNITY" '!/^#/ && NF && $1 == g { print $2 }' "$KONF")
 i=0
 while [ "$i" -lt "$GEDULD" ]; do
 	fehlen=''
@@ -24,11 +24,11 @@ while [ "$i" -lt "$GEDULD" ]; do
 			|| fehlen="$fehlen $c"
 	done
 	if [ -z "$fehlen" ]; then
-		[ "$i" -gt 0 ] && logger -t karte-en "yanic $GEM: alle bat-Instanzen nach $i s bereit"
+		[ "$i" -gt 0 ] && logger -t karte-en "yanic $COMMUNITY: alle bat-Instanzen nach $i s bereit"
 		exit 0
 	fi
 	sleep 2
 	i=$((i + 2))
 done
-logger -t karte-en "yanic $GEM startet trotz fehlender Instanzen:$fehlen"
+logger -t karte-en "yanic $COMMUNITY startet trotz fehlender Instanzen:$fehlen"
 exit 0

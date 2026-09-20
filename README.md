@@ -41,7 +41,7 @@ Wir sind in ihren Domains ein Knoten, der fragt, und sonst nichts:
 
 - [docs/einrichtung.md](docs/einrichtung.md) - von der leeren VM zur Karte
 - [docs/betrieb.md](docs/betrieb.md) - was läuft, wie man prüft, was schiefgeht
-- [docs/neue-gemeinschaft.md](docs/neue-gemeinschaft.md) - von ihren Images zur
+- [docs/neue-community.md](docs/neue-community.md) - von ihren Images zur
   Domaintabelle, samt Übergabeformat
 - [docs/hintergrund.md](docs/hintergrund.md) - Entscheidungen und Besonderheiten
 - [docs/uebergabe.md](docs/uebergabe.md) - Zugänge, Abhängigkeiten, offene Punkte

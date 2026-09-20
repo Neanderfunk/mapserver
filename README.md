@@ -37,10 +37,25 @@ Wir sind in ihren Domains ein Knoten, der fragt, und sonst nichts:
 - `no_owner = true` in allen yanic-Ausgaben: die Kontaktdaten ihrer
   Knotenbetreiber sind nicht für unsere Veröffentlichung gedacht.
 
+## Dokumentation
+
+- [docs/einrichtung.md](docs/einrichtung.md) - von der leeren VM zur Karte
+- [docs/betrieb.md](docs/betrieb.md) - was läuft, wie man prüft, was schiefgeht
+- [docs/neue-gemeinschaft.md](docs/neue-gemeinschaft.md) - von ihren Images zur
+  Domaintabelle, samt Übergabeformat
+- [docs/hintergrund.md](docs/hintergrund.md) - Entscheidungen und Besonderheiten
+- [docs/uebergabe.md](docs/uebergabe.md) - Zugänge, Abhängigkeiten, offene Punkte
+
 ## Verzeichnisse
 
 - `tunnel/` - Tunnelschicht: Domaintabelle, Hook, Starter, Unit-Vorlage,
-  Einrichtungsskript für root.
+  Einrichtungsskript für root
+- `sammler/` - yanic: Konfigurationsgenerator, Unit, Einrichtungsskript
+- `web/` - meshviewer: Konfigurations- und Vhost-Generator, Einrichtungsskript
+- `werkzeug/` - Werkzeuge ohne Installation: `site-lesen.py` liest die
+  site.json aus fremden Images, `domains-erzeugen.py` macht daraus die
+  Domaintabelle, `broker-probe.py` und `respondd-probe.py` prüfen die beiden
+  Schichten einzeln
 
 ## Zielnamen
 

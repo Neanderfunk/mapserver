@@ -1,0 +1,7 @@
+[Unit]
+Description=Wacht ueber die Tunnel zu den Freifunk-Domains
+Documentation=file:///home/ad-claude/mapserver/tunnel/waechter.sh
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/karte-en-waechter

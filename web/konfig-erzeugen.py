@@ -65,15 +65,20 @@ def konfig(titel, pfad, alle):
         'siteName': titel,
         'maxAge': 21,
         'nodeZoom': 19,
+        # Reihenfolge entscheidet: meshviewer nimmt die erste Ebene als
+        # Vorgabe (lib/map.ts sortiert nach config.order, das ohne start/end
+        # dem Listenindex entspricht). CARTO steht deshalb vorn und hat
+        # bewusst kein "start", sonst haengt die Vorgabe an der Tageszeit
+        # (adorfer 20.09.2026).
         'mapLayers': [
-            {'name': 'OpenStreetMap (deutsch)',
-             'url': KACHEL + '/tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png',
-             'config': {'type': 'osm', 'maxZoom': 19, 'start': 6,
-                        'attribution': OSM_ATTR + ', Kacheln: <a href="https://www.openstreetmap.de/">OpenStreetMap Deutschland</a>'}},
             {'name': 'CARTO hell',
              'url': KACHEL + '/carto/light_all/{z}/{x}/{y}.png',
-             'config': {'maxZoom': 19, 'start': 6,
+             'config': {'maxZoom': 19,
                         'attribution': OSM_ATTR + ', &copy; <a href="https://carto.com/attributions">CARTO</a>'}},
+            {'name': 'OpenStreetMap (deutsch)',
+             'url': KACHEL + '/tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png',
+             'config': {'type': 'osm', 'maxZoom': 19,
+                        'attribution': OSM_ATTR + ', Kacheln: <a href="https://www.openstreetmap.de/">OpenStreetMap Deutschland</a>'}},
         ],
         'fixedCenter': rahmen(f'{WEB}/sites/{pfad}/data/meshviewer.json'),
         'siteNames': [{'site': d['code'], 'name': d['name']} for d in alle],

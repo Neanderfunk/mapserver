@@ -1,12 +1,19 @@
 [Unit]
 Description=Tunneldigger zu Freifunk EN, Domain %i
 Documentation=https://github.com/wlanslovenija/tunneldigger
-After=network-online.target
+After=network-online.target systemd-modules-load.service
 Wants=network-online.target
+# Ohne Fenster kein Aufgeben: die Vorgabe (fuenf Starts in zehn Sekunden)
+# wuerde eine Domain nach einer kurzen Stoerung dauerhaft stilllegen, und
+# genau das faellt niemandem auf. Lieber ewig alle 15 Sekunden versuchen.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 ExecStart=/usr/local/sbin/karte-en-tunnel %i
+# Beim Beenden die batman-Instanz aufraeumen, auch nach SIGKILL: sonst bleibt
+# ein Interface ohne Tunnel stehen und der Sammler fragt ins Leere.
+ExecStopPost=-/usr/local/sbin/karte-en-hook session.down td-%i
 Restart=always
 RestartSec=15
 # Der Client legt L2TP-Sitzungen und batman-Schnittstellen an, das braucht

@@ -3,16 +3,20 @@ Description=yanic, respondd-Sammler fuer die acht Domains von Freifunk EN
 Documentation=https://codeberg.org/FreifunkBremen/yanic
 After=network-online.target
 Wants=network-online.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 User=yanic
 Group=www-data
 UMask=0022
+# yanic stirbt, wenn eine Schnittstelle fehlt. Nach einem Neustart der
+# Maschine ist das normal, also erst warten (als root, danach faellt der
+# Dienst auf den Benutzer yanic zurueck).
+ExecStartPre=+/usr/local/sbin/karte-en-warten
 ExecStart=/usr/local/bin/yanic serve --config /etc/yanic.conf
 Restart=always
 RestartSec=30
-StateDirectory=yanic
 # yanic fragt nur ueber UDP und schreibt JSON, mehr braucht es nicht.
 NoNewPrivileges=yes
 ProtectSystem=strict
@@ -20,6 +24,7 @@ ProtectHome=yes
 PrivateTmp=yes
 PrivateDevices=yes
 ReadWritePaths=/var/www/karte-en/sites
+StateDirectory=yanic
 
 [Install]
 WantedBy=multi-user.target

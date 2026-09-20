@@ -89,10 +89,17 @@ SCHONFRIST=180
 # (gemessen am 20.09.2026).
 hoch=$(cut -d' ' -f1 /proc/uptime | cut -d. -f1)
 
-datei=$WEB/sites/alle/data/meshviewer.json
-alter=$(alter_von "$datei")
-set -- $(knoten_in "$datei")
-ges=$1 on=$2
+# Es gibt je Gemeinschaft eine Gesamtdatei; gemessen wird die juengste und
+# die Summe ueber alle.
+alter=-1 ges=0 on=0 karten=0
+for datei in "$WEB"/sites/*/alle/data/meshviewer.json; do
+    [ -f "$datei" ] || continue
+    karten=$((karten + 1))
+    a=$(alter_von "$datei")
+    { [ "$alter" -lt 0 ] || [ "$a" -lt "$alter" ]; } && alter=$a
+    set -- $(knoten_in "$datei")
+    ges=$((ges + $1)) on=$((on + $2))
+done
 lebt=$(systemctl is-active yanic.service 2>/dev/null)
 if [ "$lebt" != active ];                     then zustand=2; text="yanic ist $lebt"
 elif [ "$alter" -lt 0 ];                      then zustand=2; text="keine Ausgabedatei"
@@ -100,7 +107,7 @@ elif [ "$on" -eq 0 ] && [ "$laeuft" -lt "$SCHONFRIST" ]; then
     zustand=0; text="frisch gestartet (${laeuft}s), erster Sammellauf steht aus"
 elif [ "$alter" -gt 600 ] || [ "$on" -eq 0 ]; then zustand=2; text="Ausgabe ${alter}s alt, $on online"
 elif [ "$alter" -gt 180 ];                    then zustand=1; text="Ausgabe ${alter}s alt"
-else zustand=0; text="$on von $ges Knoten online, Ausgabe ${alter}s alt"
+else zustand=0; text="$on von $ges Knoten online in $karten Gesamtkarten, Ausgabe ${alter}s alt"
 fi
 echo "$zustand mapserver-Sammler alter_s=$alter;180;600|knoten=$ges|knoten_online=$on;50:;1: $text"
 

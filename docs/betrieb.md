@@ -112,6 +112,38 @@ curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: witten.en.map.freifunk.space'
 ernst: dann routet eigener Verkehr durch ihr Mesh. `ip -6 route show proto ra`
 und die sysctl-Werte auf den bat-Instanzen prüfen, siehe `hintergrund.md`.
 
+## Überwachung
+
+Die Checks liegen in `~/projekte/freifunk/checkmk` und werden von dort
+ausgespielt (`sudo ./installieren.sh 'mapserver*'`). Auf der VM:
+
+```
+/usr/lib/check_mk_agent/local/mapserver         jeder Agentenlauf
+/usr/lib/check_mk_agent/local/300/mapserver-web alle fünf Minuten
+```
+
+Beide lassen sich von Hand aufrufen und geben ihre Zeilen direkt aus.
+
+| Dienst | schlägt an, wenn |
+| --- | --- |
+| `mapserver-Tunnel` | eine der acht Instanzen nicht aktiv ist, oder über 20 Neustarts |
+| `mapserver-Sammler` | yanic steht, die Ausgabe altert oder niemand mehr online ist |
+| `mapserver-Abschottung` | eine RA-Route auftaucht, ein Standardweg über bat führt oder Forwarding an ist |
+| `mapserver-Batman` | weniger L2TP-Schnittstellen da sind als Domains |
+| `mapserver-EN-<ort>` | kein Nachbar, keine Originatoren, kein Gateway oder alte Datei |
+| `mapserver-Web` | eine der neun Karten oder ihre Daten nicht mit 200 antworten |
+
+Die aussagekräftigste Größe je Domain sind die **Originatoren**, nicht die
+Knotenzahl: sie fällt in dem Moment, in dem der Tunnel abreißt, während die
+Knoten noch fünf Minuten lang als online in der Datei stehen.
+
+`mapserver-Abschottung` ist kein Betriebswert, sondern eine Zusicherung. Wenn
+dort etwas anderes als OK steht, läuft möglicherweise eigener Verkehr durch
+ein fremdes Netz, siehe [hintergrund.md](hintergrund.md).
+
+Nicht überwacht wird von hier aus der Weg von außen, also Proxy und
+Zertifikat auf twin2. Das gehört in einen Check dort.
+
 ## Neustart der Maschine
 
 Alles kommt von selbst hoch: Module über `modules-load.d`, acht Tunnel-Units

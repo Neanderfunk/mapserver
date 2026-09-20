@@ -89,10 +89,9 @@ verliert die Aenderung beim naechsten Lauf. Quelle ist immer
 
 ## Was offen ist
 
-- **Ueberwachung.** Bisher faellt ein abgerissener Tunnel niemandem auf. Ein
-  Checkmk-Localcheck mit Kennzahlen je Domain (Dienst aktiv, Originatoren,
-  Knoten in der Ausgabe, Alter der Datei) und ein Melder wie bei mitfunken
-  stehen auf der Liste. Der Checkmk-Agent laeuft bereits auf der VM.
+- **Melder.** Die Checkmk-Local-Checks stehen (siehe betrieb.md), der Host
+  muss in der Checkmk-Instanz noch angelegt werden. Eine Mailbenachrichtigung
+  wie bei mitfunken gibt es hier noch nicht; `nullmailer` liegt bereit.
 - **Zweite Gemeinschaft.** Vorbereitet, aber nicht belegt. Vorher sollten
   `/etc/karte-en` und `/var/www/karte-en` je Gemeinschaft benannt werden.
 - **Andere VPN-Arten.** Die Tunnelschicht kann nur Tunneldigger. fastd

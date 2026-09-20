@@ -21,6 +21,8 @@ WEB = '/var/www/karte-en'
 # Kommt eine zweite dazu, aendert sich hier ein Wort, und der Vorgabe-Vhost
 # listet sie mit auf (adorfer 20.09.2026: Platz fuer weitere Communities).
 SUFFIX = 'map.freifunk.space'
+# Klarname je Gemeinschaft, fuer den Titel der Gesamtkarte.
+NAMEN = {'en': 'Freifunk EN', 'neander': 'Neanderfunk'}
 EIGEN = 'map6.freifunk.space'
 INDEX = '/var/www/karte-index'
 KACHEL = 'https://tiles.ffdus.de'
@@ -186,17 +188,10 @@ def main():
     ziele = []
     for g in sorted({d['gem'] for d in alle}):
         seine = [d for d in alle if d['gem'] == g]
-        # Titel der Gesamtkarte: der gemeinsame Anfang der Domainnamen, sonst
-        # das Kuerzel. "Freifunk Hagen" und "Freifunk Witten" ergeben so
-        # "Freifunk", nicht "EN".
-        teile = [d['name'].split() for d in seine]
-        gemeinsam = []
-        for i in range(min(len(x) for x in teile)):
-            if len({x[i] for x in teile}) == 1:
-                gemeinsam.append(teile[0][i])
-            else:
-                break
-        kopf = ' '.join(gemeinsam) or g
+        # Titel der Gesamtkarte. Wie eine Gemeinschaft heissen will, laesst
+        # sich aus den Domainnamen nicht ableiten: "Freifunk Hagen" und
+        # "Freifunk Witten" ergaeben "Freifunk", nicht "Freifunk EN".
+        kopf = NAMEN.get(g, g)
         ziele.append((f'{g}/alle', f'{kopf}, alle {len(seine)} Domains',
                       f'{g}.{SUFFIX}', seine))
         for d in seine:

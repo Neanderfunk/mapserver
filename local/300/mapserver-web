@@ -38,7 +38,7 @@ pruefe_host() {
     done
 }
 
-# Je Gemeinschaft eine Gesamtkarte und je Domain eine Ortskarte.
+# Je Community eine Gesamtkarte und je Domain eine Ortskarte.
 for g in $(awk '!/^#/ && NF { print $1 }' "$KONF" | sort -u); do
     pruefe_host "$g.$SUFFIX"
     for h in $(awk -v g="$g" '!/^#/ && NF && $1 == g { print $6 }' "$KONF"); do

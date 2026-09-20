@@ -14,7 +14,7 @@
 #   mapserver-Sammler     yanic, Alter und Umfang der Gesamtausgabe
 #   mapserver-Abschottung kein Standardweg und kein Forwarding in ihr Netz
 #   mapserver-Batman      Version von Modul und Werkzeug, L2TP-Schnittstellen
-#   mapserver-<gem>-<ort> je Domain: Originatoren, Gateways, Clients, Knoten
+#   mapserver-<community>-<ort> je Domain: Originatoren, Gateways, Clients, Knoten
 #
 # Die wichtigste Groesse je Domain ist nicht die Knotenzahl, sondern die Zahl
 # der Originatoren: sie faellt sofort, wenn der Tunnel abreisst, waehrend die
@@ -89,7 +89,7 @@ SCHONFRIST=180
 # (gemessen am 20.09.2026).
 hoch=$(cut -d' ' -f1 /proc/uptime | cut -d. -f1)
 
-# Es gibt je Gemeinschaft eine Gesamtdatei; gemessen wird die juengste und
+# Es gibt je Community eine Gesamtdatei; gemessen wird die juengste und
 # die Summe ueber alle.
 alter=-1 ges=0 on=0 karten=0
 for datei in "$WEB"/sites/*/alle/data/meshviewer.json; do
@@ -152,7 +152,7 @@ echo "$zustand mapserver-Batman l2tp_if=$l2tp;$anzahl:;$anzahl:|version_gleich=$
 # Originatoren mit Stern sind die ausgewaehlten Wege, also die Knoten selbst.
 # Gateways kommen aus gwl: faellt das auf 0, ist ihr Supernode in dieser Domain
 # verschwunden, auch wenn der Tunnel noch steht.
-grep -v '^#' "$KONF" | grep . | while read -r gem code _ _ _ host _; do
+grep -v '^#' "$KONF" | grep . | while read -r community code _ _ _ host _; do
     [ -n "$code" ] || continue
     # Ruhende Domains: der Tunnel steht, Knoten sind dort nicht zu erwarten.
     ruht=0
@@ -165,7 +165,7 @@ grep -v '^#' "$KONF" | grep . | while read -r gem code _ _ _ host _; do
     nachbarn=$(batctl meshif "bat-$code" neighbors 2>/dev/null | tail -n +3 | grep -c .)
     gws=$(batctl meshif "bat-$code" gwl 2>/dev/null | tail -n +3 | grep -c .)
     clients=$(batctl meshif "bat-$code" transglobal 2>/dev/null | grep -cE '\[[^]]*W[^]]*\]')
-    datei=$WEB/sites/$gem/$host/data/meshviewer.json
+    datei=$WEB/sites/$community/$host/data/meshviewer.json
     alter=$(alter_von "$datei")
     set -- $(knoten_in "$datei")
     ges=$1 on=$2
@@ -186,5 +186,5 @@ grep -v '^#' "$KONF" | grep . | while read -r gem code _ _ _ host _; do
     else
         zustand=0; text="$orig Originatoren, $gws Gateway, $clients Clients, $on von $ges Knoten online"
     fi
-    echo "$zustand mapserver-$gem-$host originatoren=$orig;5:;1:|nachbarn=$nachbarn;1:;1:|gateways=$gws;1:;1:|clients=$clients|knoten_online=$on;1:;1:|alter_s=$alter;180;600 $text"
+    echo "$zustand mapserver-$community-$host originatoren=$orig;5:;1:|nachbarn=$nachbarn;1:;1:|gateways=$gws;1:;1:|clients=$clients|knoten_online=$on;1:;1:|alter_s=$alter;180;600 $text"
 done

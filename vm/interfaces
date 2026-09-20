@@ -1,0 +1,34 @@
+# /etc/network/interfaces auf map6.freifunk.space
+#
+# Warum nur EINE Strophe fuer ens18:
+#
+# Auf dieser Maschine sind ifupdown und ifupdown2 installiert, ausgefuehrt
+# wird ifupdown2 (/usr/sbin/ifup ist das Python-Programm). ifupdown2 fasst
+# alle Adressfamilien einer Schnittstelle zu einem Objekt zusammen. Steht
+# neben "iface ens18 inet dhcp" noch irgendeine inet6-Strophe, dann greift
+# im dhcp-Modul dieser Zweig:
+#
+#     if 'inet6' in ifaceobj.addr_family:
+#         ... self.dhclientcmd.start6(...)
+#
+# ifupdown2 startet also einen DHCPv6-Client, obwohl die inet6-Strophe
+# "static" sagt. Hier antwortet kein DHCPv6-Server, der Client solicitiert
+# endlos, ifup bleibt haengen, und die post-up-Zeilen laufen nie. Ergebnis:
+# nach jedem Neustart fehlt die oeffentliche IPv6-Adresse, waehrend IPv4
+# und damit der Proxy weiter funktionieren - der Ausfall faellt also nicht
+# sofort auf (gefunden am 20.09.2026 beim Neustarttest).
+#
+# Deshalb: keine inet6-Strophe. Adresse und Standardweg kommen als post-up
+# der v4-Strophe, mit "replace" statt "add", damit ein zweiter Aufruf nicht
+# scheitert. Ein Router Advertisement traegt hier nichts bei, es gibt keines.
+#
+# DNS kommt ueber DHCP (8.8.4.4).
+source /etc/network/interfaces.d/*
+
+auto lo
+iface lo inet loopback
+
+auto ens18
+iface ens18 inet dhcp
+	post-up ip -6 addr replace 2001:41d0:1004:3214:8000::f0:39d1/65 dev ens18
+	post-up ip -6 route replace default via 2001:41d0:1004:3214:8000::1 dev ens18 onlink

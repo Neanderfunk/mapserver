@@ -30,6 +30,19 @@ OFFLINE = '20m'
 # Broadcast-Domain (gemessen 20.09.2026: ff05 eine Antwort, ff02::1 alle).
 ABFRAGE = {'neander': 'ff02::1'}
 
+# Was die Knoten als site_code melden, ist nicht immer der Code, unter dem die
+# Domain gebaut wird. Im Neanderfunk heisst die Domain 10_wlf, die Knoten
+# melden aber "nef-10_wlf", und Geraete am Ende ihrer Unterstuetzung zusaetzlich
+# "nef-10_wlf_EOL". Ohne diese Uebersetzung filtert yanic jeden Knoten weg und
+# die Karten bleiben leer (gemessen 20.09.2026).
+SITE_PRAEFIX = {'neander': 'nef-'}
+SITE_ANHANG = ('', '_EOL')
+
+
+def site_codes(x):
+    p = SITE_PRAEFIX.get(x['gem'], '')
+    return [f'{p}{x["code"]}{a}' for a in SITE_ANHANG] if p else [x['code']]
+
 
 FELDER = ('gem', 'code', 'ordner', 'port', 'id', 'host', 'mtu', 'broker',
           'prefix6', 'prefix4', 'name')
@@ -91,8 +104,9 @@ def main():
          f'collect_interval = "{TAKT}"',
          '']
     for x in d:
-        t.append(f'[respondd.sites.{x["code"]}]')
-        t.append("domains = ['']")
+        for c in site_codes(x):
+            t.append(f'[respondd.sites.{c}]')
+            t.append("domains = ['']")
     t.append('')
     t.append('# Je batman-Instanz eine Abfrage. Ohne multicast_address nimmt yanic')
     t.append('# ff05::2:1001, und genau darauf antwortet Stock-Gluon auf br-client.')
@@ -123,10 +137,11 @@ def main():
     # sonst lägen zwei Netze in einer Datei.
     for g in sorted({x['gem'] for x in d}):
         seine = [x for x in d if x['gem'] == g]
-        t.append(ausgabe(f'{WEB}/{g}/alle/data', [x['code'] for x in seine],
+        t.append(ausgabe(f'{WEB}/{g}/alle/data',
+                         [c for x in seine for c in site_codes(x)],
                          f'{g}: alle {len(seine)} Domains, {g}.map.freifunk.space'))
         for x in seine:
-            t.append(ausgabe(f'{WEB}/{g}/{x["host"]}/data', [x['code']],
+            t.append(ausgabe(f'{WEB}/{g}/{x["host"]}/data', site_codes(x),
                              f'{x["name"]}: {x["host"]}.{g}.map.freifunk.space'))
 
     # nodes.json/graph.json und nodelist.json nur fuer die Gesamtsicht: das
@@ -134,7 +149,7 @@ def main():
     # nodes.json/graph.json und nodelist.json je Gemeinschaft: das sind die
     # Formate, die andere Karten und Verzeichnisse einlesen.
     for g in sorted({x['gem'] for x in d}):
-        codes = [x['code'] for x in d if x['gem'] == g]
+        codes = [c for x in d if x['gem'] == g for c in site_codes(x)]
         liste = '", "'.join(codes)
         t.append('')
         t.append('[[nodes.output.meshviewer]]')

@@ -29,6 +29,7 @@ export LANG=C.UTF-8
 [ "${BASH_SOURCE[0]: -1}" = "~" ] && exit 99
 
 KONF=${KARTE_EN_KONF:-/etc/karte-en/domains.conf}
+RUHEND=${KARTE_EN_RUHEND:-/etc/karte-en/ruhend.conf}
 WEB=${KARTE_EN_WEB:-/var/www/karte-en}
 
 if [ ! -r "$KONF" ]; then
@@ -146,6 +147,9 @@ echo "$zustand mapserver-Batman l2tp_if=$l2tp;$anzahl:;$anzahl:|version_gleich=$
 # verschwunden, auch wenn der Tunnel noch steht.
 grep -v '^#' "$KONF" | grep . | while read -r gem code _ _ _ host _; do
     [ -n "$code" ] || continue
+    # Ruhende Domains: der Tunnel steht, Knoten sind dort nicht zu erwarten.
+    ruht=0
+    grep -q "^$code[[:space:]]" "$RUHEND" 2>/dev/null && ruht=1
     seit_t=$(systemctl show -p ActiveEnterTimestampMonotonic --value \
              "karte-en-tunnel@$code.service" 2>/dev/null)
     tlaeuft=$(( hoch - ${seit_t:-0} / 1000000 ))
@@ -158,7 +162,9 @@ grep -v '^#' "$KONF" | grep . | while read -r gem code _ _ _ host _; do
     alter=$(alter_von "$datei")
     set -- $(knoten_in "$datei")
     ges=$1 on=$2
-    if { [ "$nachbarn" -eq 0 ] || [ "$orig" -eq 0 ]; } && [ "$tlaeuft" -lt "$SCHONFRIST" ]; then
+    if [ "$ruht" = 1 ]; then
+        zustand=0; text="ruhende Domain, $orig Originatoren, $on Knoten"
+    elif { [ "$nachbarn" -eq 0 ] || [ "$orig" -eq 0 ]; } && [ "$tlaeuft" -lt "$SCHONFRIST" ]; then
         zustand=0; text="Tunnel frisch gestartet (${tlaeuft}s), Mesh noch nicht beisammen"
     elif [ "$nachbarn" -eq 0 ] || [ "$orig" -eq 0 ]; then
         zustand=2; text="kein Mesh: $nachbarn Nachbarn, $orig Originatoren"

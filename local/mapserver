@@ -108,8 +108,10 @@ fi
 echo "$zustand mapserver-Abschottung ra_routen=$ra;1;1|standardweg_bat=$standard;1;1|forwarding_an=$weiter;1;1 $text"
 
 # --- Batman ------------------------------------------------------------------
-# batctl und Kernelmodul sollten zueinander passen; L2TP-Schnittstellen sind
-# die Gegenprobe zu den Diensten (eine je Domain).
+# L2TP-Schnittstellen sind die Gegenprobe zu den Diensten: eine je Domain.
+# Die Versionen von batctl und Kernelmodul stehen nur als Text da. Debian baut
+# beide aus verschiedenen Quellen (batctl 2025.0 gegen Modul 2024.2), ein
+# Unterschied ist dort der Normalfall und waere als Dauerwarnung wertlos.
 bat_voll=$(batctl -v 2>/dev/null)
 bat_ctl=$(echo "$bat_voll" | cut -d' ' -f2)
 bat_mod=$(echo "$bat_voll" | sed -n 's/.*batman-adv: \([^]]*\)\].*/\1/p')
@@ -117,10 +119,9 @@ gleich=0
 case "$bat_ctl" in *"$bat_mod"*) gleich=1 ;; esac
 l2tp=$(ip -br link show 2>/dev/null | grep -c '^td-')
 if [ "$l2tp" -lt "$anzahl" ]; then zustand=2; text="nur $l2tp von $anzahl L2TP-Schnittstellen"
-elif [ "$gleich" -eq 0 ];     then zustand=1; text="batctl $bat_ctl, Modul $bat_mod"
 else zustand=0; text="$bat_voll, $l2tp Schnittstellen"
 fi
-echo "$zustand mapserver-Batman l2tp_if=$l2tp;$anzahl:;$anzahl:|version_gleich=$gleich;1:;0: $text"
+echo "$zustand mapserver-Batman l2tp_if=$l2tp;$anzahl:;$anzahl:|version_gleich=$gleich $text"
 
 # --- je Domain ---------------------------------------------------------------
 # Originatoren mit Stern sind die ausgewaehlten Wege, also die Knoten selbst.

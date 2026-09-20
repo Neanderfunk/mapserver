@@ -12,7 +12,7 @@ set -e
 KONF=/etc/karte-en/domains.conf
 GEDULD=${KARTE_EN_GEDULD:-180}
 
-codes=$(awk '!/^#/ && NF { print $1 }' "$KONF")
+codes=$(awk '!/^#/ && NF { print $2 }' "$KONF")
 i=0
 while [ "$i" -lt "$GEDULD" ]; do
 	fehlen=''

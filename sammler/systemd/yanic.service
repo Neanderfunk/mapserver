@@ -13,6 +13,11 @@ UMask=0022
 # yanic stirbt, wenn eine Schnittstelle fehlt. Nach einem Neustart der
 # Maschine ist das normal, also erst warten (als root, danach faellt der
 # Dienst auf den Benutzer yanic zurueck).
+# Die Vorgabe von 90 Sekunden reicht nicht: nach einem Neustart der Maschine
+# setzt der Tunneldigger-Client die MTU erst rund zwanzig Sekunden nach dem
+# Verbindungsaufbau, danach sortiert batman sich neu. karte-en-warten gibt
+# nach 180 Sekunden ohnehin von selbst auf.
+TimeoutStartSec=300
 ExecStartPre=+/usr/local/sbin/karte-en-warten
 ExecStart=/usr/local/bin/yanic serve --config /etc/yanic.conf
 Restart=always

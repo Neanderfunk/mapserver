@@ -78,7 +78,16 @@ echo "$zustand mapserver-Tunnel tunnel_aktiv=$aktiv;$anzahl:;$anzahl:|neustarts=
 # frisch geschriebenen Datei zu Recht noch niemand online: der erste
 # Sammellauf kommt erst zur naechsten vollen Minute. Ohne diese Schonfrist
 # meldet der Check nach jedem Neustart der Maschine einmal CRIT.
-seit=$(systemctl show -p ActiveEnterTimestampMonotonic --value yanic.service 2>/dev/null)
+# Seit dem Umbau laeuft je Community eine Instanz yanic@<community>. Als
+# Startzeitpunkt zaehlt die juengste von ihnen, sonst wuerde eine gerade
+# neu gestartete Instanz die Schonfrist der anderen aufheben.
+communities=$(awk '!/^#/ && NF { print $1 }' "$KONF" | sort -u)
+seit=0 sammler_tot=''
+for c in $communities; do
+    [ "$(systemctl is-active "yanic@$c.service" 2>/dev/null)" = active ] || sammler_tot="$sammler_tot $c"
+    s=$(systemctl show -p ActiveEnterTimestampMonotonic --value "yanic@$c.service" 2>/dev/null)
+    [ "${s:-0}" -gt "$seit" ] && seit=$s
+done
 laeuft=$(( ( $(cut -d' ' -f1 /proc/uptime | cut -d. -f1) ) - ${seit:-0} / 1000000 ))
 [ "$laeuft" -lt 0 ] && laeuft=0
 SCHONFRIST=180
@@ -100,8 +109,7 @@ for datei in "$WEB"/sites/*/alle/data/meshviewer.json; do
     set -- $(knoten_in "$datei")
     ges=$((ges + $1)) on=$((on + $2))
 done
-lebt=$(systemctl is-active yanic.service 2>/dev/null)
-if [ "$lebt" != active ];                     then zustand=2; text="yanic ist $lebt"
+if [ -n "$sammler_tot" ];                     then zustand=2; text="yanic laeuft nicht:$sammler_tot"
 elif [ "$alter" -lt 0 ];                      then zustand=2; text="keine Ausgabedatei"
 elif [ "$on" -eq 0 ] && [ "$laeuft" -lt "$SCHONFRIST" ]; then
     zustand=0; text="frisch gestartet (${laeuft}s), erster Sammellauf steht aus"

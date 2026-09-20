@@ -165,7 +165,7 @@ grep -v '^#' "$KONF" | grep . | while read -r gem code _ _ _ host _; do
     nachbarn=$(batctl meshif "bat-$code" neighbors 2>/dev/null | tail -n +3 | grep -c .)
     gws=$(batctl meshif "bat-$code" gwl 2>/dev/null | tail -n +3 | grep -c .)
     clients=$(batctl meshif "bat-$code" transglobal 2>/dev/null | grep -cE '\[[^]]*W[^]]*\]')
-    datei=$WEB/sites/$host/data/meshviewer.json
+    datei=$WEB/sites/$gem/$host/data/meshviewer.json
     alter=$(alter_von "$datei")
     set -- $(knoten_in "$datei")
     ges=$1 on=$2

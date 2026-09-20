@@ -2,3 +2,6 @@
 __pycache__/
 build/
 node_modules/
+
+# Zugangsdaten bleiben ausserhalb der Versionierung
+.keys/

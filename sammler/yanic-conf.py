@@ -10,6 +10,7 @@ no_owner steht ueberall auf true. Die Knoten gehoeren nicht uns; was ihre
 Betreiberinnen an Kontaktdaten eingetragen haben, ist nicht fuer unsere
 Veroeffentlichung gedacht.
 """
+import os
 import sys
 
 KONF = '/etc/karte-en/domains.conf'
@@ -62,6 +63,19 @@ def main():
         print(f'keine Domains in {KONF}', file=sys.stderr)
         return 1
 
+    # Eine einzige fehlende Schnittstelle beendet yanic mit einem Panic
+    # ("route ip+net: no such network interface"). Bei 56 Domains heisst das:
+    # ein Broker, der nicht antwortet, nimmt die ganze Karte mit. Deshalb
+    # kommen nur Domains in die Konfiguration, deren bat-Instanz es auch gibt.
+    # Die Ausgaben bleiben vollstaendig, eine Domain ohne Tunnel ist dann eine
+    # leere Karte statt gar keiner (20.09.2026).
+    fehlen = [x for x in d if not os.path.isdir(f'/sys/class/net/bat-{x["code"]}')]
+    if fehlen and '--alle' not in sys.argv:
+        print('# ohne Tunnel, deshalb nicht abgefragt: '
+              + ', '.join(x['code'] for x in fehlen))
+        for x in fehlen:
+            print(f'#   {x["code"]:12} {x["name"]}')
+
     t = ['# Erzeugt von yanic-conf.py aus /etc/karte-en/domains.conf.',
          '# Nicht von Hand aendern, sondern die Domaintabelle pflegen.',
          '',
@@ -82,7 +96,8 @@ def main():
     t.append('')
     t.append('# Je batman-Instanz eine Abfrage. Ohne multicast_address nimmt yanic')
     t.append('# ff05::2:1001, und genau darauf antwortet Stock-Gluon auf br-client.')
-    for x in d:
+    vorhanden = [x for x in d if x not in fehlen] if '--alle' not in sys.argv else d
+    for x in vorhanden:
         t.append('')
         t.append(f'# {x["name"]}')
         t.append('[[respondd.interfaces]]')

@@ -19,6 +19,10 @@ UMask=0022
 # nach 180 Sekunden ohnehin von selbst auf.
 TimeoutStartSec=300
 ExecStartPre=+/usr/local/sbin/karte-en-warten
+# Konfiguration bei jedem Start neu erzeugen: sie enthaelt nur Domains, deren
+# batman-Instanz gerade existiert. Sonst reisst ein einziger Broker, der nicht
+# antwortet, den ganzen Sammler mit.
+ExecStartPre=+/bin/sh -c '/usr/local/sbin/karte-en-yanic-conf > /etc/yanic.conf'
 ExecStart=/usr/local/bin/yanic serve --config /etc/yanic.conf
 Restart=always
 RestartSec=30

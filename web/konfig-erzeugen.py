@@ -18,6 +18,7 @@ import sys
 KONF = '/etc/karte-en/domains.conf'
 WEB = '/var/www/karte-en'
 BASIS = 'en.map.freifunk.space'
+EIGEN = 'map6.freifunk.space'
 KACHEL = 'https://tiles.ffdus.de'
 OSM_ATTR = ('&copy; <a href="https://www.openstreetmap.org/copyright">'
             'OpenStreetMap</a>-Mitwirkende')
@@ -79,8 +80,8 @@ def konfig(titel, host, alle):
 VHOST = """
 # %(titel)s
 server {
-	listen 80;
-	listen [::]:80;
+	listen 80%(vorgabe)s;
+	listen [::]:80%(vorgabe)s;
 	server_name %(fqdn)s;
 
 	root %(web)s/meshviewer;
@@ -128,8 +129,15 @@ def main():
         os.makedirs(verz, exist_ok=True)
         with open(f'{verz}/config.json', 'w', encoding='utf-8') as f:
             json.dump(konfig(titel, host, alle), f, ensure_ascii=False, indent=1)
-        fqdn = BASIS if host == 'alle' else f'{host}.{BASIS}'
-        site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'host': host, 'web': WEB})
+        # Die Gesamtkarte ist zugleich Vorgabe-Vhost: dann zeigt auch der
+        # blanke Aufruf der VM etwas Sinnvolles, solange die Namen noch nicht
+        # ueber twin2 aufgeloest werden.
+        if host == 'alle':
+            fqdn, vorgabe = f'{BASIS} {EIGEN}', ' default_server'
+        else:
+            fqdn, vorgabe = f'{host}.{BASIS}', ''
+        site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'host': host,
+                             'web': WEB, 'vorgabe': vorgabe})
         print(f'  {fqdn:38} {titel}')
 
     with open('/etc/nginx/sites-available/karte-en.conf', 'w', encoding='utf-8') as f:

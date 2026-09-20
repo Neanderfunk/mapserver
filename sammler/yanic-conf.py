@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
-"""Erzeugt /etc/yanic.conf aus der Domaintabelle.
+"""Erzeugt die yanic-Konfiguration einer Gemeinschaft.
 
-Ein yanic-Prozess fragt alle acht batman-Instanzen ab und schreibt neun
-Datensaetze: einmal alles zusammen fuer en.map.freifunk.space und je Domain
-einen gefilterten Satz fuer <ort>.en.map.freifunk.space.
+  yanic-conf.py <gemeinschaft> > /etc/yanic-<gemeinschaft>.conf
+
+Je Gemeinschaft laeuft eine eigene Instanz. Das hat zwei Gruende:
+
+1. Die Gesamtkarte braucht dann keinen site-Filter, denn die Trennung entsteht
+   schon dadurch, welche Schnittstellen die Instanz abhoert. Ohne Filter
+   faellt niemand heraus, insbesondere nicht die Supernodes: die melden nur
+   einen domain_code und keinen site_code und wurden deshalb bisher verworfen.
+   Mit ihnen erscheinen auch die VPN-Kanten und damit die Uplink-Faerbung.
+2. Eine Gemeinschaft kann die andere nicht mehr mitreissen.
+
+Die Ortskarten behalten ihren Filter, dort gehoert der Supernode nicht hin.
 
 no_owner steht ueberall auf true. Die Knoten gehoeren nicht uns; was ihre
 Betreiberinnen an Kontaktdaten eingetragen haben, ist nicht fuer unsere
@@ -90,9 +99,15 @@ def ausgabe(pfad, sites=None, titel=''):
 
 
 def main():
-    d = list(domains(KONF))
+    ruf = [a for a in sys.argv[1:] if not a.startswith('-')]
+    if len(ruf) != 1:
+        print(__doc__.splitlines()[2].strip(), file=sys.stderr)
+        return 2
+    gem = ruf[0]
+
+    d = [x for x in domains(KONF) if x['gem'] == gem]
     if not d:
-        print(f'keine Domains in {KONF}', file=sys.stderr)
+        print(f'keine Domains der Gemeinschaft {gem} in {KONF}', file=sys.stderr)
         return 1
 
     # Eine einzige fehlende Schnittstelle beendet yanic mit einem Panic
@@ -108,7 +123,7 @@ def main():
         for x in fehlen:
             print(f'#   {x["code"]:12} {x["name"]}')
 
-    t = ['# Erzeugt von yanic-conf.py aus /etc/karte-en/domains.conf.',
+    t = [f'# Erzeugt von yanic-conf.py {gem} aus /etc/karte-en/domains.conf.',
          '# Nicht von Hand aendern, sondern die Domaintabelle pflegen.',
          '',
          '[respondd]',
@@ -143,7 +158,7 @@ def main():
     t.append('enable = false')
     t.append('')
     t.append('[nodes]')
-    t.append('state_path = "/var/lib/yanic/state.json"')
+    t.append(f'state_path = "/var/lib/yanic/{gem}.json"')
     t.append('# Offline-Knoten bleiben ein Vierteljahr sichtbar, danach fallen sie raus.')
     t.append('prune_after = "90d"')
     t.append('save_interval = "1m"')
@@ -151,41 +166,33 @@ def main():
     t.append('# Knoten nach einer einzigen verpassten Runde auf offline.')
     t.append(f'offline_after = "{OFFLINE}"')
 
-    # Je Gemeinschaft eine Gesamtansicht und je Domain eine Ortsansicht. Die
-    # Gesamtansicht filtert auf die site_codes genau dieser Gemeinschaft,
-    # sonst lägen zwei Netze in einer Datei.
-    for g in sorted({x['gem'] for x in d}):
-        seine = [x for x in d if x['gem'] == g]
-        t.append(ausgabe(f'{WEB}/{g}/alle/data',
-                         [c for x in seine for c in site_codes(x)],
-                         f'{g}: alle {len(seine)} Domains, {g}.map.freifunk.space'))
-        for x in seine:
-            t.append(ausgabe(f'{WEB}/{g}/{x["host"]}/data', site_codes(x),
-                             f'{x["name"]}: {x["host"]}.{g}.map.freifunk.space'))
+    # Gesamtansicht ohne Filter: diese Instanz hoert nur die Domains dieser
+    # Gemeinschaft ab, mehr kann also gar nicht hineingeraten. Ohne Filter
+    # bleiben die Supernodes drin, und nur mit ihnen entstehen die VPN-Kanten.
+    t.append(ausgabe(f'{WEB}/{gem}/alle/data', None,
+                     f'{gem}: alle {len(d)} Domains, {gem}.map.freifunk.space'))
+    for x in d:
+        t.append(ausgabe(f'{WEB}/{gem}/{x["host"]}/data', site_codes(x),
+                         f'{x["name"]}: {x["host"]}.{gem}.map.freifunk.space'))
 
     # nodes.json/graph.json und nodelist.json nur fuer die Gesamtsicht: das
     # sind die Formate, die andere Karten und Verzeichnisse einlesen.
-    # nodes.json/graph.json und nodelist.json je Gemeinschaft: das sind die
-    # Formate, die andere Karten und Verzeichnisse einlesen.
-    for g in sorted({x['gem'] for x in d}):
-        codes = [c for x in d if x['gem'] == g for c in site_codes(x)]
-        liste = '", "'.join(codes)
-        t.append('')
-        t.append('[[nodes.output.meshviewer]]')
-        t.append('enable = true')
-        t.append('version = 2')
-        t.append(f'nodes_path = "{WEB}/{g}/alle/data/nodes.json"')
-        t.append(f'graph_path = "{WEB}/{g}/alle/data/graph.json"')
-        t.append('[nodes.output.meshviewer.filter]')
-        t.append('no_owner = true')
-        t.append(f'sites = ["{liste}"]')
-        t.append('')
-        t.append('[[nodes.output.nodelist]]')
-        t.append('enable = true')
-        t.append(f'path = "{WEB}/{g}/alle/data/nodelist.json"')
-        t.append('[nodes.output.nodelist.filter]')
-        t.append('no_owner = true')
-        t.append(f'sites = ["{liste}"]')
+    # nodes.json/graph.json und nodelist.json: die Formate, die andere Karten
+    # und Verzeichnisse einlesen. Ebenfalls ohne Filter, aus demselben Grund.
+    t.append('')
+    t.append('[[nodes.output.meshviewer]]')
+    t.append('enable = true')
+    t.append('version = 2')
+    t.append(f'nodes_path = "{WEB}/{gem}/alle/data/nodes.json"')
+    t.append(f'graph_path = "{WEB}/{gem}/alle/data/graph.json"')
+    t.append('[nodes.output.meshviewer.filter]')
+    t.append('no_owner = true')
+    t.append('')
+    t.append('[[nodes.output.nodelist]]')
+    t.append('enable = true')
+    t.append(f'path = "{WEB}/{gem}/alle/data/nodelist.json"')
+    t.append('[nodes.output.nodelist.filter]')
+    t.append('no_owner = true')
     t.append('')
     t.append('[database]')
     t.append('delete_after = "90d"')

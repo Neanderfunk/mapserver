@@ -1,5 +1,5 @@
 [Unit]
-Description=yanic, respondd-Sammler fuer die acht Domains von Freifunk EN
+Description=yanic, respondd-Sammler der Gemeinschaft %i
 Documentation=https://codeberg.org/FreifunkBremen/yanic
 After=network-online.target
 Wants=network-online.target
@@ -18,12 +18,12 @@ UMask=0022
 # Verbindungsaufbau, danach sortiert batman sich neu. karte-en-warten gibt
 # nach 180 Sekunden ohnehin von selbst auf.
 TimeoutStartSec=300
-ExecStartPre=+/usr/local/sbin/karte-en-warten
+ExecStartPre=+/usr/local/sbin/karte-en-warten %i
 # Konfiguration bei jedem Start neu erzeugen: sie enthaelt nur Domains, deren
 # batman-Instanz gerade existiert. Sonst reisst ein einziger Broker, der nicht
 # antwortet, den ganzen Sammler mit.
-ExecStartPre=+/bin/sh -c '/usr/local/sbin/karte-en-yanic-conf > /etc/yanic.conf'
-ExecStart=/usr/local/bin/yanic serve --config /etc/yanic.conf
+ExecStartPre=+/bin/sh -c '/usr/local/sbin/karte-en-yanic-conf %i > /etc/yanic-%i.conf'
+ExecStart=/usr/local/bin/yanic serve --config /etc/yanic-%i.conf
 Restart=always
 RestartSec=30
 # yanic fragt nur ueber UDP und schreibt JSON, mehr braucht es nicht.

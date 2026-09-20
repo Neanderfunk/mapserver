@@ -6,11 +6,14 @@
 # Der Schnittstellenname traegt die Domain: td-ffwit -> Domain ffwit.
 #
 # Wir sind in fremden Netzen ein Knoten, der nur fragt. Deshalb:
-#   - keine Bridge, kein DHCP, keine Adresse aus ihren Praefixen,
-#   - accept_ra und autoconf aus, sonst holen wir uns aus ihren Router
-#     Advertisements eine Adresse in ihrem Netz,
+#   - keine Bridge, kein DHCP, keine Clients,
 #   - forwarding aus und gw_mode off, sonst zoegen wir Verkehr auf uns,
-#     den wir gar nicht bedienen wollen.
+#     den wir gar nicht bedienen wollen,
+#   - aus ihren Router Advertisements nehmen wir das Praefix, aber keine
+#     Router: kein Standardweg, keine Route-Information-Optionen, keine
+#     Router-Praeferenz. Sonst koennte eigener Verkehr dieser VM, im
+#     schlimmsten Fall die Tunnel selbst, in ihr Netz hinauslaufen
+#     (adorfer 20.09.2026).
 set -e
 
 HOOK="$1"
@@ -56,9 +59,18 @@ session.up)
 
 	ip link set dev "$BAT" down 2>/dev/null || true
 	ip link set dev "$BAT" address "$MAC_BAT"
-	setze "net/ipv6/conf/$BAT/accept_ra" 0
-	setze "net/ipv6/conf/$BAT/autoconf" 0
+	# Praefix ja, Router nein. Reihenfolge zaehlt: erst die Verbote, dann
+	# accept_ra einschalten, sonst verarbeiten wir das erste RA noch mit
+	# den Vorgabewerten.
 	setze "net/ipv6/conf/$BAT/forwarding" 0
+	setze "net/ipv6/conf/$BAT/accept_ra_defrtr" 0
+	setze "net/ipv6/conf/$BAT/accept_ra_rt_info_max_plen" 0
+	setze "net/ipv6/conf/$BAT/accept_ra_rtr_pref" 0
+	setze "net/ipv6/conf/$BAT/accept_ra_mtu" 0
+	setze "net/ipv6/conf/$BAT/use_tempaddr" 0
+	setze "net/ipv6/conf/$BAT/accept_ra_pinfo" 1
+	setze "net/ipv6/conf/$BAT/autoconf" 1
+	setze "net/ipv6/conf/$BAT/accept_ra" 1
 	ip link set dev "$BAT" up
 	logger -t karte-en "$CODE: $IF an $BAT, Originator $MAC_IF"
 	;;

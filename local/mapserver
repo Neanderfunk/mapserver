@@ -1,0 +1,151 @@
+#!/bin/bash
+#/usr/lib/check_mk_agent/local/mapserver
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Local check fuer den Kartenserver (~/projekte/freifunk/mapserver).
+#
+# Aufbau uebernommen von Adorfer/check_mk/mapsrv (Eulenfunk-Kartenserver):
+# P-Format mit mehreren Metriken je Dienst, Originatoren und Clients aus
+# batctl, teure Pruefungen in ein verzoegertes Verzeichnis. Was dort auf
+# /opt/eulenfunk/map/sites zeigt, kommt hier aus /etc/karte-en/domains.conf.
+#
+# Dienste:
+#   mapserver-Tunnel      acht Tunneldigger-Instanzen, Neustartzaehler
+#   mapserver-Sammler     yanic, Alter und Umfang der Gesamtausgabe
+#   mapserver-Abschottung kein Standardweg und kein Forwarding in ihr Netz
+#   mapserver-Batman      Version von Modul und Werkzeug, L2TP-Schnittstellen
+#   mapserver-EN-<ort>    je Domain: Originatoren, Gateways, Clients, Knoten
+#
+# Die wichtigste Groesse je Domain ist nicht die Knotenzahl, sondern die Zahl
+# der Originatoren: sie faellt sofort, wenn der Tunnel abreisst, waehrend die
+# Knoten noch fuenf Minuten als online in der Datei stehen.
+#
+# "mapserver-Abschottung" ist kein Betriebswert, sondern eine Zusicherung:
+# sobald dort etwas anderes als OK steht, laeuft moeglicherweise eigener
+# Verkehr durch ein fremdes Netz. Siehe mapserver/docs/hintergrund.md.
+export LANG=C.UTF-8
+
+# Sicherungskopien nicht ausfuehren (Konvention aus mapsrv)
+[ "${BASH_SOURCE[0]: -1}" = "~" ] && exit 99
+
+KONF=${KARTE_EN_KONF:-/etc/karte-en/domains.conf}
+WEB=${KARTE_EN_WEB:-/var/www/karte-en}
+
+if [ ! -r "$KONF" ]; then
+    echo "3 mapserver-Tunnel - $KONF nicht lesbar, Kartenserver nicht eingerichtet?"
+    exit 0
+fi
+
+jetzt=$(date +%s)
+codes=$(awk '!/^#/ && NF { print $1 }' "$KONF")
+anzahl=$(echo "$codes" | grep -c .)
+
+alter_von() {           # Alter einer Datei in Sekunden, -1 wenn es sie nicht gibt
+    if [ -f "$1" ]; then echo $(( jetzt - $(stat -c %Y "$1") )); else echo -1; fi
+}
+
+knoten_in() {           # Knoten und davon online aus einer meshviewer.json
+    python3 - "$1" <<'PY' 2>/dev/null || echo "0 0"
+import json, sys
+try:
+    n = json.load(open(sys.argv[1])).get('nodes') or []
+except (OSError, ValueError):
+    n = []
+print(len(n), sum(1 for x in n if x.get('is_online')))
+PY
+}
+
+# --- Tunnel ------------------------------------------------------------------
+aktiv=0 neustarts=0 tot=''
+for c in $codes; do
+    if [ "$(systemctl is-active "karte-en-tunnel@$c.service" 2>/dev/null)" = active ]; then
+        aktiv=$((aktiv + 1))
+    else
+        tot="$tot $c"
+    fi
+    n=$(systemctl show -p NRestarts --value "karte-en-tunnel@$c.service" 2>/dev/null)
+    neustarts=$((neustarts + ${n:-0}))
+done
+if [ "$aktiv" -lt "$anzahl" ]; then zustand=2; text="nicht aktiv:$tot"
+elif [ "$neustarts" -gt 20 ];  then zustand=1; text="alle aktiv, aber $neustarts Neustarts"
+else zustand=0; text="alle $anzahl Tunnel aktiv"
+fi
+echo "$zustand mapserver-Tunnel tunnel_aktiv=$aktiv;$anzahl:;$anzahl:|neustarts=$neustarts;20;60 $text"
+
+# --- Sammler -----------------------------------------------------------------
+datei=$WEB/sites/alle/data/meshviewer.json
+alter=$(alter_von "$datei")
+set -- $(knoten_in "$datei")
+ges=$1 on=$2
+lebt=$(systemctl is-active yanic.service 2>/dev/null)
+if [ "$lebt" != active ];                     then zustand=2; text="yanic ist $lebt"
+elif [ "$alter" -lt 0 ];                      then zustand=2; text="keine Ausgabedatei"
+elif [ "$alter" -gt 600 ] || [ "$on" -eq 0 ]; then zustand=2; text="Ausgabe ${alter}s alt, $on online"
+elif [ "$alter" -gt 180 ];                    then zustand=1; text="Ausgabe ${alter}s alt"
+else zustand=0; text="$on von $ges Knoten online, Ausgabe ${alter}s alt"
+fi
+echo "$zustand mapserver-Sammler alter_s=$alter;180;600|knoten=$ges|knoten_online=$on;50:;1: $text"
+
+# --- Abschottung -------------------------------------------------------------
+# Drei Zusicherungen, jede einzeln pruefbar:
+#   1. aus ihren Router Advertisements ist kein Weg uebernommen worden
+#   2. kein Standardweg zeigt in eine bat-Instanz
+#   3. auf keiner bat-Instanz ist Forwarding an
+ra=$(ip -6 route show proto ra 2>/dev/null | grep -c .)
+standard=$(ip -6 route show default 2>/dev/null | grep -c 'dev bat-')
+weiter=0
+for c in $codes; do
+    f=/proc/sys/net/ipv6/conf/bat-$c/forwarding
+    [ -r "$f" ] && [ "$(cat "$f")" != 0 ] && weiter=$((weiter + 1))
+done
+if [ $((ra + standard + weiter)) -gt 0 ]; then
+    zustand=2
+    text="RA-Routen $ra, Standardwege ueber bat $standard, Forwarding an $weiter"
+else
+    zustand=0
+    text="keine Route aus ihren RAs, kein Standardweg ueber bat, kein Forwarding"
+fi
+echo "$zustand mapserver-Abschottung ra_routen=$ra;1;1|standardweg_bat=$standard;1;1|forwarding_an=$weiter;1;1 $text"
+
+# --- Batman ------------------------------------------------------------------
+# batctl und Kernelmodul sollten zueinander passen; L2TP-Schnittstellen sind
+# die Gegenprobe zu den Diensten (eine je Domain).
+bat_voll=$(batctl -v 2>/dev/null)
+bat_ctl=$(echo "$bat_voll" | cut -d' ' -f2)
+bat_mod=$(echo "$bat_voll" | sed -n 's/.*batman-adv: \([^]]*\)\].*/\1/p')
+gleich=0
+case "$bat_ctl" in *"$bat_mod"*) gleich=1 ;; esac
+l2tp=$(ip -br link show 2>/dev/null | grep -c '^td-')
+if [ "$l2tp" -lt "$anzahl" ]; then zustand=2; text="nur $l2tp von $anzahl L2TP-Schnittstellen"
+elif [ "$gleich" -eq 0 ];     then zustand=1; text="batctl $bat_ctl, Modul $bat_mod"
+else zustand=0; text="$bat_voll, $l2tp Schnittstellen"
+fi
+echo "$zustand mapserver-Batman l2tp_if=$l2tp;$anzahl:;$anzahl:|version_gleich=$gleich;1:;0: $text"
+
+# --- je Domain ---------------------------------------------------------------
+# Originatoren mit Stern sind die ausgewaehlten Wege, also die Knoten selbst.
+# Gateways kommen aus gwl: faellt das auf 0, ist ihr Supernode in dieser Domain
+# verschwunden, auch wenn der Tunnel noch steht.
+grep -v '^#' "$KONF" | grep . | while read -r code _ _ _ host _; do
+    [ -n "$code" ] || continue
+    orig=$(batctl meshif "bat-$code" originators 2>/dev/null | grep -c '^ \*')
+    nachbarn=$(batctl meshif "bat-$code" neighbors 2>/dev/null | tail -n +3 | grep -c .)
+    gws=$(batctl meshif "bat-$code" gwl 2>/dev/null | tail -n +3 | grep -c .)
+    clients=$(batctl meshif "bat-$code" transglobal 2>/dev/null | grep -cE '\[[^]]*W[^]]*\]')
+    datei=$WEB/sites/$host/data/meshviewer.json
+    alter=$(alter_von "$datei")
+    set -- $(knoten_in "$datei")
+    ges=$1 on=$2
+    if [ "$nachbarn" -eq 0 ] || [ "$orig" -eq 0 ]; then
+        zustand=2; text="kein Mesh: $nachbarn Nachbarn, $orig Originatoren"
+    elif [ "$alter" -gt 600 ] || [ "$on" -eq 0 ]; then
+        zustand=2; text="$orig Originatoren, aber $on Knoten online (Datei ${alter}s)"
+    elif [ "$gws" -eq 0 ]; then
+        zustand=1; text="$orig Originatoren, aber kein Gateway in dieser Domain"
+    elif [ "$orig" -lt 5 ] || [ "$alter" -gt 180 ]; then
+        zustand=1; text="$orig Originatoren, $on online, Datei ${alter}s alt"
+    else
+        zustand=0; text="$orig Originatoren, $gws Gateway, $clients Clients, $on von $ges Knoten online"
+    fi
+    echo "$zustand mapserver-EN-$host originatoren=$orig;5:;1:|nachbarn=$nachbarn;1:;1:|gateways=$gws;1:;1:|clients=$clients|knoten_online=$on;1:;1:|alter_s=$alter;180;600 $text"
+done

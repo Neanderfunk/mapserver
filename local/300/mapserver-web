@@ -1,0 +1,52 @@
+#!/bin/bash
+#/usr/lib/check_mk_agent/local/300/mapserver-web
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Verzoegerter Teil des Kartenserver-Checks: neun Karten mal zwei Abrufe sind
+# achtzehn HTTP-Anfragen, das muss nicht jede Minute sein. Die Konvention mit
+# dem Unterverzeichnis nach Sekunden kommt aus Adorfer/check_mk/mapsrv.
+#
+# Geprueft wird gegen ::1 mit gesetztem Host, also ohne den Proxy davor:
+# gemessen wird, was dieser Rechner ausliefert, nicht ob twin2 erreichbar ist.
+# Der Weg von aussen samt TLS gehoert in einen Check auf dem Proxy.
+export LANG=C.UTF-8
+[ "${BASH_SOURCE[0]: -1}" = "~" ] && exit 99
+
+KONF=${KARTE_EN_KONF:-/etc/karte-en/domains.conf}
+BASIS=${KARTE_EN_BASIS:-en.map.freifunk.space}
+
+if [ ! -r "$KONF" ]; then
+    echo "3 mapserver-Web - $KONF nicht lesbar"
+    exit 0
+fi
+
+ok=0 erwartet=0 fehler='' langsam=0
+pruefe_host() {
+    for pfad in / /data/meshviewer.json; do
+        erwartet=$((erwartet + 1))
+        antwort=$(curl -s -o /dev/null -m 8 -w '%{http_code} %{time_total}' \
+                  -H "Host: $1" "http://[::1]$pfad" 2>/dev/null)
+        code=${antwort%% *}
+        zeit=${antwort##* }
+        if [ "$code" = 200 ]; then
+            ok=$((ok + 1))
+            # Zehntelsekunden vergleichen, ohne auf bc angewiesen zu sein
+            [ "${zeit%%.*}" -ge 1 ] && langsam=$((langsam + 1))
+        else
+            fehler="$fehler $1$pfad=$code"
+        fi
+    done
+}
+
+pruefe_host "$BASIS"
+for h in $(awk '!/^#/ && NF { print $5 }' "$KONF"); do pruefe_host "$h.$BASIS"; done
+
+karten=$((erwartet / 2))
+if [ "$ok" -lt "$erwartet" ]; then
+    zustand=2; text="Fehler:$fehler"
+elif [ "$langsam" -gt 0 ]; then
+    zustand=1; text="$ok Abrufe in Ordnung, $langsam davon ueber einer Sekunde"
+else
+    zustand=0; text="$karten Karten, alle $ok Abrufe in Ordnung"
+fi
+echo "$zustand mapserver-Web abrufe_ok=$ok;$erwartet:;$erwartet:|karten=$karten|langsam=$langsam;1;5 $text"

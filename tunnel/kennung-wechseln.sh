@@ -19,11 +19,11 @@ neu=$(( (alt + 1) % 256 ))
 echo "$neu" > "$DATEI"
 echo "Kennungsserie $alt -> $neu"
 
-for c in $(awk '!/^#/ && NF { print $1 }' /etc/karte-en/domains.conf); do
+for c in $(awk '!/^#/ && NF { print $2 }' /etc/karte-en/domains.conf); do
 	systemctl restart "karte-en-tunnel@$c"
 done
 sleep 20
-for c in $(awk '!/^#/ && NF { print $1 }' /etc/karte-en/domains.conf); do
+for c in $(awk '!/^#/ && NF { print $2 }' /etc/karte-en/domains.conf); do
 	printf '%-7s %s  %s\n' "$c" \
 		"$(cat "/sys/class/net/td-$c/address" 2>/dev/null || echo '-')" \
 		"$(batctl meshif "bat-$c" originators 2>/dev/null | grep -c '^ \*') Originatoren"

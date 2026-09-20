@@ -22,12 +22,13 @@ KONF=/etc/karte-en/domains.conf
 CODE="${IF#td-}"
 BAT="bat-$CODE"
 
-zeile=$(awk -v c="$CODE" '$1 == c { print; exit }' "$KONF" 2>/dev/null || true)
+zeile=$(awk -v c="$CODE" '$2 == c { print; exit }' "$KONF" 2>/dev/null || true)
 if [ -z "$zeile" ]; then
 	logger -t karte-en "Hook $HOOK fuer unbekannte Domain '$CODE' ($IF)"
 	exit 1
 fi
-ID=$(echo "$zeile" | awk '{ print $4 }')
+ID=$(echo "$zeile" | awk '{ print $5 }')
+MTU=$(echo "$zeile" | awk '{ print $7 }')
 
 # Feste, lokal verwaltete MACs: 02 = locally administered, 45:4e = "EN" in
 # ASCII. Die MAC der L2TP-Schnittstelle ist unsere Originator-Adresse in ihrem
@@ -51,8 +52,8 @@ case "$HOOK" in
 session.up)
 	ip link set dev "$IF" down
 	ip link set dev "$IF" address "$MAC_IF"
-	# 1420 wie in ihrer site.json (mesh_vpn.tunneldigger.mtu).
-	ip link set dev "$IF" mtu 1420
+	# MTU aus ihrer site.json (mesh_vpn.<art>.mtu), je Gemeinschaft anders.
+	ip link set dev "$IF" mtu "${MTU:-1420}"
 	setze "net/ipv6/conf/$IF/accept_ra" 0
 	setze "net/ipv6/conf/$IF/autoconf" 0
 	setze "net/ipv6/conf/$IF/forwarding" 0

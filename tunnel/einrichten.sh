@@ -53,7 +53,7 @@ install -m 0644 "$HIER/systemd/karte-en-tunnel@.service" /etc/systemd/system/
 systemctl daemon-reload
 
 echo "== Dienste =="
-codes=$(awk '!/^#/ && NF { print $1 }' /etc/karte-en/domains.conf)
+codes=$(awk '!/^#/ && NF { print $2 }' /etc/karte-en/domains.conf)
 for c in $codes; do
 	systemctl enable --now "karte-en-tunnel@$c.service"
 done

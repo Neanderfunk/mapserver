@@ -8,13 +8,18 @@ set -e
 
 CODE="$1"
 KONF=/etc/karte-en/domains.conf
-zeile=$(awk -v c="$CODE" '$1 == c { print; exit }' "$KONF" 2>/dev/null || true)
+zeile=$(awk -v c="$CODE" '$2 == c { print; exit }' "$KONF" 2>/dev/null || true)
 if [ -z "$zeile" ]; then
 	echo "unbekannte Domain '$CODE' in $KONF" >&2
 	exit 1
 fi
-PORT=$(echo "$zeile" | awk '{ print $3 }')
-ID=$(echo "$zeile" | awk '{ print $4 }')
+PORT=$(echo "$zeile" | awk '{ print $4 }')
+ID=$(echo "$zeile" | awk '{ print $5 }')
+BROKER=$(echo "$zeile" | awk '{ print $8 }' | tr ',' ' ')
+
+# Je Broker ein -b. Der Client nimmt mit -g den ersten erreichbaren.
+set --
+for b in $BROKER; do set -- "$@" -b "$b:$PORT"; done
 
 # -u ist der Name, unter dem der Broker uns fuehrt. Wer bei EN ins Log oder in
 # batctl o schaut, soll uns zuordnen koennen, statt zu raetseln. Die
@@ -29,7 +34,6 @@ exec /usr/local/bin/tunneldigger -f \
 	-u "map-neanderfunk-$CODE-$SERIE" \
 	-i "td-$CODE" \
 	-t "$ID" \
-	-b "broker1.ff-en.de:$PORT" \
-	-b "broker2.ff-en.de:$PORT" \
+	"$@" \
 	-s /usr/local/sbin/karte-en-hook \
 	-g

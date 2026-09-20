@@ -20,8 +20,7 @@ WEB = '/var/www/karte-en'
 # Eine Gemeinschaft je Ebene unter map.freifunk.space, darunter ihre Orte.
 # Kommt eine zweite dazu, aendert sich hier ein Wort, und der Vorgabe-Vhost
 # listet sie mit auf (adorfer 20.09.2026: Platz fuer weitere Communities).
-GEMEINSCHAFT = 'en'
-BASIS = f'{GEMEINSCHAFT}.map.freifunk.space'
+SUFFIX = 'map.freifunk.space'
 EIGEN = 'map6.freifunk.space'
 INDEX = '/var/www/karte-index'
 KACHEL = 'https://tiles.ffdus.de'
@@ -29,14 +28,18 @@ OSM_ATTR = ('&copy; <a href="https://www.openstreetmap.org/copyright">'
             'OpenStreetMap</a>-Mitwirkende')
 
 
+FELDER = ('gem', 'code', 'ordner', 'port', 'id', 'host', 'mtu', 'broker',
+          'prefix6', 'prefix4', 'name')
+
+
 def domains():
     for z in open(KONF, encoding='utf-8'):
         z = z.strip()
         if not z or z.startswith('#'):
             continue
-        t = z.split(None, 7)
-        if len(t) >= 8:
-            yield {'code': t[0], 'host': t[4], 'name': t[7]}
+        t = z.split(None, len(FELDER) - 1)
+        if len(t) == len(FELDER):
+            yield dict(zip(FELDER, t))
 
 
 def rahmen(datei, rand=0.02):
@@ -56,7 +59,7 @@ def rahmen(datei, rand=0.02):
             [round(min(lat) - rand, 4), round(max(lon) + rand, 4)]]
 
 
-def konfig(titel, host, alle):
+def konfig(titel, pfad, alle):
     return {
         'dataPath': ['./data/'],
         'siteName': titel,
@@ -72,8 +75,9 @@ def konfig(titel, host, alle):
              'config': {'maxZoom': 19, 'start': 6,
                         'attribution': OSM_ATTR + ', &copy; <a href="https://carto.com/attributions">CARTO</a>'}},
         ],
-        'fixedCenter': rahmen(f'{WEB}/sites/{host}/data/meshviewer.json'),
+        'fixedCenter': rahmen(f'{WEB}/sites/{pfad}/data/meshviewer.json'),
         'siteNames': [{'site': d['code'], 'name': d['name']} for d in alle],
+        'domainNames': [{'domain': d['code'], 'name': d['name']} for d in alle],
         'devicePictures': '/pictures-svg/{MODEL_NORMALIZED}.svg',
         'devicePicturesSource': ("<a href='https://github.com/freifunk/device-pictures'>"
                                  "freifunk/device-pictures</a>"),
@@ -138,8 +142,7 @@ server {
 
 def startseite(ziele):
     zeilen = []
-    for host, titel in ziele:
-        fqdn = BASIS if host == 'alle' else f'{host}.{BASIS}'
+    for _pfad, titel, fqdn, _seine in ziele:
         zeilen.append(f'    <li><a href="https://{fqdn}/">{titel}</a> '
                       f'<span class="n">{fqdn}</span></li>')
     return """<!doctype html>
@@ -170,17 +173,25 @@ def main():
     if not alle:
         print(f'keine Domains in {KONF}', file=sys.stderr)
         return 1
-    ziele = [('alle', f'Freifunk EN, alle {len(alle)} Domains')]
-    ziele += [(d['host'], d['name']) for d in alle]
+
+    # Je Gemeinschaft eine Gesamtkarte und je Domain eine Ortskarte. Der Pfad
+    # unter sites/ spiegelt den Namen: sites/<gem>/alle und sites/<gem>/<ort>.
+    ziele = []
+    for g in sorted({d['gem'] for d in alle}):
+        seine = [d for d in alle if d['gem'] == g]
+        ziele.append((f'{g}/alle', f'{g.upper()}, alle {len(seine)} Domains',
+                      f'{g}.{SUFFIX}', seine))
+        for d in seine:
+            ziele.append((f'{g}/{d["host"]}', d['name'],
+                          f'{d["host"]}.{g}.{SUFFIX}', seine))
 
     site = ['# Erzeugt von konfig-erzeugen.py. Nicht von Hand aendern.']
-    for host, titel in ziele:
-        verz = f'{WEB}/sites/{host}'
+    for pfad, titel, fqdn, seine in ziele:
+        verz = f'{WEB}/sites/{pfad}'
         os.makedirs(verz, exist_ok=True)
         with open(f'{verz}/config.json', 'w', encoding='utf-8') as f:
-            json.dump(konfig(titel, host, alle), f, ensure_ascii=False, indent=1)
-        fqdn = BASIS if host == 'alle' else f'{host}.{BASIS}'
-        site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'host': host,
+            json.dump(konfig(titel, pfad, seine), f, ensure_ascii=False, indent=1)
+        site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'host': pfad,
                              'web': WEB, 'vorgabe': ''})
         print(f'  {fqdn:38} {titel}')
 

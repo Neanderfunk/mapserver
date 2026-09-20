@@ -20,16 +20,18 @@ TAKT = '5m'
 OFFLINE = '20m'
 
 
+FELDER = ('gem', 'code', 'ordner', 'port', 'id', 'host', 'mtu', 'broker',
+          'prefix6', 'prefix4', 'name')
+
+
 def domains(pfad):
     for z in open(pfad, encoding='utf-8'):
         z = z.strip()
         if not z or z.startswith('#'):
             continue
-        t = z.split(None, 7)
-        if len(t) < 8:
-            continue
-        yield {'code': t[0], 'ordner': t[1], 'port': t[2], 'id': t[3],
-               'host': t[4], 'prefix6': t[5], 'prefix4': t[6], 'name': t[7]}
+        t = z.split(None, len(FELDER) - 1)
+        if len(t) == len(FELDER):
+            yield dict(zip(FELDER, t))
 
 
 def ausgabe(pfad, sites=None, titel=''):
@@ -89,27 +91,40 @@ def main():
     t.append('# Knoten nach einer einzigen verpassten Runde auf offline.')
     t.append(f'offline_after = "{OFFLINE}"')
 
-    t.append(ausgabe(f'{WEB}/alle/data', None, 'Alle acht Domains zusammen: en.map.freifunk.space'))
-    for x in d:
-        t.append(ausgabe(f'{WEB}/{x["host"]}/data', [x['code']],
-                         f'{x["name"]}: {x["host"]}.en.map.freifunk.space'))
+    # Je Gemeinschaft eine Gesamtansicht und je Domain eine Ortsansicht. Die
+    # Gesamtansicht filtert auf die site_codes genau dieser Gemeinschaft,
+    # sonst lägen zwei Netze in einer Datei.
+    for g in sorted({x['gem'] for x in d}):
+        seine = [x for x in d if x['gem'] == g]
+        t.append(ausgabe(f'{WEB}/{g}/alle/data', [x['code'] for x in seine],
+                         f'{g}: alle {len(seine)} Domains, {g}.map.freifunk.space'))
+        for x in seine:
+            t.append(ausgabe(f'{WEB}/{g}/{x["host"]}/data', [x['code']],
+                             f'{x["name"]}: {x["host"]}.{g}.map.freifunk.space'))
 
     # nodes.json/graph.json und nodelist.json nur fuer die Gesamtsicht: das
     # sind die Formate, die andere Karten und Verzeichnisse einlesen.
-    t.append('')
-    t.append('[[nodes.output.meshviewer]]')
-    t.append('enable = true')
-    t.append('version = 2')
-    t.append(f'nodes_path = "{WEB}/alle/data/nodes.json"')
-    t.append(f'graph_path = "{WEB}/alle/data/graph.json"')
-    t.append('[nodes.output.meshviewer.filter]')
-    t.append('no_owner = true')
-    t.append('')
-    t.append('[[nodes.output.nodelist]]')
-    t.append('enable = true')
-    t.append(f'path = "{WEB}/alle/data/nodelist.json"')
-    t.append('[nodes.output.nodelist.filter]')
-    t.append('no_owner = true')
+    # nodes.json/graph.json und nodelist.json je Gemeinschaft: das sind die
+    # Formate, die andere Karten und Verzeichnisse einlesen.
+    for g in sorted({x['gem'] for x in d}):
+        codes = [x['code'] for x in d if x['gem'] == g]
+        liste = '", "'.join(codes)
+        t.append('')
+        t.append('[[nodes.output.meshviewer]]')
+        t.append('enable = true')
+        t.append('version = 2')
+        t.append(f'nodes_path = "{WEB}/{g}/alle/data/nodes.json"')
+        t.append(f'graph_path = "{WEB}/{g}/alle/data/graph.json"')
+        t.append('[nodes.output.meshviewer.filter]')
+        t.append('no_owner = true')
+        t.append(f'sites = ["{liste}"]')
+        t.append('')
+        t.append('[[nodes.output.nodelist]]')
+        t.append('enable = true')
+        t.append(f'path = "{WEB}/{g}/alle/data/nodelist.json"')
+        t.append('[nodes.output.nodelist.filter]')
+        t.append('no_owner = true')
+        t.append(f'sites = ["{liste}"]')
     t.append('')
     t.append('[database]')
     t.append('delete_after = "90d"')

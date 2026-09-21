@@ -1,0 +1,636 @@
+# Unifi-Site "fflvr" aufteilen: welcher AP gehoert in welche Domain
+#
+# Gemessen am 21.09.2026 aus den batman-Tabellen des Kartenservers.
+# 447 von 615 Accesspoints erkannt,
+# 168 waren zum Messzeitpunkt nicht im Netz sichtbar.
+#
+## lvr-hph: 29 APs hinter 5 Knoten
+78:45:58:23:be:f6  LVR-FF-Am_Dürener_Weg-#1                     LVR-FF-Am_Dürener_Weg
+24:5a:4c:23:65:2c  LVR-FF-Am_Dürener_Weg-#2                     LVR-FF-Am_Dürener_Weg
+24:5a:4c:23:63:1a  LVR-FF-Am_Dürener_Weg-#3                     LVR-FF-Am_Dürener_Weg
+24:5a:4c:23:62:f0  LVR-FF-Am_Dürener_Weg-#4                     LVR-FF-Am_Dürener_Weg
+24:5a:4c:23:64:b9  LVR-FF-Am_Dürener_Weg-#5                     LVR-FF-Am_Dürener_Weg
+24:5a:4c:23:65:0b  LVR-FF-Am_Dürener_Weg-#6                     LVR-FF-Am_Dürener_Weg
+24:5a:4c:23:65:c2  LVR-FF-Am_Dürener_Weg-#7                     LVR-FF-Am_Dürener_Weg
+d0:21:f9:39:8e:11  LVR-FF-Am_Dürener_Weg_DG                     LVR-FF-Am_Dürener_Weg
+b4:fb:e4:f3:bd:4e  LVR-FF-Büro-IT                               LVR-FF-Verwaltung
+24:5a:4c:23:6a:7d  LVR-FF-GHS-AP1                               LVR-FF-Gerd-Horseling-Str
+24:5a:4c:23:62:52  LVR-FF-GHS-AP2                               LVR-FF-Gerd-Horseling-Str
+24:5a:4c:23:6a:78  LVR-FF-GHS-AP3                               LVR-FF-Gerd-Horseling-Str
+24:5a:4c:23:6a:6c  LVR-FF-GHS-AP4                               LVR-FF-Gerd-Horseling-Str
+24:5a:4c:23:66:63  LVR-FF-GHS-AP5                               LVR-FF-Gerd-Horseling-Str
+24:5a:4c:23:6a:cd  LVR-FF-GHS-AP6                               LVR-FF-Gerd-Horseling-Str
+ac:8b:a9:86:d2:7d  LVR-FF-Lindenstr-#1                          LVR-FF-Lindenstr
+ac:8b:a9:86:d1:96  LVR-FF-Lindenstr-#2                          LVR-FF-Lindenstr
+ac:8b:a9:86:d3:5b  LVR-FF-Lindenstr-#3                          LVR-FF-Lindenstr
+ac:8b:a9:86:d2:47  LVR-FF-Lindenstr-#4                          LVR-FF-Lindenstr
+ac:8b:a9:86:d0:e8  LVR-FF-Lindenstr-#5                          LVR-FF-Lindenstr
+ac:8b:a9:86:ce:92  LVR-FF-Lindenstr-#6                          LVR-FF-Lindenstr
+ac:8b:a9:86:ce:76  LVR-FF-Lindenstr-#7                          LVR-FF-Lindenstr
+d0:21:f9:3c:d1:ef  LVR-FF-Theodor-Körner-Str.#1                 LVR-FF-Theodor-Körner-Str
+d0:21:f9:3c:b8:b9  LVR-FF-Theodor-Körner-Str.#2                 LVR-FF-Theodor-Körner-Str
+d0:21:f9:3c:da:36  LVR-FF-Theodor-Körner-Str.#3                 LVR-FF-Theodor-Körner-Str
+d0:21:f9:3c:c9:11  LVR-FF-Theodor-Körner-Str.#4                 LVR-FF-Theodor-Körner-Str
+24:5a:4c:23:65:89  LVR-FF-Verwaltung-302                        LVR-FF-Verwaltung
+e0:63:da:b0:02:ae  LVR-FF-Verwaltung-329                        LVR-FF-Verwaltung
+d0:21:f9:30:b0:60  LVR-FF-Verwaltung-Seminarraum GROSS          LVR-FF-Verwaltung
+
+## lvr-hph-mitteost: 94 APs hinter 16 Knoten
+d0:21:f9:3c:e5:4a  BM-Schmidt-#1                                LVR-FF-BM-Schmidt
+d0:21:f9:3c:dc:13  BM-Schmidt-#2                                LVR-FF-BM-Schmidt
+d0:21:f9:3c:e1:52  BM-Schmidt-#3                                LVR-FF-BM-Schmidt
+d0:21:f9:3c:e5:37  BM-Schmidt-#5                                LVR-FF-BM-Schmidt
+d0:21:f9:3c:d9:fa  BM-Schmidt-#6                                LVR-FF-BM-Schmidt
+d0:21:f9:3c:d8:96  BM-Schmidt-#7                                LVR-FF-BM-Schmidt
+78:45:58:c6:98:1d  LVR-FF--RBB-Amern-#2                         LVR-FF-RBB-Amern
+d0:21:f9:3c:ba:61  LVR-FF-BM-Schmidt-UG                         LVR-FF-BM-Schmidt
+f0:9f:c2:29:83:0d  LVR-FF-Badehaus-Burscheid                    LVR-FF-BM-Schmidt
+d0:21:f9:30:15:7c  LVR-FF-Brodhof-#1                            LVR-FF-Brodhof
+ac:8b:a9:86:d1:a5  LVR-FF-Brodhof-#2                            LVR-FF-Brodhof
+d0:21:f9:30:15:33  LVR-FF-Brodhof-#4                            LVR-FF-Brodhof
+d0:21:f9:30:14:51  LVR-FF-Brodhof-#5                            LVR-FF-Brodhof
+ac:8b:a9:86:d3:20  LVR-FF-Brodhof-#6                            LVR-FF-Brodhof
+d0:21:f9:30:13:f7  LVR-FF-Brodhof-#7                            LVR-FF-Brodhof
+ac:8b:a9:86:bb:a6  LVR-FF-Brodhof-#8                            LVR-FF-Brodhof
+ac:8b:a9:8c:f5:93  LVR-FF-Empelerstr. #1                        LVR-FF-Empelerstr
+ac:8b:a9:8c:d0:51  LVR-FF-Empelerstr. #2                        LVR-FF-Empelerstr
+ac:8b:a9:8c:cc:9f  LVR-FF-Empelerstr. #3                        LVR-FF-Empelerstr
+ac:8b:a9:8c:c1:c0  LVR-FF-Empelerstr. #4                        LVR-FF-Empelerstr
+ac:8b:a9:8c:d3:10  LVR-FF-Empelerstr. HPZ #1                    LVR-FF-Empelerstr
+ac:8b:a9:8c:d5:81  LVR-FF-Empelerstr. HPZ #2                    LVR-FF-Empelerstr
+d0:21:f9:33:a5:32  LVR-FF-Franklinstr-#1                        LVR-FF-Franklinstr
+d0:21:f9:33:8e:e5  LVR-FF-Franklinstr-#2                        LVR-FF-Franklinstr
+d0:21:f9:33:8e:d8  LVR-FF-Franklinstr-#3                        LVR-FF-Franklinstr
+d0:21:f9:33:82:f9  LVR-FF-Franklinstr-#4                        LVR-FF-Franklinstr
+d0:21:f9:33:a2:60  LVR-FF-Franklinstr-#5                        LVR-FF-Franklinstr
+d0:21:f9:33:a3:c2  LVR-FF-Franklinstr-#6                        LVR-FF-Franklinstr
+78:45:58:19:3e:c6  LVR-FF-Friedrichstr-AP1                      LVR-FF-Friedrichstr
+78:45:58:19:3e:b2  LVR-FF-Friedrichstr-AP2                      LVR-FF-Friedrichstr
+78:45:58:19:40:d0  LVR-FF-Friedrichstr-AP3                      LVR-FF-Friedrichstr
+78:45:58:19:3d:4d  LVR-FF-Friedrichstr-AP4                      LVR-FF-Friedrichstr
+78:45:58:19:3e:5c  LVR-FF-Friedrichstr-AP5                      LVR-FF-Friedrichstr
+78:45:58:19:39:f2  LVR-FF-Friedrichstr-AP6                      LVR-FF-Friedrichstr
+d0:21:f9:33:8e:a4  LVR-FF-Jakob-Hoogen-#1                       LVRMO-FF-Nordring
+d0:21:f9:33:a4:de  LVR-FF-Jakob-Hoogen-#2                       LVRMO-FF-Nordring
+d0:21:f9:33:a3:41  LVR-FF-Jakob-Hoogen-#3                       LVRMO-FF-Nordring
+78:45:58:19:3d:60  LVR-FF-Karl-Leisner-Str-1-1-OG-links         LVR-FF-Karl-Leisner-Str
+78:45:58:16:45:60  LVR-FF-Karl-Leisner-Str-1-1-OG-rechts        LVR-FF-Karl-Leisner-Str
+78:45:58:16:3a:cc  LVR-FF-Karl-Leisner-Str-1-EG-links           LVR-FF-Karl-Leisner-Str
+78:45:58:16:41:31  LVR-FF-Karl-Leisner-Str-1-EG-rechts          LVR-FF-Karl-Leisner-Str
+24:5a:4c:23:69:35  LVR-FF-Lindenallee-#1                        LVRMO-FF-Lindenallee
+24:5a:4c:23:68:ed  LVR-FF-Lindenallee-#2                        LVRMO-FF-Lindenallee
+24:5a:4c:23:68:f6  LVR-FF-Lindenallee-#3                        LVRMO-FF-Lindenallee
+24:5a:4c:23:6a:71  LVR-FF-Lindenallee-#4                        LVRMO-FF-Lindenallee
+24:5a:4c:23:69:14  LVR-FF-Lindenallee-#5                        LVRMO-FF-Lindenallee
+d0:21:f9:3c:9c:88  LVR-FF-Mühlenstr-#1                          LVR-FF-Mühlenstr
+d0:21:f9:3c:cb:58  LVR-FF-Mühlenstr-#2                          LVR-FF-Mühlenstr
+d0:21:f9:d9:be:33  LVR-FF-Nordring-#1                           LVRMO-FF-Nordring
+d0:21:f9:7d:b7:11  LVR-FF-Nordring-#2                           LVRMO-FF-Nordring
+d0:21:f9:7d:b8:85  LVR-FF-Nordring-#3                           LVRMO-FF-Nordring
+d0:21:f9:7d:a7:66  LVR-FF-Nordring-#4                           LVRMO-FF-Nordring
+d0:21:f9:7d:bf:7b  LVR-FF-Nordring-#5                           LVRMO-FF-Nordring
+d0:21:f9:7d:bf:7e  LVR-FF-Nordring-#6                           LVRMO-FF-Nordring
+70:a7:41:62:85:59  LVR-FF-Pionierstr                            LVR-FF-Pionierstr
+d0:21:f9:30:b4:f5  LVR-FF-Querallee                             LVR-FF-Querallee
+24:5a:4c:23:65:1d  LVR-FF-Querallee                             LVR-FF-Querallee
+d0:21:f9:30:b1:05  LVR-FF-Querallee                             LVR-FF-Querallee
+ac:8b:a9:8c:cb:ce  LVR-FF-Querallee                             LVR-FF-Querallee
+d0:21:f9:30:b0:c9  LVR-FF-Querallee                             LVR-FF-Querallee
+d0:21:f9:30:b2:42  LVR-FF-Querallee                             LVR-FF-Querallee
+d0:21:f9:30:b0:9f  LVR-FF-Querallee                             LVR-FF-Querallee
+d0:21:f9:30:b2:4c  LVR-FF-Querallee                             LVR-FF-Querallee
+d0:21:f9:30:b6:2d  LVR-FF-Querallee                             LVR-FF-Querallee
+70:a7:41:64:33:91  LVR-FF-Querallee-#1-EG                       LVR-FF-Querallee
+24:5a:4c:23:63:0d  LVR-FF-Querallee-#2-OG                       LVR-FF-Querallee
+78:45:58:c6:8d:46  LVR-FF-RBB-Amern-#1                          LVR-FF-RBB-Amern
+d0:21:f9:3c:e2:36  LVR-FF-RBB-Amern-#3                          LVR-FF-RBB-Amern
+d0:21:f9:c1:84:63  LVR-FF-Reitzensteinstr-#1                    LVR-FF-Reitzensteinstr
+70:a7:41:64:32:19  LVR-FF-Reitzensteinstr-#10                   LVR-FF-Reitzensteinstr
+d0:21:f9:c1:88:23  LVR-FF-Reitzensteinstr-#2                    LVR-FF-Reitzensteinstr
+d0:21:f9:c1:90:bd  LVR-FF-Reitzensteinstr-#3                    LVR-FF-Reitzensteinstr
+d0:21:f9:c1:92:2b  LVR-FF-Reitzensteinstr-#4                    LVR-FF-Reitzensteinstr
+d0:21:f9:c1:95:9a  LVR-FF-Reitzensteinstr-#5                    LVR-FF-Reitzensteinstr
+d0:21:f9:c1:92:43  LVR-FF-Reitzensteinstr-#6                    LVR-FF-Reitzensteinstr
+70:a7:41:64:2e:c9  LVR-FF-Reitzensteinstr-#7                    LVR-FF-Reitzensteinstr
+70:a7:41:64:2e:ad  LVR-FF-Reitzensteinstr-#8                    LVR-FF-Reitzensteinstr
+70:a7:41:64:22:05  LVR-FF-Reitzensteinstr-#9                    LVR-FF-Reitzensteinstr
+d0:21:f9:33:a2:3e  LVR-FF-Schüllsmühle-#1                       LVR-FF-Schüllsmühle
+d0:21:f9:33:a2:53  LVR-FF-Schüllsmühle-#2                       LVR-FF-Schüllsmühle
+d0:21:f9:33:8f:3b  LVR-FF-Schüllsmühle-#3                       LVR-FF-Schüllsmühle
+d0:21:f9:33:a5:20  LVR-FF-Schüllsmühle-#4                       LVR-FF-Schüllsmühle
+d0:21:f9:33:a2:27  LVR-FF-Schüllsmühle-#5                       LVR-FF-Schüllsmühle
+d0:21:f9:33:a3:27  LVR-FF-Schüllsmühle-#6                       LVR-FF-Schüllsmühle
+68:d7:9a:1c:de:26  LVR-FF-WB-Berliner-Str-EG-links              LVR-FF-WB-Berliner-Str
+78:45:58:19:28:4e  LVR-FF-WB-Berliner-Str-EG-rechts             LVR-FF-WB-Berliner-Str
+78:45:58:16:45:12  LVR-FF-WB-Berliner-Str-OG-links              LVR-FF-WB-Berliner-Str
+78:45:58:02:2f:05  LVR-FF-WB-Haverkamp-1-OG-1                   LVR-FF-WB-Haverkamp
+78:45:58:19:30:04  LVR-FF-WB-Haverkamp-1-OG-2                   LVR-FF-WB-Haverkamp
+78:45:58:10:41:13  LVR-FF-WB-Haverkamp-2-OG-1                   LVR-FF-WB-Haverkamp
+68:d7:9a:1c:ff:b5  LVR-FF-WB-Haverkamp-2-OG-2                   LVR-FF-WB-Haverkamp
+78:45:58:02:2c:13  LVR-FF-WB-Haverkamp-EG-1                     LVR-FF-WB-Haverkamp
+78:45:58:19:2e:c6  LVR-FF-WB-Haverkamp-EG-2                     LVR-FF-WB-Haverkamp
+78:8a:20:56:2a:77  LVR-FF-Wohnen-in-Burscheid-EG                LVR-FF-BM-Schmidt
+
+## lvr-hph-mittewest: 51 APs hinter 10 Knoten
+78:45:58:02:2e:31  LVR-FF-Am-Reinersbach-EG-1                   LVR-FF-Am-Reinersbach
+78:45:58:02:29:85  LVR-FF-Am-Reinersbach-EG-2                   LVR-FF-Am-Reinersbach
+78:45:58:02:2d:c4  LVR-FF-Am-Reinersbach-OG-1                   LVR-FF-Am-Reinersbach
+78:45:58:02:2d:ca  LVR-FF-Am-Reinersbach-OG-2                   LVR-FF-Am-Reinersbach
+ac:8b:a9:8c:ca:62  LVR-FF-Dornbuscher_Weg_16_1                  LVR-FF-DoBu 16_18
+d0:21:f9:30:a3:94  LVR-FF-Dornbuscher_Weg_16_2                  LVR-FF-DoBu 16_18
+ac:8b:a9:83:db:bc  LVR-FF-Dornbuscher_Weg_18_1                  LVR-FF-DoBu 16_18
+ac:8b:a9:8c:d5:d2  LVR-FF-Dornbuscher_Weg_18_2                  LVR-FF-DoBu 16_18
+e0:63:da:b0:04:34  LVR-FF-Heistersweg-AP1                       LVR-FF-WV-Heistersweg
+e0:63:da:b0:02:d6  LVR-FF-Heistersweg-AP2                       LVR-FF-WV-Heistersweg
+e0:63:da:b0:06:0b  LVR-FF-Heistersweg-AP3                       LVR-FF-WV-Heistersweg
+d0:21:f9:33:a2:95  LVR-FF-Hochstr-#1                            LVRMW-FF-Hochstraße
+d0:21:f9:33:a3:0b  LVR-FF-Hochstr-#2                            LVRMW-FF-Hochstraße
+d0:21:f9:33:a1:d1  LVR-FF-Hochstr-#3                            LVRMW-FF-Hochstraße
+d0:21:f9:33:a4:df  LVR-FF-Hochstr-#4                            LVRMW-FF-Hochstraße
+d0:21:f9:33:a4:ca  LVR-FF-Hochstr-#5                            LVRMW-FF-Hochstraße
+d0:21:f9:33:a5:60  LVR-FF-Hochstr-#6                            LVRMW-FF-Hochstraße
+e0:63:da:bc:92:47  LVR-FF-Kenger-Weg_AP01                       LVRMW-FF-Kenger Weg
+e0:63:da:bc:90:89  LVR-FF-Kenger-Weg_AP02                       LVRMW-FF-Kenger Weg
+e0:63:da:bc:95:07  LVR-FF-Kenger-Weg_AP03                       LVRMW-FF-Kenger Weg
+e0:63:da:bc:95:2a  LVR-FF-Kenger-Weg_AP04                       LVRMW-FF-Kenger Weg
+e0:63:da:bc:90:7e  LVR-FF-Kenger-Weg_AP05                       LVRMW-FF-Kenger Weg
+e0:63:da:bc:90:8e  LVR-FF-Kenger-Weg_AP06                       LVRMW-FF-Kenger Weg
+e0:63:da:bc:90:73  LVR-FF-Kenger-Weg_AP07                       LVRMW-FF-Kenger Weg
+d0:21:f9:30:b4:b2  LVR-FF-Krüchtens-#1                          LVRMW-FF-Krüchtensstr
+d0:21:f9:30:a9:ce  LVR-FF-Krüchtens-#2                          LVRMW-FF-Krüchtensstr
+d0:21:f9:30:b1:f5  LVR-FF-Krüchtens-#3                          LVRMW-FF-Krüchtensstr
+d0:21:f9:30:b3:fa  LVR-FF-Krüchtens-#4                          LVRMW-FF-Krüchtensstr
+d0:21:f9:30:b4:ae  LVR-FF-Krüchtens-#5                          LVRMW-FF-Krüchtensstr
+d0:21:f9:33:60:19  LVR-FF-Krüchtens-#6                          LVRMW-FF-Krüchtensstr
+78:45:58:19:30:a6  LVR-FF-Polmansstr_6_1_OG-links               LVR-FF-Polmansstr 6
+e0:63:da:bc:90:be  LVR-FF-Polmansstr_6_1_OG-rechts              LVR-FF-Polmansstr 6
+78:45:58:16:46:53  LVR-FF-Polmansstr_6_2-OG-links               LVR-FF-Polmansstr 6
+78:45:58:19:36:17  LVR-FF-Polmansstr_6_2-OG-rechts              LVR-FF-Polmansstr 6
+78:45:58:19:3d:c9  LVR-FF-Polmansstr_6_EG-links                 LVR-FF-Polmansstr 6
+78:45:58:19:3d:41  LVR-FF-Polmansstr_6_EG-rechts                LVR-FF-Polmansstr 6
+ac:8b:a9:83:dd:58  LVR-FF-Ungerather-#2                         LVRMW-FF-Ungerather Str.
+ac:8b:a9:83:dd:59  LVR-FF-Ungerather-#3                         LVRMW-FF-Ungerather Str.
+ac:8b:a9:83:dd:c4  LVR-FF-Ungerather-#4                         LVRMW-FF-Ungerather Str.
+d0:21:f9:30:17:36  LVR-FF-Ungerather-#5                         LVRMW-FF-Ungerather Str.
+ac:8b:a9:83:dd:20  LVR-FF-Ungerather-#6                         LVRMW-FF-Ungerather Str.
+e0:63:da:bc:90:8a  LVR-FF-Ungerather-Str.  AP1                  LVRMW-FF-Ungerather Str.
+e0:63:da:b0:02:bf  LVR-FF-WB-Vennstr_42d-EG-links               LVR-FF-Vennstr
+e0:63:da:b0:02:bd  LVR-FF-WB-Vennstr_42d-EG-rechts              LVR-FF-Vennstr
+e0:63:da:b0:02:73  LVR-FF-WB-Vennstr_42d-OG-links               LVR-FF-Vennstr
+e0:63:da:b0:02:b3  LVR-FF-WB-Vennstr_42d-OG-rechts              LVR-FF-Vennstr
+b4:fb:e4:f3:bd:4f  LVR-FF-Wohnen-in-Monheim-1-OG-UP             LVR-FF-Radstädter Weg
+b4:fb:e4:f3:be:c4  LVR-FF-Wohnen-in-Monheim-2-OG-DOWN           LVR-FF-Radstädter Weg
+b4:fb:e4:f3:c2:0a  LVR-FF-Wohnen-in-Monheim-2-OG-UP             LVR-FF-Radstädter Weg
+b4:fb:e4:f3:c5:75  LVR-FF-Wohnen-in-Monheim-EG-DOWN             LVR-FF-Radstädter Weg
+78:8a:20:b3:51:1f  LVR-FF-Wohnen-in-Monheim-EG-UP               LVR-FF-Radstädter Weg
+
+## lvr-hph-nordost: 69 APs hinter 13 Knoten
+24:5a:4c:23:65:da  LVR-FF-Bendmannstr_AP2                       LVRNO-FF-Bendmannstr.
+24:5a:4c:23:63:18  LVR-FF-Bendmannstr_AP3                       LVRNO-FF-Bendmannstr.
+24:5a:4c:23:63:17  LVR-FF-Bendmannstr_AP4                       LVRNO-FF-Bendmannstr.
+24:5a:4c:23:63:42  LVR-FF-Bendmannstr_AP5                       LVRNO-FF-Bendmannstr.
+24:5a:4c:23:64:b4  LVR-FF-Bendmannstr_AP6                       LVRNO-FF-Bendmannstr.
+e0:63:da:bc:92:48  LVR-FF-Brandenburgerstr-AP1                  LVR-FF-WV-Brandenburgerstr
+e0:63:da:bc:92:50  LVR-FF-Brandenburgerstr-AP2                  LVR-FF-WV-Brandenburgerstr
+e0:63:da:bc:90:b8  LVR-FF-Brandenburgerstr-AP3                  LVR-FF-WV-Brandenburgerstr
+e0:63:da:bc:92:4c  LVR-FF-Brandenburgerstr-AP4                  LVR-FF-WV-Brandenburgerstr
+ac:8b:a9:8c:d7:91  LVR-FF-Dorfstr                               LVRNO-FF-Dorfstr
+ac:8b:a9:8c:d7:78  LVR-FF-Dorfstr                               LVRNO-FF-Dorfstr
+ac:8b:a9:8c:cf:b7  LVR-FF-Dorfstr                               LVRNO-FF-Dorfstr
+ac:8b:a9:8c:d5:78  LVR-FF-Dorfstr                               LVRNO-FF-Dorfstr
+ac:8b:a9:8c:d5:4c  LVR-FF-Dorfstr-#5                            LVRNO-FF-Dorfstr
+ac:8b:a9:8c:d1:3a  LVR-FF-Dorfstr-#6                            LVRNO-FF-Dorfstr
+ac:8b:a9:8c:d2:6f  LVR-FF-Dorfstr-#7                            LVRNO-FF-Dorfstr
+ac:8b:a9:8c:d3:48  LVR-FF-Dorfstr-#8                            LVRNO-FF-Dorfstr
+ac:8b:a9:8c:f5:a6  LVR-FF-Dorfstr-#9                            LVRNO-FF-Dorfstr
+e0:63:da:bc:97:a9  LVR-FF-Duisburgerstr_AP1                     LVRNO-Duisburger Straße
+e0:63:da:bc:91:a0  LVR-FF-Duisburgerstr_AP2                     LVRNO-Duisburger Straße
+e0:63:da:bc:92:52  LVR-FF-Duisburgerstr_AP3                     LVRNO-Duisburger Straße
+f4:92:bf:63:4a:31  LVR-FF-Duisburgerstr_AP4                     LVRNO-Duisburger Straße
+e0:63:da:bc:90:c1  LVR-FF-Duisburgerstr_AP5                     LVRNO-Duisburger Straße
+e0:63:da:bc:90:bf  LVR-FF-Duisburgerstr_AP6                     LVRNO-Duisburger Straße
+e0:63:da:bc:92:54  LVR-FF-Duisburgerstr_AP7                     LVRNO-Duisburger Straße
+24:5a:4c:23:64:65  LVR-FF-Haagstr-AP1                           LVR-FF-Haagstr
+24:5a:4c:23:65:76  LVR-FF-Haagstr-AP2                           LVR-FF-Haagstr
+24:5a:4c:23:62:b5  LVR-FF-Haagstr-AP3                           LVR-FF-Haagstr
+24:5a:4c:23:65:16  LVR-FF-Haagstr-AP4                           LVR-FF-Haagstr
+78:45:58:26:72:d3  LVR-FF-Haagstr-AP5                           LVR-FF-Haagstr
+78:45:58:23:ca:9c  LVR-FF-Haagstr-AP6                           LVR-FF-Haagstr
+24:5a:4c:23:65:06  LVR-FF-Haagstr-AP7                           LVR-FF-Haagstr
+24:5a:4c:23:69:ae  LVR-FF-Haagstr-AP8                           LVR-FF-Haagstr
+78:45:58:02:2c:cd  LVR-FF-Haus-Knipp-AP1                        LVR-FF-Haus-Knipp
+78:45:58:02:2e:3d  LVR-FF-Haus-Knipp-AP2                        LVR-FF-Haus-Knipp
+78:45:58:02:2b:af  LVR-FF-Haus-Knipp-AP3                        LVR-FF-Haus-Knipp
+78:45:58:02:2d:d2  LVR-FF-Haus-Knipp-AP4                        LVR-FF-Haus-Knipp
+78:45:58:02:2b:ba  LVR-FF-Haus-Knipp-AP5                        LVR-FF-Haus-Knipp
+68:d7:9a:1c:ea:9c  LVR-FF-Haus-Knipp-AP6                        LVR-FF-Haus-Knipp
+d0:21:f9:3c:87:f7  LVR-FF-Hochstr-DU-1                          LVR-FF-Hochstr-DU
+d0:21:f9:3c:d6:37  LVR-FF-Hochstr-DU-2                          LVR-FF-Hochstr-DU
+24:5a:4c:23:65:27  LVR-FF-Jakob-Hoogen-EG-1                     LVR-FF-Jakob-Hoogen-Str
+d0:21:f9:3c:ca:81  LVR-FF-Jakob-Hoogen-Str-Seniorenbetreuung    LVR-FF-Jakob-Hoogen-Str
+24:5a:4c:23:62:2a  LVR-FF-Könzgenplatz-#1                       LVR-FF-Könzgenplatz
+24:5a:4c:23:64:e5  LVR-FF-Könzgenplatz-#2                       LVR-FF-Könzgenplatz
+24:5a:4c:23:65:a3  LVR-FF-Könzgenplatz-#3                       LVR-FF-Könzgenplatz
+24:5a:4c:23:65:a2  LVR-FF-Könzgenplatz-#4                       LVR-FF-Könzgenplatz
+24:5a:4c:23:65:31  LVR-FF-Könzgenplatz-#5                       LVR-FF-Könzgenplatz
+24:5a:4c:23:64:dd  LVR-FF-Könzgenplatz-#6                       LVR-FF-Könzgenplatz
+f4:92:bf:6c:ba:6c  LVR-FF-Stauffenbergstr-1-OG-1                LVR-FF-Stauffenbergstr
+f4:92:bf:6c:bf:5e  LVR-FF-Stauffenbergstr-1-OG-2                LVR-FF-Stauffenbergstr
+f4:92:bf:6c:ba:06  LVR-FF-Stauffenbergstr-2-OG-1                LVR-FF-Stauffenbergstr
+f4:92:bf:6c:ba:7e  LVR-FF-Stauffenbergstr-2-OG-2                LVR-FF-Stauffenbergstr
+24:5a:4c:23:64:ef  LVR-FF-Thomas-von-Aquin-1-OG-links           LVR-FF-Thomas-von-Aquin-Weg
+24:5a:4c:23:66:9a  LVR-FF-Thomas-von-Aquin-1-OG-rechts          LVR-FF-Thomas-von-Aquin-Weg
+24:5a:4c:23:63:44  LVR-FF-Thomas-von-Aquin-2-OG-links           LVR-FF-Thomas-von-Aquin-Weg
+24:5a:4c:23:64:e7  LVR-FF-Thomas-von-Aquin-2-OG-rechts          LVR-FF-Thomas-von-Aquin-Weg
+24:5a:4c:23:64:de  LVR-FF-Thomas-von-Aquin-EG-links             LVR-FF-Thomas-von-Aquin-Weg
+24:5a:4c:23:61:8d  LVR-FF-Thomas-von-Aquin-EG-rechts            LVR-FF-Thomas-von-Aquin-Weg
+e0:63:da:ac:b3:aa  LVR-FF-Uedemer-Str-1-OG-L                    LVR-FF-Uedemer-Str
+e0:63:da:b0:02:b4  LVR-FF-Uedemer-Str-1-OG-R                    LVR-FF-Uedemer-Str
+e0:63:da:6d:f1:f8  LVR-FF-Uedemer-Str-DG                        LVR-FF-Uedemer-Str
+e0:63:da:6d:e7:d6  LVR-FF-Uedemer-Str-EG-L                      LVR-FF-Uedemer-Str
+e0:63:da:b0:02:c1  LVR-FF-Uedemer-Str-EG-R                      LVR-FF-Uedemer-Str
+24:5a:4c:23:69:27  LVR-FF-Zur-Licht_AP1                         LVRNO-FF-Zur Licht
+24:5a:4c:23:6a:46  LVR-FF-Zur-Licht_AP2                         LVRNO-FF-Zur Licht
+78:45:58:26:72:05  LVR-FF-Zur-Licht_AP3                         LVRNO-FF-Zur Licht
+24:5a:4c:23:68:fc  LVR-FF-Zur-Licht_AP6                         LVRNO-FF-Zur Licht
+24:5a:4c:23:65:0e  LVR-FF-Zur-Licht_AP7                         LVRNO-FF-Zur Licht
+
+## lvr-hph-nordwest: 31 APs hinter 7 Knoten
+d0:21:f9:c1:94:5c  LVR- FF-Hopfenweg-AP03                       LVRNW-FF-Hopfenweg
+d0:21:f9:c1:92:07  LVR-FF-Binnenfeld-AP1                        LVRNW-FF-Binnenfeld
+78:45:58:c6:42:97  LVR-FF-Binnenfeld-AP3                        LVRNW-FF-Binnenfeld
+78:45:58:c6:f6:22  LVR-FF-Binnenfeld-AP6                        LVRNW-FF-Binnenfeld
+24:5a:4c:23:65:aa  LVR-FF-Bockmuehle_AP1                        LVR-FF-An_der_Bockmühle
+24:5a:4c:23:65:1b  LVR-FF-Bockmuehle_AP2                        LVR-FF-An_der_Bockmühle
+24:5a:4c:23:63:1e  LVR-FF-Bockmuehle_AP3                        LVR-FF-An_der_Bockmühle
+24:5a:4c:23:65:29  LVR-FF-Bockmuehle_AP4                        LVR-FF-An_der_Bockmühle
+24:5a:4c:23:65:2b  LVR-FF-Bockmuehle_AP6                        LVR-FF-An_der_Bockmühle
+24:5a:4c:23:64:ee  LVR-FF-Bockmuehle_AP7                        LVR-FF-An_der_Bockmühle
+24:5a:4c:23:65:17  LVR-FF-Bockmuehle_AP8                        LVR-FF-An_der_Bockmühle
+ac:8b:a9:86:c0:b4  LVR-FF-Broekmannstr. AP 1 DG                 LVRNW-FF-Dr_Broekmannstr
+ac:8b:a9:86:aa:28  LVR-FF-Broekmannstr. AP 1OG                  LVRNW-FF-Dr_Broekmannstr
+ac:8b:a9:86:bc:6b  LVR-FF-Broekmannstr. AP 2 DG                 LVRNW-FF-Dr_Broekmannstr
+ac:8b:a9:86:b8:35  LVR-FF-Broekmannstr. AP 2 EG                 LVRNW-FF-Dr_Broekmannstr
+ac:8b:a9:86:bc:bf  LVR-FF-Broekmannstr. AP 2 OG                 LVRNW-FF-Dr_Broekmannstr
+ac:8b:a9:86:bb:10  LVR-FF-Broekmannstr. AP 3 OG                 LVRNW-FF-Dr_Broekmannstr
+ac:8b:a9:86:b8:41  LVR-FF-Broekmannstr. AP3 EG                  LVRNW-FF-Dr_Broekmannstr
+ac:8b:a9:83:d3:6f  LVR-FF-Frankenweg-#1                         LVR-FF-Frankenweg
+ac:8b:a9:83:d2:e4  LVR-FF-Frankenweg-#2                         LVR-FF-Frankenweg
+ac:8b:a9:83:d3:e9  LVR-FF-Frankenweg-#3                         LVR-FF-Frankenweg
+ac:8b:a9:83:de:41  LVR-FF-Frankenweg-#4                         LVR-FF-Frankenweg
+ac:8b:a9:83:da:7a  LVR-FF-Frankenweg-#5                         LVR-FF-Frankenweg
+d0:21:f9:30:16:ee  LVR-FF-Frankenweg-#6                         LVR-FF-Frankenweg
+e0:63:da:ac:b9:8e  LVR-FF-Föba-AP1                              LVR-FF-Föhrenbacheck
+e0:63:da:ac:b3:28  LVR-FF-Föba-AP2                              LVR-FF-Föhrenbacheck
+d0:21:f9:3c:e5:93  LVR-FF-HPZ-Solingen-#1                       LVR-FF-HPZ-Solingen
+d0:21:f9:3c:d3:a3  LVR-FF-HPZ-Solingen-#2                       LVR-FF-HPZ-Solingen
+d0:21:f9:c1:91:92  LVR-FF-Hopfenweg-AP4                         LVRNW-FF-Hopfenweg
+d0:21:f9:c1:92:af  LVR-FF-Hopfenweg-AP5                         LVRNW-FF-Hopfenweg
+d0:21:f9:c1:90:81  LVR-FF-Hopfenweg-AP6                         LVRNW-FF-Hopfenweg
+
+## lvr-hph-suedost-lvrso: 70 APs hinter 16 Knoten
+d0:21:f9:3c:e5:6d  AC Pro                                       LVR-FF-Wohnen_im_Halfeshof
+d0:21:f9:3c:e9:54  AC Pro                                       LVR-FF-Wohnen_im_Halfeshof
+d0:21:f9:30:16:42  LVR-FF- Kölner Str. EG 1                     LVRSO-FF-Kölner_Str_135a
+24:5a:4c:23:64:f3  LVR-FF-Bergstr-#2                            LVRSO-9483c4905257
+ac:8b:a9:86:ba:6d  LVR-FF-Bergstr-#5                            LVRSO-9483c4905257
+d0:21:f9:30:14:b2  LVR-FF-Bergstr-#6                            LVRSO-9483c4905257
+ac:8b:a9:86:c0:b7  LVR-FF-Bergstr-EG-1                          LVRSO-9483c4905257
+24:5a:4c:23:65:0d  LVR-FF-Bergstr-EG-2                          LVRSO-9483c4905257
+78:45:58:19:3d:6c  LVR-FF-Bonn-1-OG                             LVR-FF-Quartier Bonn
+ac:8b:a9:86:d1:a0  LVR-FF-Burgstrasse-Büro-EG                   LVR-Wohnen in Rheindorf
+d0:21:f9:3c:c6:f9  LVR-FF-Halfeshof-EG-L                        LVR-FF-Wohnen_im_Halfeshof
+d0:21:f9:3c:e3:b2  LVR-FF-Halfeshof-EG-R                        LVR-FF-Wohnen_im_Halfeshof
+ac:8b:a9:83:dc:1a  LVR-FF-Hevelingstr-#1                        LVR-FF-Hevelingstr
+ac:8b:a9:83:dc:79  LVR-FF-Hevelingstr-#2                        LVR-FF-Hevelingstr
+ac:8b:a9:83:dc:4c  LVR-FF-Hevelingstr-#3                        LVR-FF-Hevelingstr
+ac:8b:a9:83:d9:85  LVR-FF-Hevelingstr-#4                        LVR-FF-Hevelingstr
+d0:21:f9:30:15:81  LVR-FF-Kölner Str. 1 OG 1                    LVRSO-FF-Kölner_Str_135a
+d0:21:f9:30:14:5c  LVR-FF-Kölner Str. EG 2                      LVRSO-FF-Kölner_Str_135a
+d0:21:f9:33:60:29  LVR-FF-Raiffeisenstr-#1                      LVRSO-FF-Raiffeisenstr
+d0:21:f9:33:63:7e  LVR-FF-Raiffeisenstr-#2                      LVRSO-FF-Raiffeisenstr
+d0:21:f9:30:b5:6c  LVR-FF-Raiffeisenstr-#3                      LVRSO-FF-Raiffeisenstr
+d0:21:f9:30:16:e3  LVR-FF-Raiffeisenstr-#4                      LVRSO-FF-Raiffeisenstr
+d0:21:f9:30:16:e2  LVR-FF-Raiffeisenstr-#5                      LVRSO-FF-Raiffeisenstr
+d0:21:f9:30:18:91  LVR-FF-Raiffeisenstr-#6                      LVRSO-FF-Raiffeisenstr
+d0:21:f9:3c:96:37  LVR-FF-WOHNEN-IN-RHEINDORF-HPZ               LVR-Wohnen in Rheindorf
+f0:9f:c2:70:26:88  LVR-FF-Wohnen-am-Vogelpark-EG                LVR-FF-Wohnen-im-Vogelpark
+74:83:c2:83:87:06  LVR-FF-Wohnen-am-Vogelpark-EG-MESH           LVR-FF-Wohnen-im-Vogelpark
+f0:9f:c2:29:a8:c5  LVR-FF-Wohnen-am-Vogelpark-OG                LVR-FF-Wohnen-im-Vogelpark
+78:8a:20:56:29:dc  LVR-FF-Wohnen-im-Halfeshof-EG                LVR-FF-Wohnen_im_Halfeshof
+fc:ec:da:13:0a:35  LVR-FF-Wohnen-im-Halfeshof-OG                LVR-FF-Wohnen_im_Halfeshof
+e0:63:da:bc:90:af  LVR-FF-Wohnen-im-Quartier-Bonn-12            LVR-FF-Quartier Bonn
+f4:92:bf:63:4a:a1  LVR-FF-Wohnen-im-Quartier-Bonn-14            LVR-FF-Quartier Bonn
+f4:92:bf:63:4b:b9  LVR-FF-Wohnen-im-Quartier-Bonn-15            LVR-FF-Quartier Bonn
+e0:63:da:bc:97:c0  LVR-FF-Wohnen-im-Quartier-Bonn-16            LVR-FF-Quartier Bonn
+e0:63:da:bc:97:b8  LVR-FF-Wohnen-im-Quartier-Bonn-2             LVR-FF-Quartier Bonn
+f4:92:bf:6c:b2:f3  LVR-FF-Wohnen-im-Quartier-Bonn-3             LVR-FF-Quartier Bonn
+f4:92:bf:6c:bf:5d  LVR-FF-Wohnen-im-Quartier-Bonn-5             LVR-FF-Quartier Bonn
+f4:92:bf:6c:ba:10  LVR-FF-Wohnen-im-Quartier-Bonn-7             LVR-FF-Quartier Bonn
+f4:92:bf:6c:c0:74  LVR-FF-Wohnen-im-Quartier-Bonn-8             LVR-FF-Quartier Bonn
+74:83:c2:83:89:ee  LVR-FF-Wohnen-im-Quartier-Bonn-E2-KuK        LVR-FF-Quartier Bonn
+78:45:58:02:2f:07  LVR-FF-Wohnen-im-Quartier-Bonn-Freude-1-WZ   LVR-FF-Quartier Bonn
+74:83:c2:83:89:f5  LVR-FF-Wohnen-im-Quartier-Bonn-Freude-2-KD-1 LVR-FF-Quartier Bonn
+78:45:58:02:2c:33  LVR-FF-Wohnen-im-Quartier-Bonn-Freude-2-WZ   LVR-FF-Quartier Bonn
+b4:fb:e4:90:a5:85  LVR-FF-Wohnen-in Quettingen1. OG             LVRSO-FF-Lüki 155
+f4:92:bf:63:48:85  LVR-FF-Wohnen-in-Bonn-Freudestr-26-DG        LVR-FF-Quartier Bonn
+74:83:c2:83:8a:98  LVR-FF-Wohnen-in-Gräfrath-EG-mitte           LVR-FF-Wohnen-in-Gräfrath
+74:83:c2:83:88:1a  LVR-FF-Wohnen-in-Gräfrath-OG-mitte           LVR-FF-Wohnen-in-Gräfrath
+74:83:c2:83:86:ed  LVR-FF-Wohnen-in-Langenfeld-Flur             LVR-FF-Wohnen-in-Langenfeld
+74:83:c2:83:87:32  LVR-FF-Wohnen-in-Neunkirchen-Seelscheid (AS) LVR-Wohnen in Neunkirchen-Seelscheid
+b4:fb:e4:f6:e4:1c  LVR-FF-Wohnen-in-Neunkirchen-Seelscheid (AS) LVR-Wohnen in Neunkirchen-Seelscheid
+74:83:c2:83:88:a9  LVR-FF-Wohnen-in-Neunkirchen-Seelscheid_GH4_ LVR-FF-WV-GH4
+74:83:c2:83:8a:24  LVR-FF-Wohnen-in-Neunkirchen-Seelscheid_GH4_ LVR-FF-WV-GH4
+74:83:c2:83:89:69  LVR-FF-Wohnen-in-Ohligs-1-OG                 LVR-FF-Wohnen-in-Ohligs
+74:83:c2:83:87:65  LVR-FF-Wohnen-in-Ohligs-2-OG                 LVR-FF-Wohnen-in-Ohligs
+74:83:c2:83:87:e2  LVR-FF-Wohnen-in-Oligs-3-OG                  LVR-FF-Wohnen-in-Ohligs
+fc:ec:da:13:04:e8  LVR-FF-Wohnen-in-Quettingen 2.OG             LVRSO-FF-Lüki 155
+b4:fb:e4:f6:e5:e7  LVR-FF-Wohnen-in-Quettingen EG               LVRSO-FF-Lüki 155
+78:45:58:16:45:fe  LVR-FF-Wohnen-in-Rheindorf-#1                LVR-Wohnen in Rheindorf
+78:45:58:16:46:23  LVR-FF-Wohnen-in-Rheindorf-#2                LVR-Wohnen in Rheindorf
+78:45:58:16:55:14  LVR-FF-Wohnen-in-Rheindorf-1-OG              LVR-Wohnen in Rheindorf
+74:83:c2:83:87:49  LVR-FF-Wohnen-in-Rheindorf-EG                LVR-Wohnen in Rheindorf
+f4:92:bf:6c:c0:6e  LVR-FF-Wohnen-in-Wermelskirchen-1.OG-L       LVR-FF-Wustbacherstr
+f4:92:bf:6c:b6:a8  LVR-FF-Wohnen-in-Wermelskirchen-1.OG-R       LVR-FF-Wustbacherstr
+f4:92:bf:6c:be:7f  LVR-FF-Wohnen-in-Wermelskirchen-2.OG-L       LVR-FF-Wustbacherstr
+f4:92:bf:6c:bc:2f  LVR-FF-Wohnen-in-Wermelskirchen-2.OG-R       LVR-FF-Wustbacherstr
+f4:92:bf:6c:be:73  LVR-FF-Wohnen-in-Wermelskirchen-EG-L         LVR-FF-Wustbacherstr
+e0:63:da:ac:b5:ed  LVR-FF-Wohnen-in-Wermelskirchen-EG-R         LVR-FF-Wustbacherstr
+e0:63:da:b0:02:ba  LVR-FF-Wohnen_in_Opladen-1-OG                LVR-FF-Wohnen-in-Opladen
+e0:63:da:b0:02:ad  LVR-FF-Wohnen_in_Opladen-2-OG                LVR-FF-Wohnen-in-Opladen
+e0:63:da:b0:04:33  LVR-FF-Wohnen_in_Opladen-EG                  LVR-FF-Wohnen-in-Opladen
+
+## lvr-hph-suedost-lvrsw: 103 APs hinter 21 Knoten
+78:45:58:16:44:d6  LVR-FF-Alemannenstr-#1                       LVRSW-FF-Alemannenstr
+78:45:58:16:45:e8  LVR-FF-Alemannenstr-#2                       LVRSW-FF-Alemannenstr
+78:45:58:16:46:5e  LVR-FF-Alemannenstr-#3                       LVRSW-FF-Alemannenstr
+d0:21:f9:7d:b1:d1  LVR-FF-Alemannenstr-#4                       LVRSW-FF-Alemannenstr
+d0:21:f9:7d:aa:3f  LVR-FF-Alemannenstr-#5                       LVRSW-FF-Alemannenstr
+d0:21:f9:7d:a9:df  LVR-FF-Alemannenstr-#6                       LVRSW-FF-Alemannenstr
+d0:21:f9:7d:a8:a4  LVR-FF-Alemannenstr-#7                       LVRSW-FF-Alemannenstr
+d0:21:f9:7d:86:de  LVR-FF-Alemannenstr-#8                       LVRSW-FF-Alemannenstr
+ac:8b:a9:8c:d8:e7  LVR-FF-Am_Patersdeich_#1                     LVR-FF-Am Patersdeich
+ac:8b:a9:8c:d0:6f  LVR-FF-Am_Patersdeich_#2                     LVR-FF-Am Patersdeich
+ac:8b:a9:8c:d5:d0  LVR-FF-Am_Patersdeich_#3                     LVR-FF-Am Patersdeich
+ac:8b:a9:8c:d3:d3  LVR-FF-Am_Patersdeich_#4                     LVR-FF-Am Patersdeich
+ac:8b:a9:8c:d4:a1  LVR-FF-Am_Patersdeich_#5                     LVR-FF-Am Patersdeich
+d0:21:f9:c7:90:83  LVR-FF-Gut_Hommelsheim-Buchenhecke-EG        LVRSW-Gut-Hommelsheim
+70:a7:41:62:90:2d  LVR-FF-Gut_Hommelsheim-HS-1-1                LVRSW-Gut-Hommelsheim
+70:a7:41:64:18:0d  LVR-FF-Gut_Hommelsheim-HS-1-2                LVRSW-Gut-Hommelsheim
+70:a7:41:64:1c:49  LVR-FF-Gut_Hommelsheim-HS-2-1                LVRSW-Gut-Hommelsheim
+70:a7:41:62:76:39  LVR-FF-Gut_Hommelsheim-HS-2-2                LVRSW-Gut-Hommelsheim
+d0:21:f9:d9:d6:83  LVR-FF-Gut_Hommelsheim-HS-3-1                LVRSW-Gut-Hommelsheim
+70:a7:41:62:8f:c5  LVR-FF-Gut_Hommelsheim-HS-3-2                LVRSW-Gut-Hommelsheim
+70:a7:41:71:80:42  LVR-FF-Gut_Hommelsheim-HS-4-1                LVRSW-Gut-Hommelsheim
+70:a7:41:71:a8:3e  LVR-FF-Gut_Hommelsheim-HS-4-2                LVRSW-Gut-Hommelsheim
+70:a7:41:71:b1:4a  LVR-FF-Gut_Hommelsheim-HS-5-1                LVRSW-Gut-Hommelsheim
+70:a7:41:71:7a:ca  LVR-FF-Gut_Hommelsheim-HS-5-2                LVRSW-Gut-Hommelsheim
+70:a7:41:64:40:7d  LVR-FF-Gut_Hommelsheim-HS-6-1                LVRSW-Gut-Hommelsheim
+70:a7:41:71:aa:66  LVR-FF-Gut_Hommelsheim-HS-6-2                LVRSW-Gut-Hommelsheim
+d0:21:f9:33:8f:29  LVR-FF-Harffer-Schlossallee-DG-1             LVR-FF-Harffer Schlossallee
+d0:21:f9:33:a4:c2  LVR-FF-Harffer-Schlossallee-DG-2             LVR-FF-Harffer Schlossallee
+d0:21:f9:33:a4:e7  LVR-FF-Harffer-Schlossallee-EG-1             LVR-FF-Harffer Schlossallee
+d0:21:f9:c1:8b:11  LVR-FF-Harffer-Schlossallee-EG-2             LVR-FF-Harffer Schlossallee
+d0:21:f9:33:a2:33  LVR-FF-Harffer-Schlossallee-EG-3             LVR-FF-Harffer Schlossallee
+d0:21:f9:33:a2:31  LVR-FF-Harffer-Schlossallee-EG-4             LVR-FF-Harffer Schlossallee
+d0:21:f9:33:a3:48  LVR-FF-Harffer-Schlossallee-OG-1             LVR-FF-Harffer Schlossallee
+d0:21:f9:33:a2:5c  LVR-FF-Harffer-Schlossallee-OG-2             LVR-FF-Harffer Schlossallee
+d0:21:f9:33:83:e8  LVR-FF-Harffer-Schlossallee-OG-3             LVR-FF-Harffer Schlossallee
+d0:21:f9:33:a1:b2  LVR-FF-Harffer-Schlossallee-OG-4             LVR-FF-Harffer Schlossallee
+24:5a:4c:23:6a:67  LVR-FF-In-den-Hüppen-#1                      LVR-FF-In-den-Hüppen
+24:5a:4c:23:68:f2  LVR-FF-In-den-Hüppen-#2                      LVR-FF-In-den-Hüppen
+24:5a:4c:23:63:4b  LVR-FF-In-den-Hüppen-#3                      LVR-FF-In-den-Hüppen
+24:5a:4c:23:65:53  LVR-FF-In-den-Hüppen-#5                      LVR-FF-In-den-Hüppen
+68:d7:9a:dc:ff:84  LVR-FF-In-den-Hüppen-#7                      LVR-FF-In-den-Hüppen
+ac:8b:a9:8c:d6:d8  LVR-FF-Kerpener-2-#1                         LVRSW-Kerpener-#2
+ac:8b:a9:8c:d7:11  LVR-FF-Kerpener-2-#2                         LVRSW-Kerpener-#2
+78:45:58:02:2c:83  LVR-FF-Kerpener-Mesh-#1                      LVRSW-FF-Kerpenerstr
+ac:8b:a9:83:dc:d1  LVR-FF-Kerpener-Mesh-#2                      LVRSW-FF-Kerpenerstr
+d0:21:f9:7d:ac:25  LVR-FF-Kerpenerstr-1GG-L                     LVRSW-FF-Kerpenerstr
+d0:21:f9:7d:ac:d9  LVR-FF-Kerpenerstr-1OG--R                    LVRSW-FF-Kerpenerstr
+d0:21:f9:7d:b2:10  LVR-FF-Kerpenerstr-EG-L                      LVRSW-FF-Kerpenerstr
+d0:21:f9:7d:af:6a  LVR-FF-Kerpenerstr-EG-R                      LVRSW-FF-Kerpenerstr
+78:45:58:02:2e:20  LVR-FF-Kessenicherstr-1-OG                   LVRSW-FF-Kessenicher
+78:45:58:02:2d:c9  LVR-FF-Kessenicherstr-EG                     LVRSW-FF-Kessenicher
+e0:63:da:bc:90:7a  LVR-FF-Lilienweg-AP6                         LVR-FF-Lilienweg
+d0:21:f9:7d:ab:f5  LVR-FF-Maiglöchenweg-#2                      LVRSW-FF-Maiglöckchenweg
+d0:21:f9:c1:90:42  LVR-FF-Maiglöchenweg-#3                      LVRSW-FF-Maiglöckchenweg
+78:45:58:02:2d:43  LVR-FF-Maiglöchenweg-#4                      LVRSW-FF-Maiglöckchenweg
+78:45:58:16:45:00  LVR-FF-Maiglöchenweg-#7                      LVRSW-FF-Maiglöckchenweg
+d0:21:f9:3c:b0:25  LVR-FF-Maiglöckchenweg-1-OG                  LVRSW-FF-Maiglöckchenweg
+d0:21:f9:7d:c0:38  LVR-FF-Merzenicher-AP-1                      LVRSW-FF-Merzenicher Straße
+d0:21:f9:7d:ac:46  LVR-FF-Merzenicher-AP-3                      LVRSW-FF-Merzenicher Straße
+d0:21:f9:7d:bf:78  LVR-FF-Merzenicher-AP2                       LVRSW-FF-Merzenicher Straße
+d0:21:f9:7d:a7:72  LVR-FF-Mühlenweg-#1                          LVRSW-FF-Mühlenweg
+d0:21:f9:7d:a3:2e  LVR-FF-Mühlenweg-#2                          LVRSW-FF-Mühlenweg
+d0:21:f9:c1:87:f9  LVR-FF-Mühlenweg-#3                          LVRSW-FF-Mühlenweg
+d0:21:f9:7d:a2:4d  LVR-FF-Mühlenweg-#4                          LVRSW-FF-Mühlenweg
+d0:21:f9:7d:a8:e3  LVR-FF-Mühlenweg-#5                          LVRSW-FF-Mühlenweg
+d0:21:f9:7d:a8:95  LVR-FF-Mühlenweg-#6                          LVRSW-FF-Mühlenweg
+78:45:58:02:2b:bd  LVR-FF-Nelkenstr-1-OG                        LVR-FF-Nelkenstr
+78:45:58:02:2c:90  LVR-FF-Nelkenstr-2-OG                        LVR-FF-Nelkenstr
+78:45:58:02:29:89  LVR-FF-Nelkenstr-EG                          LVR-FF-Nelkenstr
+d0:21:f9:c1:91:ec  LVR-FF-Ostpromenade-#5                       LVRSW-Gut-Hommelsheim
+d0:21:f9:c1:8e:b0  LVR-FF-Ostpromenade-#6                       LVRSW-Gut-Hommelsheim
+24:5a:4c:23:65:7a  LVR-FF-Ostpromenade-#7                       LVRSW-Gut-Hommelsheim
+d0:21:f9:3c:9c:3f  LVR-FF-Pützdorferstr-EG-#1                   LVR-FF-Pützdorferstr
+d0:21:f9:3c:b3:30  LVR-FF-Pützdorferstr-EG-#2                   LVR-FF-Pützdorferstr
+d0:21:f9:3c:bd:22  LVR-FF-Pützdorferstr-EG-#3                   LVR-FF-Pützdorferstr
+d0:21:f9:3c:b3:2b  LVR-FF-Pützdorferstr-OG-#1                   LVR-FF-Pützdorferstr
+d0:21:f9:3c:db:f1  LVR-FF-Pützdorferstr-OG-#2                   LVR-FF-Pützdorferstr
+d0:21:f9:3c:9a:f0  LVR-FF-Pützdorferstr-OG-#3                   LVR-FF-Pützdorferstr
+24:5a:4c:23:6a:8c  LVR-FF-Schillingstr-#1                       LVRSW-Schillingstr
+24:5a:4c:23:65:83  LVR-FF-Schillingstr-#2                       LVRSW-Schillingstr
+ac:8b:a9:86:d1:22  LVR-FF-Schlossstr-#1                         LVR-FF-Schlossstr
+ac:8b:a9:86:d2:59  LVR-FF-Schlossstr-#2                         LVR-FF-Schlossstr
+ac:8b:a9:86:d1:33  LVR-FF-Schlossstr-#3                         LVR-FF-Schlossstr
+ac:8b:a9:86:d0:6f  LVR-FF-Schlossstr-#4                         LVR-FF-Schlossstr
+ac:8b:a9:86:d2:48  LVR-FF-Schlossstr-#5                         LVR-FF-Schlossstr
+ac:8b:a9:86:d2:8c  LVR-FF-Schlossstr-#6                         LVR-FF-Schlossstr
+ac:8b:a9:8c:ce:9f  LVR-FF-Sonnenstr-#1                          LVRSW-Sonnenstr
+ac:8b:a9:8c:d8:e8  LVR-FF-Sonnenstr-#2                          LVRSW-Sonnenstr
+e0:63:da:b0:02:c9  LVR-FF-WB_Am-Schulzentrum-2-OG-DOWN          LVR-FF-Am-Schulzentrum
+b4:fb:e4:f6:e6:7b  LVR-FF-Wohnen-in-Flehe-1-OG-DOWN             LVR-FF-Am_Scharfenstein
+fc:ec:da:13:06:29  LVR-FF-Wohnen-in-Flehe-1-OG-UP               LVR-FF-Am_Scharfenstein
+b4:fb:e4:f6:e3:db  LVR-FF-Wohnen-in-Flehe-2-OG-DOWN             LVR-FF-Am_Scharfenstein
+b4:fb:e4:f6:e4:17  LVR-FF-Wohnen-in-Flehe-2-OG-UP               LVR-FF-Am_Scharfenstein
+74:83:c2:83:87:5f  LVR-FF-Wohnen-in-Flehe-EG-DOWN               LVR-FF-Am_Scharfenstein
+b4:fb:e4:96:05:5a  LVR-FF-Wohnen-in-Flehe-EG-UP                 LVR-FF-Am_Scharfenstein
+24:5a:4c:23:6a:6b  LVR-FF-Zur_alten_Burg-1-OG-links             LVR-FF-An_der_alten_Burg
+24:5a:4c:23:62:b3  LVR-FF-Zur_alten_Burg-1-OG-rechts            LVR-FF-An_der_alten_Burg
+24:5a:4c:23:65:b8  LVR-FF-Zur_alten_Burg-2-OG                   LVR-FF-An_der_alten_Burg
+24:5a:4c:23:6a:58  LVR-FF-Zur_alten_Burg-EG-rechts              LVR-FF-An_der_alten_Burg
+d0:21:f9:30:0d:18  LVRSW-FF-Schulstraße-#1                      LVR-FF-Schulstr
+d0:21:f9:30:17:7d  LVRSW-FF-Schulstraße-#3                      LVR-FF-Schulstr
+d0:21:f9:30:17:95  LVRSW-FF-Schulstraße-#4                      LVR-FF-Schulstr
+d0:21:f9:30:17:9b  LVRSW-FF-Schulstraße-#5                      LVR-FF-Schulstr
+
+## nicht zugeordnet (168)
+78:45:58:19:39:df  AC LR
+78:45:58:19:3c:de  AC LR
+78:45:58:19:39:00  AC LR
+24:5a:4c:23:65:71  AC Pro
+d0:21:f9:3c:e1:e0  BM-Schmidt-#4
+24:5a:4c:23:65:77  LVR-FF-Bergstr-#1
+d0:21:f9:3c:e3:89  LVR-FF-Binnenfeld-#1
+d0:21:f9:3c:9c:60  LVR-FF-Binnenfeld-#2
+d0:21:f9:c1:62:fd  LVR-FF-Binnenfeld-AP5
+24:5a:4c:23:65:74  LVR-FF-Bockmuehle_AP5
+74:ac:b9:90:a3:e0  LVR-FF-Brandenburgerstr-AP5
+74:ac:b9:90:a3:b2  LVR-FF-Brandenburgerstr-AP6
+d0:21:f9:30:12:bb  LVR-FF-Brodhof-#3
+ac:8b:a9:86:ba:de  LVR-FF-Broekmannstr .AP 1 EG
+ac:8b:a9:8c:d4:68  LVR-FF-Buchenweg_#3
+24:5a:4c:23:6b:0f  LVR-FF-DBH-AP1
+24:5a:4c:23:6a:42  LVR-FF-DBH-AP2
+24:5a:4c:23:65:24  LVR-FF-DBH-AP3
+f4:e2:c6:19:02:03  LVR-FF-DoBu-2-#1
+f4:e2:c6:19:01:61  LVR-FF-DoBu-2-#2
+f4:e2:c6:19:00:57  LVR-FF-DoBu-4-#1
+f4:e2:c6:16:ba:e1  LVR-FF-DoBu-4-#2
+f4:e2:c6:19:00:f9  LVR-FF-DoBu-6-#1
+f4:e2:c6:19:01:cf  LVR-FF-DoBu-6-#2
+f4:e2:c6:19:01:5c  LVR-FF-DoBu-8-#1
+f4:e2:c6:19:01:c8  LVR-FF-DoBu-8-#2
+f4:e2:c6:16:cb:03  LVR-FF-Dobu-22
+d0:21:f9:7d:bf:d5  LVR-FF-Friedrich-Ebert-EG-#1
+78:45:58:16:46:2b  LVR-FF-Friedrich-Ebert-EG-#2
+78:45:58:16:45:b3  LVR-FF-Friedrich-Ebert-EG-#3
+d0:21:f9:7d:b5:79  LVR-FF-Friedrich-Ebert-OG-#1
+24:5a:4c:23:65:30  LVR-FF-Friedrich-Ebert-OG-#2
+ac:8b:a9:83:da:ab  LVR-FF-Friedrich-Willhelm-Str. DG 1
+ac:8b:a9:86:bb:d9  LVR-FF-Friedrich-Willhelm-Str. DG 2
+ac:8b:a9:83:dd:7a  LVR-FF-Friedrich-Willhelm-Str. DG 3
+ac:8b:a9:83:da:ec  LVR-FF-Friedrich-Willhelm-Str. EG 1
+ac:8b:a9:83:d2:22  LVR-FF-Friedrich-Willhelm-Str. EG 2
+ac:8b:a9:83:d6:77  LVR-FF-Friedrich-Willhelm-Str. EG 3
+ac:8b:a9:86:bb:de  LVR-FF-Friedrich-Willhelm-Str. OG 1
+ac:8b:a9:86:c0:b9  LVR-FF-Friedrich-Willhelm-Str. OG 2
+e0:63:da:bc:90:90  LVR-FF-Großenbaumer Allee-#1
+e0:63:da:bc:90:8f  LVR-FF-Großenbaumer Allee-#2
+d0:21:f9:3c:c7:d5  LVR-FF-HPZ-DU-#1
+d0:21:f9:3c:b1:6b  LVR-FF-HPZ-DU-#2
+d0:21:f9:3c:cb:70  LVR-FF-HPZ-DU-#3
+d0:21:f9:30:39:ee  LVR-FF-Halfeshof-OG-R
+78:45:58:02:2d:cc  LVR-FF-Hevelingstr
+8c:30:66:42:63:ff  LVR-FF-Hochstr-DU-3
+24:5a:4c:23:65:59  LVR-FF-In-den-Hüppen-#4
+f4:e2:c6:16:cb:68  LVR-FF-Jakob-Hoogen-EG-2
+f4:e2:c6:16:cc:18  LVR-FF-Jakob-Hoogen-EG-3
+f4:e2:c6:16:d0:b4  LVR-FF-Jakob-Hoogen-OG-1
+f4:e2:c6:26:d8:e9  LVR-FF-Jakob-Hoogen-OG-2
+f4:e2:c6:16:ca:d8  LVR-FF-Jakob-Hoogen-OG-3
+ac:8b:a9:8c:cf:e9  LVR-FF-Kerpener-2-#3
+f4:e2:c6:16:c9:4c  LVR-FF-Kölner Str. 1 OG 2
+d0:21:f9:30:14:54  LVR-FF-Kölner Str. 1 OG 2
+74:ac:b9:90:a3:c0  LVR-FF-Lilienweg-AP1
+74:ac:b9:90:a3:ae  LVR-FF-Lilienweg-AP2
+74:ac:b9:90:a3:e3  LVR-FF-Lilienweg-AP3
+74:ac:b9:90:a3:dc  LVR-FF-Lilienweg-AP4
+74:ac:b9:90:a3:db  LVR-FF-Lilienweg-AP5
+f4:e2:c6:19:01:d3  LVR-FF-Moersenstr-1-#1
+f4:e2:c6:16:bc:fb  LVR-FF-Moersenstr-1-#2
+f4:e2:c6:16:c9:eb  LVR-FF-Moersenstr-1-#3
+f4:e2:c6:16:c9:35  LVR-FF-Moersenstr-2-#1
+f4:e2:c6:16:cd:fb  LVR-FF-Moersenstr-2-#2
+f4:e2:c6:16:dc:51  LVR-FF-Moersenstr-2-#3
+d0:21:f9:39:ab:a7  LVR-FF-Mühlenstr-#3
+d0:21:f9:3c:9c:57  LVR-FF-Mühlenstr-#4
+74:ac:b9:90:a2:e7  LVR-FF-Nierenbergerstr-1-OG
+74:ac:b9:90:a3:df  LVR-FF-Nierenbergerstr-AP1
+74:ac:b9:90:a3:e7  LVR-FF-Nierenbergerstr-AP2
+f4:e2:c6:26:d4:3b  LVR-FF-Ostpromenade-#1
+f4:e2:c6:26:d0:e9  LVR-FF-Ostpromenade-#2
+ac:8b:a9:86:b8:f5  LVR-FF-Ostpromenade-#3
+f4:e2:c6:26:d5:35  LVR-FF-Ostpromenade-#4
+f4:e2:c6:16:c9:0f  LVR-FF-Pionierstr
+f4:e2:c6:16:d0:b5  LVR-FF-Pionierstr 
+f4:e2:c6:16:cc:bf  LVR-FF-Pionierstr-#1
+f4:e2:c6:16:d8:54  LVR-FF-Pionierstr-#2
+f4:e2:c6:16:ea:b6  LVR-FF-Pionierstr-#3
+f4:e2:c6:16:c8:85  LVR-FF-Pionierstr-#4
+e0:63:da:bc:93:ee  LVR-FF-Porzerstr-1-OG-#1
+e0:63:da:bc:96:91  LVR-FF-Porzerstr-1-OG-#2
+e0:63:da:bc:97:c1  LVR-FF-Porzerstr-2-OG-#1
+e0:63:da:bc:97:c2  LVR-FF-Porzerstr-2-OG-#2
+e0:63:da:b0:02:ab  LVR-FF-Porzerstr-EG-#1
+e0:63:da:bc:92:ff  LVR-FF-Porzerstr-EG-#2
+f4:e2:c6:26:c8:57  LVR-FF-Porzerstr-EG-#3
+d0:21:f9:33:60:0b  LVR-FF-Querallee-#1-OG
+8c:30:66:42:63:5d  LVR-FF-St_Martinstr #1
+8c:30:66:42:1e:60  LVR-FF-St_Martinstr #2
+b4:fb:e4:f6:e6:f6  LVR-FF-Stadtwohnen Bonn DG
+78:8a:20:b3:50:e0  LVR-FF-TEST-AP
+d0:21:f9:c1:89:af  LVR-FF-Van der-Giese-2-OG
+d0:21:f9:c1:83:5e  LVR-FF-Van-der-Giese-1-OG
+24:5a:4c:23:64:e9  LVR-FF-Van-der-Giese-EG
+78:45:58:16:45:ca  LVR-FF-Verwaltung-AE-1
+e0:63:da:b0:02:94  LVR-FF-Verwaltung-IT-Büro
+78:45:58:02:2e:33  LVR-FF-Verwaltung-Seminarraum-gross
+78:45:58:16:45:f2  LVR-FF-WB-Berliner-Str-OG-rechts
+74:ac:b9:23:1d:94  LVR-FF-WB_Am-Schulzentrum-1-OG-DOWN
+74:ac:b9:20:74:91  LVR-FF-WB_Am-Schulzentrum-1-OG-UP
+74:ac:b9:23:1d:3c  LVR-FF-WB_Am-Schulzentrum-2-OG-UP
+74:ac:b9:23:18:9e  LVR-FF-WB_Am-Schulzentrum-EG-DOWN
+74:ac:b9:23:18:4b  LVR-FF-WB_Am-Schulzentrum-EG-UP
+f4:92:bf:63:4b:ee  LVR-FF-Wohnen-im-Quartier-Bonn-11
+f4:92:bf:6c:bd:97  LVR-FF-Wohnen-im-Quartier-Bonn-6
+78:45:58:19:3d:6b  LVR-FF-Wohnen-in-Bonn-Castell-1-OG-1
+78:45:58:19:3e:5b  LVR-FF-Wohnen-in-Bonn-Castell-1-OG-2
+78:45:58:19:3e:86  LVR-FF-Wohnen-in-Bonn-Castell-2-OG-1
+78:45:58:16:40:b1  LVR-FF-Wohnen-in-Bonn-Castell-2-OG-2
+78:45:58:16:46:3b  LVR-FF-Wohnen-in-Bonn-Castell-3-OG-1
+78:45:58:16:46:36  LVR-FF-Wohnen-in-Bonn-Castell-3-OG-2
+78:45:58:19:34:69  LVR-FF-Wohnen-in-Bonn-Castell-EG-1
+78:45:58:19:3a:08  LVR-FF-Wohnen-in-Bonn-Castell-EG-2
+f4:92:bf:6c:b2:f6  LVR-FF-Wohnen-in-Bonn-Freude-4-DG
+f4:e2:c6:16:c9:2c  LVR-FF-Wohnen-in-Gräfrath-EG-links
+f4:e2:c6:16:cf:20  LVR-FF-Wohnen-in-Gräfrath-EG-rechts
+74:83:c2:83:88:64  LVR-FF-Wohnen-in-Gräfrath-OG
+f4:e2:c6:16:ce:4d  LVR-FF-Wohnen-in-Gräfrath-OG-2
+f4:e2:c6:16:ca:eb  LVR-FF-Wohnen-in-Gräfrath-OG-3
+74:ac:b9:23:1c:ce  LVR-FF-Wohnen-in-Hilden-1-OG
+74:ac:b9:23:1c:58  LVR-FF-Wohnen-in-Hilden-2-OG
+74:ac:b9:20:72:e4  LVR-FF-Wohnen-in-Hilden-EG
+b4:fb:e4:f6:c1:74  LVR-FF-Wohnen-in-Kürten-Bechen-EG-DOWN
+b4:fb:e4:f6:e5:06  LVR-FF-Wohnen-in-Kürten-Bechen-EG-UP
+b4:fb:e4:f6:e4:04  LVR-FF-Wohnen-in-Kürten-Bechen-OG-DOWN
+b4:fb:e4:f6:94:57  LVR-FF-Wohnen-in-Kürten-Bechen-OG-UP
+f0:9f:c2:29:a1:c0  LVR-FF-Wohnen-in-Langenfeld-01
+74:ac:b9:20:73:58  LVR-FF-Wohnen-in-Langenfeld-mesh-58b
+74:ac:b9:23:1c:9b  LVR-FF-Wohnen-in-Langenfeld-mesh-Villa
+b4:fb:e4:f3:da:1c  LVR-FF-Wohnen-in-Monheim-1-OG-DOWN
+74:ac:b9:23:1c:a2  LVR-FF-Wohnen-in-NKS-Arndtstr-1-OG-DOWN
+74:ac:b9:23:1c:ac  LVR-FF-Wohnen-in-NKS-Arndtstr-1-OG-UP
+74:ac:b9:23:18:90  LVR-FF-Wohnen-in-NKS-Arndtstr-EG-DOWN
+74:ac:b9:23:1c:b8  LVR-FF-Wohnen-in-NKS-Arndtstr-EG-UP
+74:ac:b9:23:1c:70  LVR-FF-Wohnen-in-NKS-Arndtstr-UG
+78:45:58:02:2e:3f  LVR-FF-Wohnen-in-Neunkirchen-Seelscheid_GH4_OG
+74:83:c2:83:87:16  LVR-FF-Wohnen-in-Rheindorf-1-OG
+74:83:c2:83:89:9c  LVR-FF-Wohnen-in-Rheindorf-2-OG
+78:8a:20:56:1d:96  LVR-FF-Wohnen-in-Rheindorf-EG-Büro
+74:83:c2:83:90:d0  LVR-FF-Wohnen-in-Solingen-Mitte-2-OG
+74:83:c2:83:96:05  LVR-FF-Wohnen-in-Solingen-Mitte-EG-links
+74:83:c2:83:89:a8  LVR-FF-Wohnen-in-Solingen-Mitte-EG-rechts
+24:5a:4c:23:6a:57  LVR-FF-Zur-Licht_AP5
+24:5a:4c:23:69:0a  LVR-FF-Zur_alten_Burg-EG-links
+f4:e2:c6:26:d4:61  LVR-FF-van-Meenen-2-OG-R
+ac:8b:a9:8c:d1:90  LVR-FF-Äquatorweg #1
+8c:30:66:40:d6:26  LVR-FF-Äquatorweg #2
+f0:9f:c2:70:27:08  LVR-Wohnen-in-002
+f4:e2:c6:26:d0:42  LVRMW-FF-Jakob-Hoogen #2
+f4:e2:c6:26:d3:08  LVRMW-FF-Jakob-Hoogen #8
+f4:e2:c6:26:d1:5d  LVRNW-FF-Hevelingstr. #2
+f4:e2:c6:26:d4:c2  LVRNW-FF-Peiterstr #2
+f4:e2:c6:26:d3:69  LVRNW-FF-Peiterstr #3
+f4:e2:c6:26:d5:31  LVRNW-FF-Peiterstr #4
+f4:e2:c6:26:d8:dd  LVRNW-FF-Peiterstr #5
+f4:e2:c6:26:d5:53  LVRNW-FF-Peiterstr #6
+f4:e2:c6:26:c9:02  LVRNW-FF-Peiterstr #R313
+f4:e2:c6:26:cf:73  LVRNW-FF-Peiterstr #WZ
+f4:e2:c6:26:c8:5a  LVRNW-FF-Peiterstr #WZ2
+f4:e2:c6:26:d8:f6  LVRNW-FF-Zur Mulde #1
+f4:e2:c6:26:ca:01  LVRNW-FF-Zur Mulde #2
+f4:e2:c6:26:c7:96  LVRNW-FF-Zur Mulde #3
+d0:21:f9:30:17:78  LVRSW-FF-Schulstraße-#2
+d8:b3:70:17:f9:29  U6 Pro

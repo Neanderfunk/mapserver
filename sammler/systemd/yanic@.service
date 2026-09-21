@@ -10,6 +10,11 @@ Type=simple
 User=yanic
 Group=www-data
 UMask=0022
+# Adressen, die per Rundruf nicht erreichbar sind, fragt yanic zusaetzlich
+# einzeln. Die Liste erzeugt karte-ziele-ernten aus der Translation Table,
+# die batman uns als Mitglied des Mesh ohnehin zustellt. Fehlt die Datei,
+# aendert sich nichts. Braucht patches/yanic-seeds.patch im gebauten yanic.
+Environment=YANIC_SEEDS=/etc/karte-en/ziele-%i.txt
 # yanic stirbt, wenn eine Schnittstelle fehlt. Nach einem Neustart der
 # Maschine ist das normal, also erst warten (als root, danach faellt der
 # Dienst auf den Benutzer yanic zurueck).

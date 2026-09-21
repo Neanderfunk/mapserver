@@ -1,0 +1,10 @@
+[Unit]
+Description=Ziele neu erheben, alle 30 Minuten
+
+[Timer]
+OnBootSec=12min
+OnUnitActiveSec=30min
+AccuracySec=2min
+
+[Install]
+WantedBy=timers.target

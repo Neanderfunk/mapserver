@@ -23,7 +23,11 @@ if [ ! -d "$BAU/.git" ]; then
 	git clone -q https://codeberg.org/FreifunkBremen/yanic.git "$BAU"
 fi
 git -C "$BAU" fetch -q --tags origin
-git -C "$BAU" checkout -q "$YANIC_TAG"
+git -C "$BAU" checkout -q --force "$YANIC_TAG"
+# Unser einziger Eingriff in yanic: es fragt zusaetzlich Adressen aus einer
+# Datei mit. Noetig fuer Netze, die unseren Rundruf nicht an ihre Knoten
+# zustellen; siehe patches/yanic-seeds.patch und docs/hintergrund.md.
+git -C "$BAU" apply "$HIER/patches/yanic-seeds.patch"
 ( cd "$BAU" && GOFLAGS=-mod=mod go build -o /usr/local/bin/yanic . )
 /usr/local/bin/yanic --version 2>&1 | head -2 || true
 
@@ -40,6 +44,8 @@ install -m 0755 "$HIER/yanic-conf.py" /usr/local/sbin/karte-en-yanic-conf
 install -m 0755 "$HIER/sitecodes-ermitteln.py" /usr/local/sbin/karte-en-sitecodes
 install -m 0755 "$HIER/warten.sh" /usr/local/sbin/karte-en-warten
 install -m 0644 "$HIER/systemd/yanic@.service" /etc/systemd/system/
+install -m 0755 "$HIER/ziele-ernten.py" /usr/local/sbin/karte-ziele-ernten
+install -m 0644 "$HIER/systemd/karte-ziele.service" "$HIER/systemd/karte-ziele.timer" /etc/systemd/system/
 [ -f /etc/karte-en/sitecodes.conf ] || install -m 0644 "$HIER/sitecodes.conf" /etc/karte-en/sitecodes.conf
 systemctl daemon-reload
 

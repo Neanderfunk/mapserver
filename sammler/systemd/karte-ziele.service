@@ -1,0 +1,12 @@
+[Unit]
+Description=Sucht Knoten, die auf keinen Rundruf antworten
+
+[Service]
+Type=oneshot
+# Nur fuer Communities, deren Multicast nicht durchkommt. Fuer die eigenen
+# Domains waere es doppelte Last ohne Gewinn.
+#
+# Erst in eine Nebendatei schreiben und dann umbenennen: yanic liest die Datei
+# in jeder Runde, und eine halb geschriebene Liste waere schlimmer als eine
+# alte.
+ExecStart=/bin/sh -c '/usr/local/sbin/karte-ziele-ernten en > /etc/karte-en/ziele-en.txt.neu && mv /etc/karte-en/ziele-en.txt.neu /etc/karte-en/ziele-en.txt'

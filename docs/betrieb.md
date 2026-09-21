@@ -112,6 +112,40 @@ curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: witten.en.map.freifunk.space'
 ernst: dann routet eigener Verkehr durch ihr Mesh. `ip -6 route show proto ra`
 und die sysctl-Werte auf den bat-Instanzen prüfen, siehe `hintergrund.md`.
 
+## Eine Community in den Standby nehmen
+
+Wenn eine Community wieder selbst eine Karte betreibt, brauchen wir ihre
+Domains nicht mehr mitzumessen. Der Aufbau bleibt stehen, er hört nur auf zu
+arbeiten, und ein Auskommentieren macht ihn wieder lebendig.
+
+Die Domaintabelle ist dabei der einzige Schalter: alles andere wird daraus
+erzeugt. Reihenfolge, damit nichts hängen bleibt:
+
+```bash
+# 1. Dienste anhalten, solange sie noch in der Tabelle stehen
+for c in $(awk '!/^#/ && NF && $1 == "en" { print $2 }' /etc/karte-en/domains.conf); do
+    sudo systemctl disable --now "karte-en-tunnel@$c"
+done
+sudo systemctl disable --now yanic@en
+
+# 2. Zeilen der Community in tunnel/domains.conf auskommentieren, ausspielen
+sudo install -m 0644 domains.conf /etc/karte-en/domains.conf
+
+# 3. Erzeugtes neu bauen: Vhosts und Sammlerkonfiguration verlieren sie damit
+sudo /usr/local/sbin/karte-en-konfig
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Vorher zu klären, weil es an einer anderen Stelle weh tut: **wer unsere Karte
+als Datenquelle liest**, verliert sie. Bei mitfunken steht sie in der
+`initiativen.yaml` unter `daten:`; dort gehört dann die eigene Karte der
+Community unter `quellen.karte` hinein, und zwar **bevor** wir hier abschalten,
+sonst steht die Community dort für einen Lauf ohne Daten da.
+
+Die Zeitreihe in `/var/lib/karte/verlauf.csv` bleibt erhalten und ist der
+Grund, warum sich das Abschalten lohnt statt des Loeschens: sie dokumentiert,
+was das Netz getan hat, solange wir hingesehen haben.
+
 ## Überwachung
 
 Die Checks liegen in `~/projekte/freifunk/checkmk` und werden von dort

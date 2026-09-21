@@ -1,0 +1,6 @@
+[Unit]
+Description=Schreibt den Zustand je Domain in die Zeitreihe
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/karte-verlauf

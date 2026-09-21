@@ -3,6 +3,11 @@
 Die Dinge, die man aus dem Code nicht ablesen kann, und die Entscheidungen,
 die jemand sonst versehentlich rueckgaengig macht.
 
+Wer eine leere Karte vor sich hat und nicht weiss, woran es liegt, faengt
+besser bei `docs/kartenausfall-diagnose.md` in der Router-Werkstatt an: dort
+steht die Reihenfolge, in der man die Schichten auseinandersortiert, und die
+Fallen, die uns beim Aufbau dieses Servers eine Nacht gekostet haben.
+
 ## Warum wir das ueberhaupt duerfen
 
 Respondd ist so gebaut, dass jeder Knoten einer Domain fragen darf: Anfrage

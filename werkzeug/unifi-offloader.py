@@ -19,6 +19,14 @@ Mit --sites (CSV: MAC,Sitename) entsteht daraus der fertige offloader_mac-Block
 und, wichtiger, die Liste der Sites, deren Accesspoints hinter Knoten in
 verschiedenen Domains haengen. Genau die muessen aufgeteilt werden, denn
 unifi_respondd kennt je Site nur einen Offloader und damit nur eine Domain.
+
+Grenze des Verfahrens: es findet nur Accesspoints, die **in-band** verwaltet
+werden, deren eigene MAC also im Freifunk-Netz auftaucht. Liegt die Verwaltung
+in einem eigenen VLAN und wird nur der SSID-Verkehr ins Client-Netz gebrueckt,
+stehen im Mesh ausschliesslich die WLAN-Clients und kein einziger AP. Gemessen
+am 21.09.2026: beim LVR in-band und hunderte Treffer, in der
+Graf-Adolf-Strasse getrennt und kein einziger. Dort muss die Offloader-MAC von
+Hand kommen, etwa aus dem Kartenlink des Knotens.
 """
 import argparse
 import collections
@@ -37,7 +45,10 @@ UBIQUITI = (
     '24:5a:4c', '78:8a:20', '68:d7:9a', 'e0:63:da', 'f4:92:bf', '74:83:c2',
     '44:d9:e7', 'fc:ec:da', '80:2a:a8', 'b4:fb:e4', '18:e8:29', '70:a7:41',
     'd0:21:f9', 'dc:9f:db', '04:18:d6', '9c:05:d6', '28:70:4e', 'ac:8b:a9',
-    '78:45:58', 'f0:9f:c2', '44:d9:e7', '60:22:32', 'e4:38:83',
+    '78:45:58', 'f0:9f:c2', '60:22:32', 'e4:38:83',
+    # U6-Serie; fehlte anfangs, deshalb sah die Domain 24_dusukw leer aus
+    # (adorfer 21.09.2026, Screenshot des Switches in Graf-Adolf-Str. 73)
+    '0c:ea:14', '9c:29:76', '94:2a:6f', 'd0:ee:0c', '70:a7:41',
 )
 
 

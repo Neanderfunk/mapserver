@@ -61,8 +61,60 @@ def rahmen(datei, rand=0.02):
             [round(min(lat) - rand, 4), round(max(lon) + rand, 4)]]
 
 
+# Geraete mit 4 MB Flash und 32 MB RAM. Sie laufen bei uns auf den
+# _EOL-Domains, das ist die verlaessliche Quelle: was dort steht, hat unsere
+# Firmware selbst als Altgeraet einsortiert. Die Liste unten ist nur der
+# Anfangsbestand vom 22.09.2026, damit die Warnung auch dann steht, wenn
+# gerade kein Geraet eines Typs online ist; altgeraete() ergaenzt sie um das,
+# was in den Daten wirklich auftaucht.
+#
+# meshviewer bringt eine eigene Liste mit (config_default.ts, eol), die 18
+# unserer 19 Modelle kennt, aber nicht "Ubiquiti UniFi". Unsere eigenen Daten
+# sind genauer als eine gepflegte Fremdliste.
+ALTGERAETE = [
+    'TP-Link TL-WA801N/ND v2', 'TP-Link TL-WA850RE v1', 'TP-Link TL-WA860RE v1',
+    'TP-Link TL-WA901N/ND v3', 'TP-Link TL-WR1043N/ND v1',
+    'TP-Link TL-WR740N/ND v4', 'TP-Link TL-WR741N/ND v1',
+    'TP-Link TL-WR741N/ND v4', 'TP-Link TL-WR841N/ND v8',
+    'TP-Link TL-WR841N/ND v9', 'TP-Link TL-WR841N/ND v10',
+    'TP-Link TL-WR841N/ND v11', 'TP-Link TL-WR940N v4', 'TP-Link TL-WR940N v6',
+    'TP-Link TL-WR941N/ND v6', 'Ubiquiti NanoStation M2',
+    'Ubiquiti NanoStation loco M2', 'Ubiquiti PicoStation M2', 'Ubiquiti UniFi',
+]
+
+# Steht im Infofenster eines solchen Knotens. Vorerst nur ein Hinweis mit
+# Link, keine Abschaltung (adorfer 23.09.2026).
+ALTGERAETE_TEXT = (
+    'Dieses Gerät hat nur 4 MB Flash und 32 MB RAM. Es bekommt keine neuen '
+    'Funktionen mehr und sollte ersetzt werden. '
+    '<a href="https://neanderfunk.de/freifunk-router-austausch-aktion/" '
+    'target="_blank" rel="noopener">Zur Router-Austauschaktion</a>'
+)
+
+
+def altgeraete(datei):
+    """Modelle, die in den Daten auf einer _EOL-Domain stehen."""
+    gefunden = set(ALTGERAETE)
+    try:
+        with open(datei, encoding='utf-8') as f:
+            for k in json.load(f).get('nodes', []):
+                if (k.get('domain') or '').endswith('_EOL') and k.get('model'):
+                    gefunden.add(k['model'])
+    except (OSError, ValueError):
+        pass
+    return sorted(gefunden)
+
+
 def konfig(titel, pfad, alle):
+    community = pfad.split('/')[0]
+    daten = f'{WEB}/sites/{pfad}/data/meshviewer.json'
+    # Nur in der eigenen Community warnen. Wessen Geraet bei Freifunk EN zu
+    # klein ist, entscheiden die selbst, und unsere Austauschaktion gilt dort
+    # nicht.
+    alt = ({'eol': altgeraete(daten), 'eol_text': ALTGERAETE_TEXT}
+           if community == 'neander' else {'deprecation_enabled': False})
     return {
+        **alt,
         'dataPath': ['./data/'],
         'siteName': titel,
         'maxAge': 21,
@@ -97,7 +149,7 @@ def konfig(titel, pfad, alle):
              'config': {'type': 'osm', 'maxZoom': 19, 'className': 'entsaettigt karte-dunkel',
                         'attribution': OSM_ATTR + ', Kacheln: <a href="https://www.openstreetmap.de/">OpenStreetMap Deutschland</a>'}},
         ],
-        'fixedCenter': rahmen(f'{WEB}/sites/{pfad}/data/meshviewer.json'),
+        'fixedCenter': rahmen(daten),
         'siteNames': [{'site': d['code'], 'name': d['name']} for d in alle],
         'domainNames': [{'domain': d['code'], 'name': d['name']} for d in alle],
         'devicePictures': '/pictures-svg/{MODEL_NORMALIZED}.svg',

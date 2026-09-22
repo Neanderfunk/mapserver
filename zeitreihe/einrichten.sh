@@ -42,6 +42,7 @@ install -m 0644 "$HIER/grafana/systemd-dropin.conf" /etc/systemd/system/grafana-
 install -m 0644 "$HIER/grafana/datasource.yaml" /etc/grafana/provisioning/datasources/victoriametrics.yaml
 install -m 0644 "$HIER/grafana/dashboards.yaml" /etc/grafana/provisioning/dashboards/neanderfunk.yaml
 python3 "$HIER/grafana/dashboard-erzeugen.py" > /var/lib/grafana/dashboards/knoten.json
+python3 "$HIER/grafana/dashboard-erzeugen.py" supernode > /var/lib/grafana/dashboards/supernode.json
 chown -R grafana:grafana /var/lib/grafana/dashboards
 systemctl daemon-reload
 systemctl enable grafana-server

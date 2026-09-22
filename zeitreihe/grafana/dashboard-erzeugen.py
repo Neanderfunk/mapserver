@@ -198,6 +198,135 @@ PANELS = KOPF + [
         beschreibung='Wie viel komprimiert im Speicher liegt. Braucht das Paket neanderfunk-respondd.'),
 ]
 
+# --- Supernodes -------------------------------------------------------------
+# Ein Supernode ist kein Knoten wie die anderen: kein WLAN, keine Airtime,
+# keine Clients an ihm selbst. Interessant ist, was an ihm haengt. Je Domain
+# tritt er als eigener Knoten auf (hostname <name>_<domain>, node_id
+# f2beef00<dd><nn>), deshalb waehlt die Variable den Hostnamen.
+#
+# KANTE bildet die Kanten auf die node_id der Gegenstelle ab. Damit lassen
+# sich Werte der angebundenen Knoten summieren, ohne eine Liste zu pflegen:
+# "* 0 + 1" macht aus der Kante einen Faktor 1.
+KANTE = ('label_replace(last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m]),'
+         ' "nodeid", "$1", "source.id", "(.*)")')
+DAHINTER = '%s * on(nodeid) group_left() (' + KANTE + ' * 0 + 1)'
+
+SUPERNODE_VARIABLEN = [
+    {'name': 'sn', 'label': 'Supernode', 'type': 'query', 'datasource': QUELLE,
+     'query': {'qryType': 1,
+               'query': 'label_values(node_load{is_gateway="true"}, hostname)',
+               'refId': 'sn'},
+     'definition': 'label_values(node_load{is_gateway="true"}, hostname)',
+     'refresh': 1, 'sort': 1, 'includeAll': False, 'multi': False,
+     'current': {}, 'options': []},
+]
+
+SUPERNODE_KOPF = [
+    {
+        'id': 100, 'title': 'Supernode', 'type': 'table', 'datasource': QUELLE,
+        'gridPos': {'h': 5, 'w': 17, 'x': 0, 'y': 0},
+        'targets': [dict(ziel('last_over_time({__name__="node_load", hostname="$sn"}[6h])',
+                              '', 'A'), instant=True, range=False, format='table')],
+        'transformations': [
+            {'id': 'organize', 'options': {
+                'excludeByName': {'Time': True, 'Value': True, '__name__': True,
+                                  'db': True, 'firmware_base': True,
+                                  'firmware_image_name': True, 'firmware_subtarget': True,
+                                  'firmware_release': True, 'firmware_target': True,
+                                  'model': True, 'autoupdater': True, 'site': True},
+                'renameByName': {'hostname': 'Instanz', 'nodeid': 'node_id',
+                                 'domain': 'Domain', 'is_gateway': 'Gateway'}}},
+        ],
+        'options': {'showHeader': True},
+        'fieldConfig': {'defaults': {'custom': {'align': 'auto'}}, 'overrides': []},
+    },
+    {
+        'id': 101, 'title': 'Knoten an dieser Instanz', 'type': 'stat', 'datasource': QUELLE,
+        'gridPos': {'h': 5, 'w': 7, 'x': 17, 'y': 0},
+        'targets': [dict(ziel('count(last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m]))',
+                              'Knoten', 'A'), instant=True, range=False)],
+        'fieldConfig': {'defaults': {'decimals': 0, 'thresholds': {'mode': 'absolute', 'steps': [
+            {'color': 'red', 'value': None}, {'color': 'green', 'value': 1}]}}, 'overrides': []},
+        'options': {'colorMode': 'value', 'graphMode': 'area', 'textMode': 'auto',
+                    'reduceOptions': {'calcs': ['lastNotNull'], 'fields': '', 'values': False}},
+    },
+]
+
+SUPERNODE_PANELS = SUPERNODE_KOPF + [
+    panel(1, 'Angebundene Knoten', [
+        ziel('count(last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m]))',
+             'Knoten', 'A'),
+    ], 0, 5, min_=0,
+        beschreibung='Kanten zu dieser Instanz. Faellt die Zahl, hat der Supernode Knoten verloren.'),
+
+    panel(2, 'Clients dahinter', [
+        ziel('sum(' + DAHINTER % 'last_over_time({__name__="node_clients.total"}[15m])' + ')',
+             'Clients', 'A'),
+    ], 12, 5, min_=0,
+        beschreibung='Summe ueber alle Knoten, die gerade an dieser Instanz haengen.'),
+
+    panel(3, 'Verkehr der Instanz', [
+        ziel('rate({__name__="node_traffic.forward.bytes", hostname="$sn"}[$__rate_interval]) * 8',
+             'weitergereicht', 'A'),
+        ziel('rate({__name__="node_traffic.rx.bytes", hostname="$sn"}[$__rate_interval]) * 8',
+             'empfangen', 'B'),
+        ziel('- rate({__name__="node_traffic.tx.bytes", hostname="$sn"}[$__rate_interval]) * 8',
+             'gesendet', 'C'),
+    ], 0, 13, einheit='bps',
+        beschreibung='Weitergereicht ist bei einem Supernode der eigentliche Wert.'),
+
+    panel(4, 'Verkehr der angebundenen Knoten', [
+        ziel('sum(' + DAHINTER % 'rate({__name__="node_traffic.rx.bytes"}[$__rate_interval])' + ') * 8',
+             'empfangen', 'A'),
+        ziel('- sum(' + DAHINTER % 'rate({__name__="node_traffic.tx.bytes"}[$__rate_interval])' + ') * 8',
+             'gesendet', 'B'),
+    ], 12, 13, einheit='bps',
+        beschreibung='Aus Sicht der Knoten, nicht der Instanz. Die Differenz zum Verkehr '
+                     'der Instanz ist Mesh-Verkehr, der nie zum Supernode laeuft.'),
+
+    panel(5, 'Linkqualitaet zu den Knoten', [
+        ziel('min(last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m]))', 'schlechteste', 'A'),
+        ziel('avg(last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m]))', 'Mittel', 'B'),
+    ], 0, 21, einheit='percent', min_=0,
+        beschreibung='TQ ueber alle Kanten. Faellt das Minimum, hat ein Knoten eine schlechte Anbindung.'),
+
+    panel(6, 'Last und Speicher', [
+        ziel('{__name__="node_load", hostname="$sn"}', 'loadavg', 'A'),
+        ziel('{__name__="node_proc.running", hostname="$sn"}', 'laufende Prozesse', 'B'),
+    ], 12, 21, min_=0),
+
+    panel(7, 'Freier Speicher', [
+        ziel('{__name__="node_memory.available", hostname="$sn"} * 1024', 'verfuegbar', 'A'),
+        ziel('{__name__="node_memory.total", hostname="$sn"} * 1024', 'gesamt', 'B'),
+    ], 0, 29, einheit='bytes', min_=0),
+
+    panel(8, 'Laufzeit', [
+        ziel('{__name__="node_time.up", hostname="$sn"}', 'Laufzeit', 'A'),
+    ], 12, 29, einheit='s',
+        beschreibung='Ein Sprung nach unten ist ein Neustart der Instanz.'),
+
+    {
+        'id': 9, 'title': 'Knoten an dieser Instanz', 'type': 'table', 'datasource': QUELLE,
+        'description': 'Momentaufnahme mit Linkqualitaet, absteigend nach TQ.',
+        'gridPos': {'h': 10, 'w': 24, 'x': 0, 'y': 37},
+        'targets': [dict(ziel('last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m])',
+                              '', 'A'), instant=True, range=False, format='table')],
+        'transformations': [
+            {'id': 'organize', 'options': {
+                'excludeByName': {'Time': True, '__name__': True, 'db': True,
+                                  'target.addr': True, 'target.hostname': True,
+                                  'target.id': True, 'source.addr': True},
+                'renameByName': {'source.hostname': 'Knoten', 'source.id': 'node_id',
+                                 'type': 'Art', 'Value': 'TQ'}}},
+            {'id': 'sortBy', 'options': {'fields': {},
+                                         'sort': [{'field': 'TQ', 'desc': False}]}},
+        ],
+        'options': {'showHeader': True},
+        'fieldConfig': {'defaults': {'custom': {'align': 'auto'}}, 'overrides': []},
+    },
+]
+
+
 DASHBOARD = {
     'uid': 'nf-knoten',
     'title': 'Knoten',
@@ -213,11 +342,37 @@ DASHBOARD = {
     'panels': PANELS,
     'editable': False,
     'graphTooltip': 1,
+    'links': [{'type': 'dashboards', 'tags': ['neanderfunk'], 'title': 'Weitere',
+               'asDropdown': True, 'icon': 'external link', 'includeVars': False,
+               'keepTime': True, 'targetBlank': False}],
+}
+
+
+SUPERNODE = {
+    'uid': 'nf-supernode',
+    'title': 'Supernode',
+    'description': 'Eine Supernode-Instanz und was an ihr haengt. Je Domain '
+                   'gibt es eine Instanz.',
+    'tags': ['neanderfunk'],
+    'timezone': 'browser',
+    'schemaVersion': 39,
+    'version': 1,
+    'refresh': '5m',
+    'time': {'from': 'now-7d', 'to': 'now'},
+    'templating': {'list': SUPERNODE_VARIABLEN},
+    'panels': SUPERNODE_PANELS,
+    'editable': False,
+    'graphTooltip': 1,
+    'links': [{'type': 'dashboards', 'tags': ['neanderfunk'], 'title': 'Weitere',
+               'asDropdown': True, 'icon': 'external link', 'includeVars': False,
+               'keepTime': True, 'targetBlank': False}],
 }
 
 
 def main():
-    json.dump(DASHBOARD, sys.stdout, ensure_ascii=False, indent=1)
+    was = sys.argv[1] if len(sys.argv) > 1 else 'knoten'
+    json.dump(SUPERNODE if was == 'supernode' else DASHBOARD, sys.stdout,
+              ensure_ascii=False, indent=1)
     print()
     return 0
 

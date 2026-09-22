@@ -1,0 +1,10 @@
+[Unit]
+Description=Adressbuch der Community %i, alle zwei Minuten
+
+[Timer]
+OnBootSec=6min
+OnUnitActiveSec=2min
+AccuracySec=20s
+
+[Install]
+WantedBy=timers.target

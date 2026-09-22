@@ -125,11 +125,23 @@ server {
 	location /assets/ {
 		expires 30d;
 	}
-	location / {
+%(api)s	location / {
 		try_files $uri $uri/ /index.html;
 		add_header Cache-Control "no-cache";
 	}
 }
+"""
+
+
+# Nur auf der Gesamtkarte einer Community: maschinenlesbare Auszuege fuer
+# Sammler ausserhalb, etwa das Adressbuch node_id -> Adressen
+# (sammler/adressbuch.py). Lesend, ohne Anmeldung, dieselben Daten wie die Karte.
+API = """	location /nf/ {
+		alias %(web)s/api/%(community)s/;
+		default_type application/json;
+		add_header Cache-Control "no-cache";
+		add_header Access-Control-Allow-Origin "*";
+	}
 """
 
 
@@ -207,8 +219,10 @@ def main():
         os.makedirs(f'{verz}/data', exist_ok=True)
         with open(f'{verz}/config.json', 'w', encoding='utf-8') as f:
             json.dump(konfig(titel, pfad, seine), f, ensure_ascii=False, indent=1)
+        g, _, ort = pfad.partition('/')
+        api = API % {'web': WEB, 'community': g} if ort == 'alle' else ''
         site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'host': pfad,
-                             'web': WEB, 'vorgabe': ''})
+                             'web': WEB, 'vorgabe': '', 'api': api})
         print(f'  {fqdn:38} {titel}')
 
     site.append(VORGABE % {'eigen': EIGEN, 'index': INDEX})

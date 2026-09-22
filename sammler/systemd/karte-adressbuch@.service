@@ -1,0 +1,7 @@
+[Unit]
+Description=Adressbuch node_id -> Adressen der Community %i
+
+[Service]
+Type=oneshot
+User=yanic
+ExecStart=/usr/local/sbin/karte-adressbuch %i

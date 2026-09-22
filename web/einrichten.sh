@@ -68,6 +68,7 @@ chown -R yanic:www-data "$WEB/sites"
 find "$WEB/sites" -name config.json -exec chmod 0644 {} +
 
 echo "== nginx =="
+install -m 0644 "$HIER/nginx-hash.conf" /etc/nginx/conf.d/karte-hash.conf
 ln -sf /etc/nginx/sites-available/karte-en.conf /etc/nginx/sites-enabled/karte-en.conf
 nginx -t
 systemctl reload nginx

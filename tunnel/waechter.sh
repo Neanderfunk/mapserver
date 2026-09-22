@@ -33,3 +33,19 @@ for code in $(awk '!/^#/ && NF { print $2 }' "$KONF"); do
 		logger -t karte-en "Waechter: td-$code fehlt, beim naechsten Lauf wird neu gestartet"
 	fi
 done
+
+# Zweite Aufgabe: ein Sammler, der an einer verschwundenen Schnittstelle
+# haengt. ss zeigt einen Socket, dessen Schnittstelle es nicht mehr gibt, mit
+# ihrem blanken Index (%if100) statt mit Namen. Ein einziger solcher Socket
+# heisst: eine Domain ist fuer diese yanic-Instanz stumm, bis sie neu startet
+# (22.09.2026, zwoelf Stunden unbemerkt). Neustart kostet nichts, der Zustand
+# liegt in /var/lib/yanic.
+for dienst in $(systemctl list-units --no-legend --state=active 'yanic@*.service' | awk '{ print $1 }'); do
+	pid=$(systemctl show -p MainPID --value "$dienst")
+	[ "${pid:-0}" -gt 0 ] || continue
+	tot=$(ss -uanp 2>/dev/null | grep "pid=$pid," | grep -c '%if[0-9]' || true)
+	if [ "${tot:-0}" -gt 0 ]; then
+		logger -t karte-en "Waechter: $dienst haengt an $tot verschwundenen Schnittstellen, Neustart"
+		systemctl restart "$dienst" || true
+	fi
+done

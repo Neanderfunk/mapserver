@@ -50,7 +50,12 @@ install -m 0644 "$HIER/domains.conf"    /etc/karte-en/domains.conf
 install -m 0755 "$HIER/tunnel-hook.sh"  /usr/local/sbin/karte-en-hook
 install -m 0755 "$HIER/tunnel-start.sh" /usr/local/sbin/karte-en-tunnel
 install -m 0644 "$HIER/systemd/karte-en-tunnel@.service" /etc/systemd/system/
+# Waechter: startet Tunnel ohne td-Schnittstelle und Sammler an verschwundenen
+# Schnittstellen neu. Fehlte hier bis 22.09.2026, war nur von Hand installiert.
+install -m 0755 "$HIER/waechter.sh" /usr/local/sbin/karte-en-waechter
+install -m 0644 "$HIER/systemd/karte-en-waechter.service" "$HIER/systemd/karte-en-waechter.timer" /etc/systemd/system/
 systemctl daemon-reload
+systemctl enable --now karte-en-waechter.timer
 
 echo "== Dienste =="
 codes=$(awk '!/^#/ && NF { print $2 }' /etc/karte-en/domains.conf)

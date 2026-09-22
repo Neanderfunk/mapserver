@@ -65,8 +65,13 @@ session.up)
 	batctl meshif "$BAT" interface add "$IF"
 	batctl meshif "$BAT" gw_mode off
 
-	ip link set dev "$BAT" down 2>/dev/null || true
-	ip link set dev "$BAT" address "$MAC_BAT"
+	# Die MAC nur setzen, wenn sie nicht schon stimmt: die bat-Instanz
+	# ueberlebt inzwischen den Abbau des Tunnels (siehe session.down), und ein
+	# unnoetiges down/up wirft ihre Adressen kurz weg.
+	if [ "$(cat "/sys/class/net/$BAT/address" 2>/dev/null)" != "$MAC_BAT" ]; then
+		ip link set dev "$BAT" down 2>/dev/null || true
+		ip link set dev "$BAT" address "$MAC_BAT"
+	fi
 	# Praefix ja, Router nein. Reihenfolge zaehlt: erst die Verbote, dann
 	# accept_ra einschalten, sonst verarbeiten wir das erste RA noch mit
 	# den Vorgabewerten.
@@ -83,8 +88,15 @@ session.up)
 	logger -t karte-en "$CODE: $IF an $BAT, Originator $MAC_IF"
 	;;
 session.down)
+	# Nur die L2TP-Schnittstelle loesen, die bat-Instanz bleibt stehen.
+	# yanic bindet je Domain einen Socket an die bat-Instanz, und zwar an
+	# ihren ifindex. Wird sie geloescht und beim naechsten session.up neu
+	# angelegt, hat sie einen neuen Index, und yanic hoert in dieser Domain
+	# nie wieder etwas, ohne sich zu beschweren. So geschehen am 22.09.2026
+	# um 06:27: elara schickte allen Tunneln einen Teardown, der Client
+	# verband sich binnen Sekunden neu, und fuenfzehn Domains blieben zwoelf
+	# Stunden lang stumm, obwohl Tunnel und Mesh einwandfrei liefen.
 	batctl meshif "$BAT" interface del "$IF" 2>/dev/null || true
-	ip link del "$BAT" 2>/dev/null || true
-	logger -t karte-en "$CODE: $IF abgebaut"
+	logger -t karte-en "$CODE: $IF abgebaut, $BAT bleibt"
 	;;
 esac

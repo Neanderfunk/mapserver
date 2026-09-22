@@ -26,7 +26,9 @@ Dunkle Knoten sind der zweite Grund fuer dieses Skript: batman-Knoten, die im
 Mesh mitreden, deren respondd aber nicht antwortet. Sie stehen auf keiner
 Karte, und ohne diesen Vergleich merkt sie niemand.
 """
+import datetime
 import json
+import os
 import subprocess
 import sys
 import urllib.request
@@ -34,6 +36,8 @@ import urllib.request
 KONF = '/etc/karte-en/domains.conf'
 WEB = '/var/www/karte-en/sites'
 ZIEL = 'http://127.0.0.1:8428/write'
+BESTAND = '/var/lib/karte/adressbuch'
+API = '/var/www/karte-en/api'
 
 FELDER = ('community', 'code', 'ordner', 'port', 'id', 'host', 'mtu', 'broker',
           'prefix6', 'prefix4', 'name')
@@ -89,7 +93,7 @@ def mesh_macs(community):
     return zu
 
 
-def mesh(iface, zu):
+def mesh(iface, zu, dunkle=None, ankuendiger=None, domain=''):
     """(Originatoren, verschiedene Knoten, dunkle Knoten) einer Domain.
 
     Ein Knoten taucht mit jeder seiner Mesh-Schnittstellen als Originator auf,
@@ -105,19 +109,45 @@ def mesh(iface, zu):
                              capture_output=True, text=True, timeout=30).stdout
     except (OSError, subprocess.TimeoutExpired):
         return 0, 0, 0
-    orig = set()
+    orig, naechster = set(), {}
     for z in aus.splitlines()[2:]:
         f = z.split()
         if f and f[0] == '*':
             f = f[1:]
         if f and len(f[0]) == 17:
             orig.add(f[0].lower())
+            weiter = [x.lower() for x in f[1:] if len(x) == 17]
+            if weiter:
+                naechster[f[0].lower()] = weiter[0]
     knoten = {zu[m] for m in orig if m in zu}
-    return len(orig), len(knoten), len(orig) - len([m for m in orig if m in zu])
+    fremd = [m for m in orig if m not in zu]
+    if dunkle is not None:
+        for m in fremd:
+            e = dunkle.setdefault(m, {'domains': [], 'ankuendigungen': 0,
+                                      'respondd_gruppe': False, 'ueber': []})
+            e['domains'].append(domain)
+            angesagt = (ankuendiger or {}).get(m, [])
+            e['ankuendigungen'] += len(angesagt)
+            if RESPONDD_GRUPPE in angesagt:
+                e['respondd_gruppe'] = True
+            if naechster.get(m) and naechster[m] not in e['ueber']:
+                e['ueber'].append(naechster[m])
+    return len(orig), len(knoten), len(fremd)
 
 
-def tabelle(iface):
-    """MACs aus der globalen Uebersetzungstabelle einer bat-Instanz."""
+# Die Multicast-Gruppe, auf der respondd lauscht (ff05::2:1001). Wer sie
+# ankuendigt, hat eine Firmware mit respondd; antwortet er trotzdem nicht, ist
+# das ein kaputter Knoten und kein handgebautes Geraet.
+RESPONDD_GRUPPE = '33:33:00:02:10:01'
+
+
+def tabelle(iface, ankuendiger=None):
+    """MACs aus der globalen Uebersetzungstabelle einer bat-Instanz.
+
+    Mit ankuendiger (dict) wird zusaetzlich festgehalten, welcher Originator
+    welche MAC ankuendigt. Das trennt echte Teilnehmer von Phantomen: ein
+    Phantom aus reflektierten OGMs kuendigt nichts an.
+    """
     try:
         aus = subprocess.run(['batctl', 'meshif', iface, 'transglobal'],
                              capture_output=True, text=True, timeout=30).stdout
@@ -131,6 +161,10 @@ def tabelle(iface):
         if not f or len(f[0]) != 17:
             continue
         mac = f[0].lower()
+        if ankuendiger is not None:
+            via = [x.lower() for x in f[1:] if len(x) == 17]
+            if via:
+                ankuendiger.setdefault(via[0], []).append(mac)
         # Multicast und Broadcast sind keine Stationen
         if mac.startswith(('01:00:5e', '33:33', 'ff:ff')) or int(mac[1], 16) & 1:
             continue
@@ -153,17 +187,20 @@ def main():
 
     knoten = knoten_macs(community)
     zuordnung = mesh_macs(community)
+    dunkle = {}
     zeilen = []
     for d in domains(community):
         iface = f'bat-{d["code"]}'
-        eintraege = tabelle(iface)
+        ankuendiger = {}
+        eintraege = tabelle(iface, ankuendiger)
         if not eintraege:
             continue
         clients = eintraege - knoten
         # Die Domainnummer steckt vorn im Code (05_mon) und ist zugleich die
         # Nummer, unter der die Supernodes ihre Instanz melden (ffnefd05).
         nummer = d['code'].split('_')[0]
-        orig, im_mesh, dunkel = mesh(iface, zuordnung)
+        orig, im_mesh, dunkel = mesh(iface, zuordnung, dunkle, ankuendiger,
+                                     d['code'])
         zeilen.append(f'tt,domain={d["code"]},sndomain=ffnefd{nummer} '
                       f'clients={len(clients)}i,eintraege={len(eintraege)}i,'
                       f'knoten={len(eintraege) - len(clients)}i,'
@@ -177,9 +214,51 @@ def main():
     if not zeilen:
         print('keine Tabelle lesbar, laeuft das als root?', file=sys.stderr)
         return 1
-    if not zeigen:
-        schreiben(zeilen, community)
+    if zeigen:
+        for mac, e in sorted(dunkle.items()):
+            print(f'dunkel {mac}  {len(e["domains"]):2} Domains, '
+                  f'{e["ankuendigungen"]:3} Ankuendigungen, '
+                  f'respondd-Gruppe {"ja" if e["respondd_gruppe"] else "nein"}')
+        return 0
+    schreiben(zeilen, community)
+    dunkelliste(dunkle, community)
     return 0
+
+
+def dunkelliste(dunkle, community):
+    """Die dunklen Knoten mit Merkmalen festhalten, nicht nur zaehlen.
+
+    Was sie sind, entscheidet der Blick auf die Merkmale (adorfer 23.09.2026):
+    ein gestorbenes respondd, ein handgebautes Geraet, ein absichtlich stummer
+    Knoten oder ein Phantom aus reflektierten OGMs. Die Zahl allein sagt das
+    nicht, die Liste hilft beim Nachsehen.
+    """
+    jetzt = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    bestand_pfad = f'{BESTAND}/dunkel-{community}.json'
+    try:
+        bestand = json.load(open(bestand_pfad, encoding='utf-8'))
+    except (OSError, ValueError):
+        bestand = {}
+    for mac, e in dunkle.items():
+        alt = bestand.get(mac, {})
+        bestand[mac] = {
+            'domains': sorted(e['domains']),
+            'ankuendigungen': e['ankuendigungen'],
+            'respondd_gruppe': e['respondd_gruppe'],
+            'ueber': sorted(e['ueber']),
+            'erste_sichtung': alt.get('erste_sichtung', jetzt),
+            'letzte_sichtung': jetzt,
+        }
+    os.makedirs(BESTAND, exist_ok=True)
+    for pfad in (bestand_pfad, f'{API}/{community}/dunkel.json'):
+        os.makedirs(os.path.dirname(pfad), exist_ok=True)
+        neu = pfad + '.neu'
+        with open(neu, 'w', encoding='utf-8') as f:
+            json.dump({'generated': jetzt, 'community': community,
+                       'knoten': bestand} if pfad.endswith('dunkel.json')
+                      else bestand, f, ensure_ascii=False, sort_keys=True)
+        os.chmod(neu, 0o644)
+        os.replace(neu, pfad)
 
 
 if __name__ == '__main__':

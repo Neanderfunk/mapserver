@@ -307,6 +307,8 @@ ohnehin zugestellt wird (48 Abfragen kosten zusammen 0,13 Sekunden):
 | `tt_im_mesh` | verschiedene Knoten dahinter |
 | `tt_dunkel` | Originatoren, die zu keinem bekannten Knoten gehören |
 
+Dazu die Liste `api/<community>/dunkel.json` mit den Merkmalen je MAC.
+
 Zwei Zählweisen für Clients, und beide sind richtig: respondd summiert, was
 die antwortenden Knoten melden (Untergrenze), die Tabelle kennt jede Station
 der Domain, hält sie aber noch einige Minuten nach dem Abmelden (Obergrenze).
@@ -314,13 +316,41 @@ Gemessen am 23.09.2026: 2243 gegen 2945.
 
 **Dunkle Knoten** sind batman-Knoten ohne antwortendes respondd. Wer
 Originatoren mit Knoten vergleicht, erfindet sie: 1763 Originatoren sind 1070
-Knoten. Richtig gezählt wird über die Mesh-MACs aus `nodes.json`. Stand
-23.09.2026 gibt es genau zwei im ganzen Netz, einer davon in allen 48 Domains:
+Knoten. Richtig gezählt wird über die Mesh-MACs aus `nodes.json`.
 
-- `02:a5:a7:99:f0:fa`, erreichbar über den jeweiligen Supernode, antwortet
-  weder auf respondd noch auf ping. Nicht unsere Maschine, unsere MACs sind
-  `02:45:4e:*`. Ungeklärt, wem er gehört.
-- `0a:ed:b7:74:e0:a3`, nur in `22_dusukn`.
+Was so ein Knoten ist, sagt die Zahl nicht. Vier Möglichkeiten, nach adorfer:
+
+1. **Gestorbenes respondd.** Der Knoten lebt, redet im Mesh mit, schafft aber
+   nicht einmal mehr einen Neustart.
+2. **Handgebautes.** Eigenbau mit Tunneldigger und batman, früher gern ein
+   Raspberry Pi. Nie ein respondd drauf gewesen.
+3. **Absichtlich stumm.** Wer nicht auf der Karte stehen will, schaltet es ab.
+4. **Phantom.** Kein Gerät, sondern reflektierte OGMs, typisch bei
+   asymmetrischem VLAN-Tagging im lokalen Mesh. Ein Konfigurationsfehler,
+   der wie ein Knoten aussieht.
+
+Unterscheiden lassen sie sich an dem, was sie tun:
+
+| Merkmal | Bedeutung |
+| --- | --- |
+| kündigt MACs an (`ankuendigungen` > 0) | echter Teilnehmer, kein Phantom; ein Phantom trägt nichts in die Tabelle ein |
+| kündigt `33:33:00:02:10:01` an | hat eine Firmware mit respondd, hört sogar auf dessen Gruppe: Fall 1 oder 3, nicht 2 |
+| antwortet auf ping an Link-Local | IP-Stack lebt |
+| in vielen Domains zugleich | keine Ortsinstallation, sondern etwas Betriebliches |
+| taucht auf und verschwindet, ohne je etwas anzukündigen | Fall 4 |
+
+Die Liste steht unter `https://neander.map.freifunk.space/nf/dunkel.json`, mit
+erster und letzter Sichtung, den Domains, der Zahl der Ankündigungen und dem
+nächsten Schritt dorthin. Stand 23.09.2026 gibt es genau zwei:
+
+- `0a:ed:b7:74:e0:a3` in `22_dusukn`, neun Ankündigungen, **kündigt die
+  respondd-Gruppe an**, antwortet aber weder auf respondd noch auf ping. Ein
+  Knoten mit passender Firmware, dessen respondd steht: Fall 1.
+- `02:a5:a7:99:f0:fa` in **allen 48 Domains**, je vier Ankündigungen, ohne
+  respondd-Gruppe, erreichbar über den jeweiligen Supernode. Dieselbe MAC
+  überall, also eine Maschine, die wie wir in allen Domains hängt, anders als
+  wir aber ohne eigene MAC je Domain. Nicht unsere: unsere sind `02:45:4e:*`,
+  und batman führt einen Knoten nie in seiner eigenen Tabelle. Ungeklärt.
 
 ### Grafana
 

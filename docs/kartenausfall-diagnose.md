@@ -93,6 +93,22 @@ versetzt (`synchronize`). Zwei Mitschnitte zwischen den Läufen haben eine
 halbe Stunde gekostet. Vor dem Mitschneiden immer erst ins Log sehen, wann
 die Läufe tatsächlich liegen.
 
+**Falle: der taube Sammler.** Das Netz antwortet, von Hand per
+`respondd-probe.py` sogar vollzaehlig, aber yanic bekommt nichts. yanic bindet
+je Domain einen Socket an die Schnittstelle, genauer an ihren ifindex. Wird
+die bat-Instanz geloescht und neu angelegt, traegt sie denselben Namen, aber
+einen neuen Index, und der alte Socket hoert ins Leere, ohne Fehlermeldung.
+Erkennbar in `ss -uanp`: die Schnittstelle steht dort als blanke Nummer
+(`%if100`) statt mit Namen. Am 22.09.2026 um 06:27 schickte ein Broker allen
+Tunneln einen Teardown, der Client verband sich binnen Sekunden neu, und
+fuenfzehn Domains blieben zwoelf Stunden stumm, waehrend Tunnel, Mesh und die
+Pruefung der Originatoren gruen waren. Seitdem loescht der Hook die
+bat-Instanz nicht mehr, und der Waechter startet einen Sammler neu, der an
+einer verschwundenen Schnittstelle haengt.
+
+Merksatz dazu: **erst von Hand fragen, dann dem Sammler glauben.** Antwortet
+die Probe und yanic nicht, liegt es an unserer Seite.
+
 ## Schicht 5: Filter
 
 Hier sind die meisten leeren Karten entstanden, und sie sehen von außen genau
@@ -218,3 +234,5 @@ das Gespräch ist billiger als beides:
 | Pakete fließen, Karte leer | Filter | site_code stimmt nicht |
 | keine VPN-Kanten, keine Gateways | Filter | Supernodes weggefiltert |
 | Sammler stirbt beim Start | Ausgabe | Schnittstelle fehlt, Panic |
+| Probe antwortet, yanic nicht, `%ifNNN` in `ss` | respondd | tauber Sammler nach Neuanlage der bat-Instanz |
+| `nginx -t` scheitert, Karten laufen trotzdem | Ausgabe | alte Konfiguration im Speicher, der naechste Neustart nimmt alles |

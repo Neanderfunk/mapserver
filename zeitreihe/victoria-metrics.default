@@ -4,11 +4,14 @@
 # laesst nur lesende Pfade durch (zeitreihe/nginx-prom.conf). Die Vorgabe des
 # Pakets lauscht auf 0.0.0.0 und nimmt Schreibzugriffe aus dem ganzen LAN an.
 #
-# retentionPeriod: 180 Tage. Geschaetzt 15 bis 30 MB je Tag bei rund 1100
-# Knoten im Fuenf-Minuten-Takt, also 3 bis 5 GB; die VM hat 14 GB frei.
-# Laenger nur mit mehr Platte.
+# retentionPeriod: 400 Tage, also gut dreizehn Monate. Damit laesst sich ein
+# Jahr vergleichen, etwa Winter gegen Winter. Geschaetzt 15 bis 30 MB je Tag
+# bei rund 1100 Knoten im Fuenf-Minuten-Takt, also 6 bis 12 GB; seit dem
+# 23.09.2026 hat die VM 42 GB frei (adorfer hat Platte, RAM und einen zweiten
+# Kern nachgelegt). Der Check mapserver-zeitreihe schlaegt an, bevor es eng
+# wird.
 #
-# memory.allowedPercent: die VM hat 1,4 GB, yanic und nginx brauchen auch
-# etwas. Die Grenzen fuer Abfragen schuetzen den einen Kern vor einer
+# memory.allowedPercent: die VM hat 2,4 GB, yanic und nginx brauchen auch
+# etwas. Die Grenzen fuer Abfragen bleiben, sie schuetzen die Karte vor einer
 # oeffentlichen Abfrage, die alles auf einmal will.
-ARGS="-storageDataPath=/var/lib/victoria-metrics -httpListenAddr=127.0.0.1:8428 -retentionPeriod=180d -memory.allowedPercent=30 -relabelConfig=/etc/victoria-metrics/relabel.yml -search.maxConcurrentRequests=2 -search.maxQueueDuration=10s -search.maxQueryDuration=30s -search.maxUniqueTimeseries=50000 -search.maxPointsPerTimeseries=30000 -search.maxSamplesPerQuery=100000000"
+ARGS="-storageDataPath=/var/lib/victoria-metrics -httpListenAddr=127.0.0.1:8428 -retentionPeriod=400d -memory.allowedPercent=30 -relabelConfig=/etc/victoria-metrics/relabel.yml -search.maxConcurrentRequests=4 -search.maxQueueDuration=10s -search.maxQueryDuration=30s -search.maxUniqueTimeseries=50000 -search.maxPointsPerTimeseries=30000 -search.maxSamplesPerQuery=100000000"

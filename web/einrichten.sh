@@ -29,6 +29,12 @@ fi
 git -C "$BAU" fetch -q origin "$MV_ZWEIG"
 git -C "$BAU" checkout -q "origin/$MV_ZWEIG"
 echo "  Stand: $(git -C "$BAU" log -1 --format='%h %ad %s' --date=short)"
+# Lokaler Eingriff, nicht upstream: drei Konfigurationsschalter fuer die
+# Beschriftung der Knoten (Saumfarbe, Schriftfarbe, Abstand). Ohne sie holt
+# die Beschriftungsebene ihre Farben aus dem Seitenkoerper und ist im
+# Dunkelmodus auf unserer hellen Grundkarte unlesbar (adorfer 22.09.2026).
+git -C "$BAU" checkout -q -- lib
+git -C "$BAU" apply "$HIER/patches/meshviewer-label.patch"
 ( cd "$BAU" && npm install --no-audit --no-fund --loglevel=error && npm run build )
 install -d -m 0755 "$WEB/meshviewer"
 rsync -rlt --delete "$BAU/build/" "$WEB/meshviewer/"

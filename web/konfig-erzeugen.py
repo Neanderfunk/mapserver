@@ -66,6 +66,17 @@ def konfig(titel, pfad, alle):
         'dataPath': ['./data/'],
         'siteName': titel,
         'maxAge': 21,
+        # Beschriftung der Knoten. Im Dunkelmodus nimmt meshviewer sonst die
+        # Farben des Seitenkoerpers: helle Schrift mit dunklem Saum. Unsere
+        # Grundkarte bleibt dabei hell (CARTO wird nicht umgedreht), und das
+        # ist dann unlesbar. Deshalb fest dunkle Schrift auf weissem Saum,
+        # in beiden Modi. Braucht patches/meshviewer-label.patch.
+        'map': {
+            'labelShadowColor': 'rgba(255, 255, 255, 0.85)',
+            'labelColor': '#1c1c1c',
+            # etwa eine Leerzeichenbreite mehr Luft zum Knotenpunkt
+            'labelOffset': 4,
+        },
         'nodeZoom': 19,
         # Reihenfolge entscheidet: meshviewer nimmt die erste Ebene als
         # Vorgabe (lib/map.ts sortiert nach config.order, das ohne start/end

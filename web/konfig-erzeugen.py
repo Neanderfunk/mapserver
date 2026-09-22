@@ -111,7 +111,11 @@ def konfig(titel, pfad, alle):
     # Nur in der eigenen Community warnen. Wessen Geraet bei Freifunk EN zu
     # klein ist, entscheiden die selbst, und unsere Austauschaktion gilt dort
     # nicht.
-    alt = ({'eol': altgeraete(daten), 'eol_text': ALTGERAETE_TEXT}
+    # Bis 23.09.2026 stand am Ende dieser Konfiguration ein pauschales
+    # deprecation_enabled False. Es kam nach dieser Stelle und hat den Hinweis
+    # ueberall abgeschaltet, auch dort, wo die Liste gesetzt war.
+    alt = ({'deprecation_enabled': True,
+            'eol': altgeraete(daten), 'eol_text': ALTGERAETE_TEXT}
            if community == 'neander' else {'deprecation_enabled': False})
     return {
         **alt,
@@ -156,7 +160,6 @@ def konfig(titel, pfad, alle):
         'devicePicturesSource': ("<a href='https://github.com/freifunk/device-pictures'>"
                                  "freifunk/device-pictures</a>"),
         'devicePicturesLicense': 'CC-BY-NC-SA 4.0',
-        'deprecation_enabled': False,
     }
 
 

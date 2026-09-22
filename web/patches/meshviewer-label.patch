@@ -1,8 +1,8 @@
 diff --git a/lib/config_default.ts b/lib/config_default.ts
-index 5612ab1..6c7e459 100644
+index 5612ab1..8aa61ce 100644
 --- a/lib/config_default.ts
 +++ b/lib/config_default.ts
-@@ -136,6 +136,14 @@ export interface Config {
+@@ -136,6 +136,18 @@ export interface Config {
      other: string;
    };
    map: {
@@ -10,28 +10,42 @@ index 5612ab1..6c7e459 100644
 +    // Beschriftungsebene die Farben des Seitenkoerpers, und im Dunkelmodus
 +    // heisst das helle Schrift mit dunklem Saum. Auf einer hellen Karte, die
 +    // nicht mit invert-in-dark-mode umgedreht wird, ist das unlesbar.
-+    // Leer oder 0 laesst alles wie gehabt.
++    // Leer oder 0 laesst alles wie gehabt. Die Dark-Varianten gelten,
++    // solange das Dunkelthema aktiv ist; sind sie leer, bleibt es dort beim
++    // Verhalten des Themas.
 +    labelShadowColor: string;
 +    labelColor: string;
++    labelShadowColorDark: string;
++    labelColorDark: string;
 +    labelOffset: number;
      labelNewColor: string;
      tqFrom: string;
      tqTo: string;
-@@ -341,6 +349,9 @@ export const config: Config = {
+@@ -341,6 +353,11 @@ export const config: Config = {
      other: "rgba(227, 166, 25, 0.7)",
    },
    map: {
 +    labelShadowColor: "",
 +    labelColor: "",
++    labelShadowColorDark: "",
++    labelColorDark: "",
 +    labelOffset: 0,
      labelNewColor: "#459C18",
      tqFrom: "#F02311",
      tqTo: "#04C714",
 diff --git a/lib/map/labellayer.js b/lib/map/labellayer.js
-index d9ad076..1affd31 100644
+index d9ad076..fca4c99 100644
 --- a/lib/map/labellayer.js
 +++ b/lib/map/labellayer.js
-@@ -270,10 +270,13 @@ export const LabelLayer = L.GridLayer.extend({
+@@ -21,6 +21,7 @@ let labelLocations = [
+   ["right", "ideographic", 3 / 8],
+ ];
+ let labelShadow;
++let labelFill;
+ let bodyStyle = { fontFamily: "sans-serif" };
+ let nodeRadius = 4;
+ 
+@@ -270,10 +271,13 @@ export const LabelLayer = L.GridLayer.extend({
      // - label (string)
      // - color (string)
  
@@ -49,26 +63,29 @@ index d9ad076..1affd31 100644
  
      let labels = [].concat(labelsNew).concat(labelsLost).concat(labelsOnline).concat(labelsOffline);
  
-@@ -375,8 +378,11 @@ export const LabelLayer = L.GridLayer.extend({
+@@ -375,8 +379,15 @@ export const LabelLayer = L.GridLayer.extend({
  
      let size = tilePoint.multiplyBy(tileSize);
      let map = this._map;
 +    let config = window.config;
++    // Im Dunkelthema eigene Werte, sonst bleibt es dort beim Thema
++    let dark = document.documentElement.classList.contains("theme_dark");
++    labelFill = dark ? config.map.labelColorDark : config.map.labelColor;
 +
      bodyStyle = window.getComputedStyle(document.querySelector("body"));
 -    labelShadow = bodyStyle.backgroundColor.replace(/rgb/i, "rgba").replace(/\)/i, ",0.7)");
 +    labelShadow =
-+      config.map.labelShadowColor || bodyStyle.backgroundColor.replace(/rgb/i, "rgba").replace(/\)/i, ",0.7)");
++      (dark ? config.map.labelShadowColorDark : config.map.labelShadowColor) ||
++      bodyStyle.backgroundColor.replace(/rgb/i, "rgba").replace(/\)/i, ",0.7)");
  
      function projectNodes(d) {
        let point = map.project(d.label.position);
-@@ -399,7 +405,8 @@ export const LabelLayer = L.GridLayer.extend({
+@@ -399,7 +410,7 @@ export const LabelLayer = L.GridLayer.extend({
        ctx.font = labelPoint.label.font;
        ctx.textAlign = labelPoint.label.anchor[0];
        ctx.textBaseline = labelPoint.label.anchor[1];
 -      ctx.fillStyle = labelPoint.label.fillStyle === null ? bodyStyle.color : labelPoint.label.fillStyle;
-+      ctx.fillStyle =
-+        labelPoint.label.fillStyle === null ? config.map.labelColor || bodyStyle.color : labelPoint.label.fillStyle;
++      ctx.fillStyle = labelPoint.label.fillStyle === null ? labelFill || bodyStyle.color : labelPoint.label.fillStyle;
  
        if (labelPoint.label.stroke) {
          ctx.strokeText(

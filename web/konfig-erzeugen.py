@@ -44,6 +44,24 @@ def domains():
             yield dict(zip(FELDER, t))
 
 
+STANDBY_KONF = '/etc/karte-en/standby.conf'
+
+
+def standby():
+    """Community -> Umleitungsziel, fuer Communities, die wir nicht mehr messen."""
+    z = {}
+    try:
+        for zeile in open(STANDBY_KONF, encoding='utf-8'):
+            zeile = zeile.strip()
+            if zeile and not zeile.startswith('#'):
+                t = zeile.split(None, 2)
+                if len(t) >= 2:
+                    z[t[0]] = t[1]
+    except OSError:
+        pass
+    return z
+
+
 def rahmen(datei, rand=0.02):
     """Eckpunkte aus den vorhandenen Knotenkoordinaten, sonst das EN-Gebiet."""
     vorgabe = [[51.52, 7.05], [51.20, 7.55]]
@@ -286,6 +304,24 @@ API = """	location /nf/ {
 """
 
 
+UMLEITUNG = """
+# %(titel)s: Standby, %(grund)s
+server {
+	listen 80;
+	listen [::]:80;
+	server_name %(fqdn)s;
+
+	access_log /var/log/nginx/karte-en.access.log;
+
+	# Dauerhaft, nicht nur fuer diesen Aufruf: wir messen dieses Netz nicht
+	# mehr. Wer die Karte verlinkt hat, soll bei der Community landen.
+	location / {
+		return 301 %(ziel)s;
+	}
+}
+"""
+
+
 VORGABE = """
 # Vorgabe: alles, was keinen eigenen Vhost hat, landet hier. Die Karte einer
 # Community soll nicht zufaellig unter dem Namen der VM erscheinen.
@@ -351,8 +387,18 @@ def main():
             ziele.append((f'{g}/{d["host"]}', d['name'],
                           f'{d["host"]}.{g}.{SUFFIX}', seine))
 
+    ruht = standby()
     site = ['# Erzeugt von konfig-erzeugen.py. Nicht von Hand aendern.']
     for pfad, titel, fqdn, seine in ziele:
+        g, _, ort = pfad.partition('/')
+        # Community im Standby: nur eine Umleitung, keine Karte. Die Daten
+        # unter sites/ bleiben liegen, eine Zeile weniger in standby.conf
+        # holt alles zurueck.
+        if g in ruht:
+            site.append(UMLEITUNG % {'titel': titel, 'fqdn': fqdn,
+                                     'ziel': ruht[g], 'grund': f'Umleitung auf {ruht[g]}'})
+            print(f'  {fqdn:38} -> {ruht[g]}')
+            continue
         verz = f'{WEB}/sites/{pfad}'
         # data/ gleich mit anlegen: yanic legt fehlende Verzeichnisse nicht
         # selbst an und schreibt dann still nichts (20.09.2026). Die Rechte
@@ -360,7 +406,6 @@ def main():
         os.makedirs(f'{verz}/data', exist_ok=True)
         with open(f'{verz}/config.json', 'w', encoding='utf-8') as f:
             json.dump(konfig(titel, pfad, seine), f, ensure_ascii=False, indent=1)
-        g, _, ort = pfad.partition('/')
         api = API % {'web': WEB, 'community': g} if ort == 'alle' else ''
         site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'host': pfad,
                              'web': WEB, 'vorgabe': '', 'api': api})
@@ -373,7 +418,7 @@ def main():
 
     os.makedirs(INDEX, exist_ok=True)
     with open(f'{INDEX}/index.html', 'w', encoding='utf-8') as f:
-        f.write(startseite(ziele))
+        f.write(startseite([z for z in ziele if z[0].split('/')[0] not in ruht]))
     print(f'  {INDEX}/index.html als Vorgabe-Vhost')
     return 0
 

@@ -13,6 +13,7 @@ export LANG=C.UTF-8
 [ "${BASH_SOURCE[0]: -1}" = "~" ] && exit 99
 
 KONF=${KARTE_EN_KONF:-/etc/karte-en/domains.conf}
+STANDBY=${KARTE_EN_STANDBY:-/etc/karte-en/standby.conf}
 SUFFIX=${KARTE_BASIS:-map.freifunk.space}
 
 if [ ! -r "$KONF" ]; then
@@ -20,7 +21,26 @@ if [ ! -r "$KONF" ]; then
     exit 0
 fi
 
-ok=0 erwartet=0 fehler='' langsam=0
+ok=0 erwartet=0 fehler='' langsam=0 umleitungen=0
+ruhende=$(awk '!/^#/ && NF { print $1 }' "$STANDBY" 2>/dev/null)
+im_standby() {
+    for c in $ruhende; do [ "$c" = "$1" ] && return 0; done
+    return 1
+}
+
+# Community im Standby: statt zweier Karten-Abrufe ein Blick darauf, dass die
+# Umleitung steht. Ein 200 waere hier der Fehler.
+pruefe_umleitung() {
+    erwartet=$((erwartet + 1))
+    antwort=$(curl -s -o /dev/null -m 8 -w '%{http_code} %{redirect_url}' \
+              -H "Host: $1" "http://[::1]/" 2>/dev/null)
+    code=${antwort%% *}
+    if [ "$code" = 301 ]; then
+        ok=$((ok + 1)); umleitungen=$((umleitungen + 1))
+    else
+        fehler="$fehler $1=$code(statt 301)"
+    fi
+}
 pruefe_host() {
     for pfad in / /data/meshviewer.json; do
         erwartet=$((erwartet + 1))
@@ -40,18 +60,25 @@ pruefe_host() {
 
 # Je Community eine Gesamtkarte und je Domain eine Ortskarte.
 for g in $(awk '!/^#/ && NF { print $1 }' "$KONF" | sort -u); do
+    if im_standby "$g"; then
+        pruefe_umleitung "$g.$SUFFIX"
+        for h in $(awk -v g="$g" '!/^#/ && NF && $1 == g { print $6 }' "$KONF"); do
+            pruefe_umleitung "$h.$g.$SUFFIX"
+        done
+        continue
+    fi
     pruefe_host "$g.$SUFFIX"
     for h in $(awk -v g="$g" '!/^#/ && NF && $1 == g { print $6 }' "$KONF"); do
         pruefe_host "$h.$g.$SUFFIX"
     done
 done
 
-karten=$((erwartet / 2))
+karten=$(( (erwartet - umleitungen) / 2 ))
 if [ "$ok" -lt "$erwartet" ]; then
     zustand=2; text="Fehler:$fehler"
 elif [ "$langsam" -gt 0 ]; then
     zustand=1; text="$ok Abrufe in Ordnung, $langsam davon ueber einer Sekunde"
 else
-    zustand=0; text="$karten Karten, alle $ok Abrufe in Ordnung"
+    zustand=0; text="$karten Karten, $umleitungen Umleitungen, alle $ok Abrufe in Ordnung"
 fi
 echo "$zustand mapserver-Web abrufe_ok=$ok;$erwartet:;$erwartet:|karten=$karten|langsam=$langsam;1;5 $text"

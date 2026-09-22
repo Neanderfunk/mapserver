@@ -30,6 +30,9 @@ export LANG=C.UTF-8
 
 KONF=${KARTE_EN_KONF:-/etc/karte-en/domains.conf}
 RUHEND=${KARTE_EN_RUHEND:-/etc/karte-en/ruhend.conf}
+# Communities im Standby: Aufbau steht, Dienste aus, Namen leiten um. Dort
+# ist ein stiller Tunnel der erwartete Zustand und kein Fehler.
+STANDBY=${KARTE_EN_STANDBY:-/etc/karte-en/standby.conf}
 WEB=${KARTE_EN_WEB:-/var/www/karte-en}
 
 if [ ! -r "$KONF" ]; then
@@ -38,7 +41,15 @@ if [ ! -r "$KONF" ]; then
 fi
 
 jetzt=$(date +%s)
-codes=$(awk '!/^#/ && NF { print $2 }' "$KONF")
+ruhende_communities=$(awk '!/^#/ && NF { print $1 }' "$STANDBY" 2>/dev/null)
+im_standby() {          # 0, wenn die Community im Standby ist
+    for c in $ruhende_communities; do [ "$c" = "$1" ] && return 0; done
+    return 1
+}
+# Nur Domains von Communities, die wir auch messen
+codes=$(awk -v s="$(echo $ruhende_communities)" '
+    BEGIN { n = split(s, a, " ") }
+    !/^#/ && NF { for (i = 1; i <= n; i++) if ($1 == a[i]) next; print $2 }' "$KONF")
 anzahl=$(echo "$codes" | grep -c .)
 
 alter_von() {           # Alter einer Datei in Sekunden, -1 wenn es sie nicht gibt
@@ -82,6 +93,11 @@ echo "$zustand mapserver-Tunnel tunnel_aktiv=$aktiv;$anzahl:;$anzahl:|neustarts=
 # Startzeitpunkt zaehlt die juengste von ihnen, sonst wuerde eine gerade
 # neu gestartete Instanz die Schonfrist der anderen aufheben.
 communities=$(awk '!/^#/ && NF { print $1 }' "$KONF" | sort -u)
+for c in $ruhende_communities; do
+    communities=$(echo "$communities" | grep -vx "$c")
+    ziel=$(awk -v c="$c" '!/^#/ && $1 == c { print $2 }' "$STANDBY")
+    echo "0 mapserver-standby-$c - Standby, Dienste aus, Umleitung auf $ziel"
+done
 seit=0 sammler_tot=''
 for c in $communities; do
     [ "$(systemctl is-active "yanic@$c.service" 2>/dev/null)" = active ] || sammler_tot="$sammler_tot $c"
@@ -161,6 +177,7 @@ echo "$zustand mapserver-Batman l2tp_if=$l2tp;$anzahl:;$anzahl:|version_gleich=$
 # Gateways kommen aus gwl: faellt das auf 0, ist ihr Supernode in dieser Domain
 # verschwunden, auch wenn der Tunnel noch steht.
 grep -v '^#' "$KONF" | grep . | while read -r community code _ _ _ host _; do
+    im_standby "$community" && continue
     [ -n "$code" ] || continue
     # Ruhende Domains: der Tunnel steht, Knoten sind dort nicht zu erwarten.
     ruht=0
@@ -249,6 +266,7 @@ serie=$(cat /etc/karte-en/kennung 2>/dev/null || echo 0)
 falsch=''
 while read -r _com code _ordner _port id _rest; do
     case "$_com" in \#*|'') continue ;; esac
+    im_standby "$_com" && continue
     for art in bat:01 td:00; do
         f=/sys/class/net/${art%:*}-$code/address
         [ -r "$f" ] || continue

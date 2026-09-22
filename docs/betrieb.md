@@ -125,37 +125,53 @@ und die sysctl-Werte auf den bat-Instanzen prüfen, siehe `hintergrund.md`.
 
 ## Eine Community in den Standby nehmen
 
-Wenn eine Community wieder selbst eine Karte betreibt, brauchen wir ihre
-Domains nicht mehr mitzumessen. Der Aufbau bleibt stehen, er hört nur auf zu
-arbeiten, und ein Auskommentieren macht ihn wieder lebendig.
+Wenn eine Community wieder selbst eine Karte betreibt, brauchen wir ihr Netz
+nicht mehr mitzumessen. Der Aufbau bleibt vollständig stehen, er hört nur auf
+zu arbeiten, und ihre Namen leiten dauerhaft auf ihre eigene Karte um.
 
-Die Domaintabelle ist dabei der einzige Schalter: alles andere wird daraus
-erzeugt. Reihenfolge, damit nichts hängen bleibt:
+Geschaltet wird das in **`web/standby.conf`**, eine Zeile je Community:
+
+```
+en   https://map.ff-en.de/   Freifunk EN hat seit 21.09.2026 wieder eine eigene Karte
+```
+
+Daraus folgt alles Weitere: `karte-en-konfig` erzeugt für alle Namen dieser
+Community statt einer Karte einen `301` auf das Ziel, die Startseite führt sie
+nicht mehr auf, und beide Checks überspringen sie. Der Web-Check prüft dann,
+dass die Umleitung steht; ein `200` wäre dort der Fehler.
 
 ```bash
-# 1. Dienste anhalten, solange sie noch in der Tabelle stehen
+# 1. Zeile in standby.conf eintragen und ausspielen
+sudo install -m 0644 web/standby.conf /etc/karte-en/standby.conf
+
+# 2. Dienste anhalten (Tunnel und Sammler bleiben installiert)
 for c in $(awk '!/^#/ && NF && $1 == "en" { print $2 }' /etc/karte-en/domains.conf); do
     sudo systemctl disable --now "karte-en-tunnel@$c"
 done
 sudo systemctl disable --now yanic@en
 
-# 2. Zeilen der Community in tunnel/domains.conf auskommentieren, ausspielen
-sudo install -m 0644 domains.conf /etc/karte-en/domains.conf
-
-# 3. Erzeugtes neu bauen: Vhosts und Sammlerkonfiguration verlieren sie damit
+# 3. Vhosts neu erzeugen
 sudo /usr/local/sbin/karte-en-konfig
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Vorher zu klären, weil es an einer anderen Stelle weh tut: **wer unsere Karte
-als Datenquelle liest**, verliert sie. Bei mitfunken steht sie in der
+Zurückholen heißt: Zeile aus `standby.conf` entfernen, `karte-en-konfig`
+laufen lassen, die Dienste wieder `enable --now`. Die Domaintabelle bleibt
+dabei unangetastet, und die Daten unter `sites/<community>/` liegen weiter da.
+
+Vorher zu klären, weil es an anderer Stelle weh tut: **wer unsere Karte als
+Datenquelle liest**, verliert sie. Bei mitfunken steht sie in der
 `initiativen.yaml` unter `daten:`; dort gehört dann die eigene Karte der
-Community unter `quellen.karte` hinein, und zwar **bevor** wir hier abschalten,
+Community unter `quellen.karte` hinein, und zwar bevor hier abgeschaltet wird,
 sonst steht die Community dort für einen Lauf ohne Daten da.
 
 Die Zeitreihe in `/var/lib/karte/verlauf.csv` bleibt erhalten und ist der
-Grund, warum sich das Abschalten lohnt statt des Loeschens: sie dokumentiert,
+Grund, warum sich das Abschalten lohnt statt des Löschens: sie dokumentiert,
 was das Netz getan hat, solange wir hingesehen haben.
+
+**Stand 23.09.2026:** Freifunk EN ist im Standby, acht Tunnel und der Sammler
+`yanic@en` sind abgeschaltet, neun Namen leiten auf `map.ff-en.de` um. Es
+laufen 48 Tunnel für Neanderfunk.
 
 ## Überwachung
 

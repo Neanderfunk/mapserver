@@ -1,0 +1,263 @@
+#!/bin/bash
+#/usr/lib/check_mk_agent/local/mapserver
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Local check fuer den Kartenserver (~/projekte/freifunk/mapserver).
+#
+# Aufbau uebernommen von Adorfer/check_mk/mapsrv (Eulenfunk-Kartenserver):
+# P-Format mit mehreren Metriken je Dienst, Originatoren und Clients aus
+# batctl, teure Pruefungen in ein verzoegertes Verzeichnis. Was dort auf
+# /opt/eulenfunk/map/sites zeigt, kommt hier aus /etc/karte-en/domains.conf.
+#
+# Dienste:
+#   mapserver-Tunnel      acht Tunneldigger-Instanzen, Neustartzaehler
+#   mapserver-Sammler     yanic, Alter und Umfang der Gesamtausgabe
+#   mapserver-Abschottung kein Standardweg und kein Forwarding in ihr Netz
+#   mapserver-Batman      Version von Modul und Werkzeug, L2TP-Schnittstellen
+#   mapserver-<community>-<ort> je Domain: Originatoren, Gateways, Clients, Knoten
+#
+# Die wichtigste Groesse je Domain ist nicht die Knotenzahl, sondern die Zahl
+# der Originatoren: sie faellt sofort, wenn der Tunnel abreisst, waehrend die
+# Knoten noch fuenf Minuten als online in der Datei stehen.
+#
+# "mapserver-Abschottung" ist kein Betriebswert, sondern eine Zusicherung:
+# sobald dort etwas anderes als OK steht, laeuft moeglicherweise eigener
+# Verkehr durch ein fremdes Netz. Siehe mapserver/docs/hintergrund.md.
+export LANG=C.UTF-8
+
+# Sicherungskopien nicht ausfuehren (Konvention aus mapsrv)
+[ "${BASH_SOURCE[0]: -1}" = "~" ] && exit 99
+
+KONF=${KARTE_EN_KONF:-/etc/karte-en/domains.conf}
+RUHEND=${KARTE_EN_RUHEND:-/etc/karte-en/ruhend.conf}
+WEB=${KARTE_EN_WEB:-/var/www/karte-en}
+
+if [ ! -r "$KONF" ]; then
+    echo "3 mapserver-Tunnel - $KONF nicht lesbar, Kartenserver nicht eingerichtet?"
+    exit 0
+fi
+
+jetzt=$(date +%s)
+codes=$(awk '!/^#/ && NF { print $2 }' "$KONF")
+anzahl=$(echo "$codes" | grep -c .)
+
+alter_von() {           # Alter einer Datei in Sekunden, -1 wenn es sie nicht gibt
+    if [ -f "$1" ]; then echo $(( jetzt - $(stat -c %Y "$1") )); else echo -1; fi
+}
+
+knoten_in() {           # Knoten und davon online aus einer meshviewer.json
+    python3 - "$1" <<'PY' 2>/dev/null || echo "0 0"
+import json, sys
+try:
+    n = json.load(open(sys.argv[1])).get('nodes') or []
+except (OSError, ValueError):
+    n = []
+print(len(n), sum(1 for x in n if x.get('is_online')))
+PY
+}
+
+# --- Tunnel ------------------------------------------------------------------
+aktiv=0 neustarts=0 tot=''
+for c in $codes; do
+    if [ "$(systemctl is-active "karte-en-tunnel@$c.service" 2>/dev/null)" = active ]; then
+        aktiv=$((aktiv + 1))
+    else
+        tot="$tot $c"
+    fi
+    n=$(systemctl show -p NRestarts --value "karte-en-tunnel@$c.service" 2>/dev/null)
+    neustarts=$((neustarts + ${n:-0}))
+done
+if [ "$aktiv" -lt "$anzahl" ]; then zustand=2; text="nicht aktiv:$tot"
+elif [ "$neustarts" -gt 20 ];  then zustand=1; text="alle aktiv, aber $neustarts Neustarts"
+else zustand=0; text="alle $anzahl Tunnel aktiv"
+fi
+echo "$zustand mapserver-Tunnel tunnel_aktiv=$aktiv;$anzahl:;$anzahl:|neustarts=$neustarts;20;60 $text"
+
+# --- Sammler -----------------------------------------------------------------
+# Wie lange laeuft yanic schon? Direkt nach einem Neustart steht in der
+# frisch geschriebenen Datei zu Recht noch niemand online: der erste
+# Sammellauf kommt erst zur naechsten vollen Minute. Ohne diese Schonfrist
+# meldet der Check nach jedem Neustart der Maschine einmal CRIT.
+# Seit dem Umbau laeuft je Community eine Instanz yanic@<community>. Als
+# Startzeitpunkt zaehlt die juengste von ihnen, sonst wuerde eine gerade
+# neu gestartete Instanz die Schonfrist der anderen aufheben.
+communities=$(awk '!/^#/ && NF { print $1 }' "$KONF" | sort -u)
+seit=0 sammler_tot=''
+for c in $communities; do
+    [ "$(systemctl is-active "yanic@$c.service" 2>/dev/null)" = active ] || sammler_tot="$sammler_tot $c"
+    s=$(systemctl show -p ActiveEnterTimestampMonotonic --value "yanic@$c.service" 2>/dev/null)
+    [ "${s:-0}" -gt "$seit" ] && seit=$s
+done
+laeuft=$(( ( $(cut -d' ' -f1 /proc/uptime | cut -d. -f1) ) - ${seit:-0} / 1000000 ))
+[ "$laeuft" -lt 0 ] && laeuft=0
+SCHONFRIST=180
+# Nach einem Neustart der Maschine braucht die Tunnelschicht laenger als man
+# denkt: der Tunneldigger-Client setzt die MTU erst etwa zwanzig Sekunden nach
+# dem Verbindungsaufbau, danach sortiert batman sich neu. Drei Minuten nach
+# dem Start eines Tunnels ist ein leeres Mesh deshalb noch kein Fehler
+# (gemessen am 20.09.2026).
+hoch=$(cut -d' ' -f1 /proc/uptime | cut -d. -f1)
+
+# Es gibt je Community eine Gesamtdatei; gemessen wird die juengste und
+# die Summe ueber alle.
+alter=-1 ges=0 on=0 karten=0
+for datei in "$WEB"/sites/*/alle/data/meshviewer.json; do
+    [ -f "$datei" ] || continue
+    karten=$((karten + 1))
+    a=$(alter_von "$datei")
+    { [ "$alter" -lt 0 ] || [ "$a" -lt "$alter" ]; } && alter=$a
+    set -- $(knoten_in "$datei")
+    ges=$((ges + $1)) on=$((on + $2))
+done
+if [ -n "$sammler_tot" ];                     then zustand=2; text="yanic laeuft nicht:$sammler_tot"
+elif [ "$alter" -lt 0 ];                      then zustand=2; text="keine Ausgabedatei"
+elif [ "$on" -eq 0 ] && [ "$laeuft" -lt "$SCHONFRIST" ]; then
+    zustand=0; text="frisch gestartet (${laeuft}s), erster Sammellauf steht aus"
+elif [ "$alter" -gt 600 ] || [ "$on" -eq 0 ]; then zustand=2; text="Ausgabe ${alter}s alt, $on online"
+elif [ "$alter" -gt 180 ];                    then zustand=1; text="Ausgabe ${alter}s alt"
+else zustand=0; text="$on von $ges Knoten online in $karten Gesamtkarten, Ausgabe ${alter}s alt"
+fi
+echo "$zustand mapserver-Sammler alter_s=$alter;180;600|knoten=$ges|knoten_online=$on;50:;1: $text"
+
+# --- Abschottung -------------------------------------------------------------
+# Drei Zusicherungen, jede einzeln pruefbar:
+#   1. aus ihren Router Advertisements ist kein Weg uebernommen worden
+#   2. kein Standardweg zeigt in eine bat-Instanz
+#   3. auf keiner bat-Instanz ist Forwarding an
+ra=$(ip -6 route show proto ra 2>/dev/null | grep -c .)
+standard=$(ip -6 route show default 2>/dev/null | grep -c 'dev bat-')
+weiter=0
+for c in $codes; do
+    f=/proc/sys/net/ipv6/conf/bat-$c/forwarding
+    [ -r "$f" ] && [ "$(cat "$f")" != 0 ] && weiter=$((weiter + 1))
+done
+if [ $((ra + standard + weiter)) -gt 0 ]; then
+    zustand=2
+    text="RA-Routen $ra, Standardwege ueber bat $standard, Forwarding an $weiter"
+else
+    zustand=0
+    text="keine Route aus ihren RAs, kein Standardweg ueber bat, kein Forwarding"
+fi
+echo "$zustand mapserver-Abschottung ra_routen=$ra;1;1|standardweg_bat=$standard;1;1|forwarding_an=$weiter;1;1 $text"
+
+# --- Batman ------------------------------------------------------------------
+# L2TP-Schnittstellen sind die Gegenprobe zu den Diensten: eine je Domain.
+# Die Versionen von batctl und Kernelmodul stehen nur als Text da. Debian baut
+# beide aus verschiedenen Quellen (batctl 2025.0 gegen Modul 2024.2), ein
+# Unterschied ist dort der Normalfall und waere als Dauerwarnung wertlos.
+bat_voll=$(batctl -v 2>/dev/null)
+bat_ctl=$(echo "$bat_voll" | cut -d' ' -f2)
+bat_mod=$(echo "$bat_voll" | sed -n 's/.*batman-adv: \([^]]*\)\].*/\1/p')
+gleich=0
+case "$bat_ctl" in *"$bat_mod"*) gleich=1 ;; esac
+l2tp=$(ip -br link show 2>/dev/null | grep -c '^td-')
+if [ "$l2tp" -lt "$anzahl" ]; then zustand=2; text="nur $l2tp von $anzahl L2TP-Schnittstellen"
+else zustand=0; text="$bat_voll, $l2tp Schnittstellen"
+fi
+echo "$zustand mapserver-Batman l2tp_if=$l2tp;$anzahl:;$anzahl:|version_gleich=$gleich $text"
+
+# --- je Domain ---------------------------------------------------------------
+# Originatoren mit Stern sind die ausgewaehlten Wege, also die Knoten selbst.
+# Gateways kommen aus gwl: faellt das auf 0, ist ihr Supernode in dieser Domain
+# verschwunden, auch wenn der Tunnel noch steht.
+grep -v '^#' "$KONF" | grep . | while read -r community code _ _ _ host _; do
+    [ -n "$code" ] || continue
+    # Ruhende Domains: der Tunnel steht, Knoten sind dort nicht zu erwarten.
+    ruht=0
+    grep -q "^$code[[:space:]]" "$RUHEND" 2>/dev/null && ruht=1
+    seit_t=$(systemctl show -p ActiveEnterTimestampMonotonic --value \
+             "karte-en-tunnel@$code.service" 2>/dev/null)
+    tlaeuft=$(( hoch - ${seit_t:-0} / 1000000 ))
+    [ "$tlaeuft" -lt 0 ] && tlaeuft=0
+    orig=$(batctl meshif "bat-$code" originators 2>/dev/null | grep -c '^ \*')
+    nachbarn=$(batctl meshif "bat-$code" neighbors 2>/dev/null | tail -n +3 | grep -c .)
+    gws=$(batctl meshif "bat-$code" gwl 2>/dev/null | tail -n +3 | grep -c .)
+    clients=$(batctl meshif "bat-$code" transglobal 2>/dev/null | grep -cE '\[[^]]*W[^]]*\]')
+    datei=$WEB/sites/$community/$host/data/meshviewer.json
+    alter=$(alter_von "$datei")
+    set -- $(knoten_in "$datei")
+    ges=$1 on=$2
+    if [ "$ruht" = 1 ]; then
+        zustand=0; text="ruhende Domain, $orig Originatoren, $on Knoten"
+    elif { [ "$nachbarn" -eq 0 ] || [ "$orig" -eq 0 ]; } && [ "$tlaeuft" -lt "$SCHONFRIST" ]; then
+        zustand=0; text="Tunnel frisch gestartet (${tlaeuft}s), Mesh noch nicht beisammen"
+    elif [ "$nachbarn" -eq 0 ] || [ "$orig" -eq 0 ]; then
+        zustand=2; text="kein Mesh: $nachbarn Nachbarn, $orig Originatoren"
+    elif [ "$on" -eq 0 ] && [ "$laeuft" -lt "$SCHONFRIST" ]; then
+        zustand=0; text="$orig Originatoren, Sammler frisch gestartet (${laeuft}s)"
+    elif [ "$alter" -gt 600 ] || [ "$on" -eq 0 ]; then
+        zustand=2; text="$orig Originatoren, aber $on Knoten online (Datei ${alter}s)"
+    elif [ "$gws" -eq 0 ]; then
+        zustand=1; text="$orig Originatoren, aber kein Gateway in dieser Domain"
+    elif [ "$orig" -lt 5 ] || [ "$alter" -gt 180 ]; then
+        zustand=1; text="$orig Originatoren, $on online, Datei ${alter}s alt"
+    else
+        zustand=0; text="$orig Originatoren, $gws Gateway, $clients Clients, $on von $ges Knoten online"
+    fi
+    echo "$zustand mapserver-$community-$host originatoren=$orig;5:;1:|nachbarn=$nachbarn;1:;1:|gateways=$gws;1:;1:|clients=$clients|knoten_online=$on;1:;1:|alter_s=$alter;180;600 $text"
+done
+
+# --- Webserver-Konfiguration -------------------------------------------------
+# Ein laufender nginx bedient mit der Konfiguration, die er beim letzten
+# erfolgreichen Laden hatte. Ist die Datei auf der Platte seitdem kaputt, faellt
+# das erst beim naechsten Neustart auf, dann aber mit allen Karten auf einmal
+# (22.09.2026: server_names_hash_bucket_size, seit dem Ausbau auf 59 Vhosts).
+if fehler=$(nginx -t 2>&1); then
+    echo "0 mapserver-nginx-konfig - nginx -t ok, uebersteht einen Neustart"
+else
+    echo "2 mapserver-nginx-konfig - nginx -t schlaegt fehl, nach Neustart keine Karten: $(echo "$fehler" | grep -m1 emerg | cut -c1-160)"
+fi
+
+# --- Adressbuch fuer Sammler ausserhalb --------------------------------------
+# https://neander.map.freifunk.space/nf/targets.json, alle zwei Minuten neu.
+# Die Paketfeed-Session loest damit node_id in aktuelle Adressen auf.
+for datei in "$WEB"/api/*/targets.json; do
+    [ -f "$datei" ] || continue
+    c=$(basename "$(dirname "$datei")")
+    a=$(alter_von "$datei")
+    n=$(python3 -c "import json,sys; print(len(json.load(open(sys.argv[1]))['nodes']))" "$datei" 2>/dev/null || echo 0)
+    if [ "$a" -gt 900 ] || [ "$n" -eq 0 ]; then z=2
+    elif [ "$a" -gt 420 ]; then z=1
+    else z=0
+    fi
+    echo "$z mapserver-adressbuch-$c alter_s=$a;420;900|knoten=$n $n Knoten, ${a}s alt"
+done
+
+# --- Zeitreihen --------------------------------------------------------------
+# yanic -> VictoriaMetrics, oeffentlich lesend unter /nf/prom/. Gezaehlt
+# werden Knoten mit einem Wert aus der letzten Viertelstunde, dazu Platte.
+if systemctl is-enabled -q victoria-metrics 2>/dev/null; then
+    n=$(curl -s -m 10 http://127.0.0.1:8428/api/v1/query \
+        --data-urlencode 'query=count(last_over_time({__name__="node_load"}[15m]))' 2>/dev/null |
+        python3 -c "import json,sys; r=json.load(sys.stdin)['data']['result']; print(r[0]['value'][1] if r else 0)" 2>/dev/null || echo -1)
+    mb=$(( $(du -sk /var/lib/victoria-metrics 2>/dev/null | cut -f1) / 1024 ))
+    voll=$(df --output=pcent /var/lib/victoria-metrics 2>/dev/null | tail -1 | tr -dc 0-9)
+    if [ "$n" = -1 ];            then z=2; t="VictoriaMetrics antwortet nicht"
+    elif [ "${voll:-0}" -ge 90 ]; then z=2; t="Platte ${voll}% voll, Zeitreihen ${mb} MB"
+    elif [ "$n" -eq 0 ] && [ "$laeuft" -gt 900 ]; then z=2; t="keine Werte der letzten 15 Minuten"
+    elif [ "${voll:-0}" -ge 80 ]; then z=1; t="Platte ${voll}% voll, Zeitreihen ${mb} MB"
+    else z=0; t="$n Knoten mit frischen Werten, ${mb} MB, Platte ${voll}%"
+    fi
+    echo "$z mapserver-zeitreihe knoten=$n|groesse_mb=$mb|platte_pct=${voll:-0};80;90 $t"
+fi
+
+# --- Kennung -----------------------------------------------------------------
+# Unsere MACs in fremden Netzen folgen einem Schema (docs/hintergrund.md), damit
+# man uns dort zuordnen kann. Am 22.09.2026 trug bat-42_siwil stattdessen eine
+# Zufalls-MAC, unbemerkt seit dem Aufbau.
+serie=$(cat /etc/karte-en/kennung 2>/dev/null || echo 0)
+falsch=''
+while read -r _com code _ordner _port id _rest; do
+    case "$_com" in \#*|'') continue ;; esac
+    for art in bat:01 td:00; do
+        f=/sys/class/net/${art%:*}-$code/address
+        [ -r "$f" ] || continue
+        soll=$(printf '02:45:4e:%02x:%s:%02x' "$serie" "${art#*:}" "$id")
+        [ "$(cat "$f")" = "$soll" ] || falsch="$falsch ${art%:*}-$code"
+    done
+done < "$KONF"
+if [ -n "$falsch" ]; then
+    echo "1 mapserver-kennung - MAC nicht nach Schema:$falsch"
+else
+    echo "0 mapserver-kennung - alle Schnittstellen mit Kennung aus Serie $serie"
+fi

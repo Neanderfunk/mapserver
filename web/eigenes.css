@@ -13,3 +13,18 @@
 .entsaettigt {
 	filter: saturate(0.1);
 }
+
+/* Dunkelmodus mit denselben OSM-Kacheln. meshviewer bringt dafuer die Klasse
+ * invert-in-dark-mode mit, die aber nur umdreht und die Karte dann grell und
+ * bunt macht. Deshalb eine eigene Regel, die zusaetzlich entsaettigt und
+ * abdunkelt. Sie gilt nur, solange das Dunkelthema aktiv ist; im hellen
+ * Thema bleibt alles wie es war (adorfer 22.09.2026, Vorbild sdrmap.org).
+ *
+ * Zum Nachstellen:
+ *   invert(1) hue-rotate(180deg)   dreht um, ohne dass Wasser rot wird
+ *   saturate(0.25)                 Restfarbe, hoeher = bunter
+ *   brightness(0.9) contrast(0.9)  etwas dunkler und flacher als das Original
+ */
+.theme_dark .karte-dunkel {
+	filter: invert(1) hue-rotate(180deg) saturate(0.25) brightness(0.9) contrast(0.9);
+}

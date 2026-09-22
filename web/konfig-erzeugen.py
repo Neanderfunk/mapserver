@@ -86,13 +86,15 @@ def konfig(titel, pfad, alle):
         'mapLayers': [
             {'name': 'CARTO hell',
              'url': KACHEL + '/carto/light_all/{z}/{x}/{y}.png',
-             'config': {'maxZoom': 19,
+             'config': {'maxZoom': 19, 'className': 'karte-dunkel',
                         'attribution': OSM_ATTR + ', &copy; <a href="https://carto.com/attributions">CARTO</a>'}},
             {'name': 'OpenStreetMap (deutsch, blass)',
              'url': KACHEL + '/tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png',
-             # className landet auf der Kachelebene; die Regel dazu steht in
-             # web/eigenes.css und wird beim Bau in die index.html eingefuegt.
-             'config': {'type': 'osm', 'maxZoom': 19, 'className': 'entsaettigt',
+             # className landet auf der Kachelebene; die Regeln dazu stehen in
+             # web/eigenes.css und werden beim Bau in die index.html
+             # eingefuegt. karte-dunkel wirkt nur im Dunkelmodus und macht
+             # aus denselben Kacheln eine dunkle Karte.
+             'config': {'type': 'osm', 'maxZoom': 19, 'className': 'entsaettigt karte-dunkel',
                         'attribution': OSM_ATTR + ', Kacheln: <a href="https://www.openstreetmap.de/">OpenStreetMap Deutschland</a>'}},
         ],
         'fixedCenter': rahmen(f'{WEB}/sites/{pfad}/data/meshviewer.json'),

@@ -1,8 +1,8 @@
 diff --git a/lib/config_default.ts b/lib/config_default.ts
-index 5612ab1..a0aca70 100644
+index 5612ab1..edbf678 100644
 --- a/lib/config_default.ts
 +++ b/lib/config_default.ts
-@@ -58,6 +58,12 @@ export interface GrafanaConfig {
+@@ -58,6 +58,17 @@ export interface GrafanaConfig {
    url: string;
    orgId?: number;
  }
@@ -12,10 +12,15 @@ index 5612ab1..a0aca70 100644
 +export interface PrometheusConfig {
 +  url: string;
 +}
++// Lokaler Zusatz: waehlbare Zeitraeume ueber den Diagrammen im Knotenfenster
++export interface ChartRange {
++  name: string;
++  from: string;
++}
  
  export interface ChartSeries {
    name: string;
-@@ -67,6 +73,9 @@ export interface ChartSeries {
+@@ -67,6 +78,9 @@ export interface ChartSeries {
  
  export interface Chart {
    name: string;
@@ -25,7 +30,7 @@ index 5612ab1..a0aca70 100644
    datasourceUid: string;
    datasourceType: string;
    query: string;
-@@ -136,6 +145,18 @@ export interface Config {
+@@ -136,6 +150,18 @@ export interface Config {
      other: string;
    };
    map: {
@@ -44,15 +49,16 @@ index 5612ab1..a0aca70 100644
      labelNewColor: string;
      tqFrom: string;
      tqTo: string;
-@@ -197,6 +218,7 @@ export interface Config {
+@@ -197,6 +223,8 @@ export interface Config {
    linkInfos: LinkInfo[];
    nodeInfos: NodeInfo[];
    grafana?: GrafanaConfig;
 +  prometheus?: PrometheusConfig;
++  chartRanges?: ChartRange[];
    nodeCharts: Chart[];
    linkCharts: Chart[];
    globalCharts: Chart[];
-@@ -341,6 +363,11 @@ export const config: Config = {
+@@ -341,6 +369,11 @@ export const config: Config = {
      other: "rgba(227, 166, 25, 0.7)",
    },
    map: {
@@ -65,9 +71,18 @@ index 5612ab1..a0aca70 100644
      tqFrom: "#F02311",
      tqTo: "#04C714",
 diff --git a/lib/infobox/chart.ts b/lib/infobox/chart.ts
-index 0f8b2a0..5da48ab 100644
+index 0f8b2a0..5158365 100644
 --- a/lib/infobox/chart.ts
 +++ b/lib/infobox/chart.ts
+@@ -9,7 +9,7 @@ import { timeFormat } from "d3-time-format";
+ import { format as d3Format } from "d3-format";
+ import { schemeTableau10 } from "d3-scale-chromatic";
+ import { _ } from "../utils/language.js";
+-import { Chart, ChartSeries } from "../config_default.js";
++import { Chart, ChartRange, ChartSeries } from "../config_default.js";
+ 
+ interface Series {
+   name: string;
 @@ -92,6 +92,82 @@ async function fetchChartData(
    return response.json();
  }
@@ -188,6 +203,127 @@ index 0f8b2a0..5da48ab 100644
            if (parsed.series.length === 0 || !Number.isFinite(parsed.xDomain[0])) {
              el.textContent = _.t("node.chartNoData", { name: chart.name });
              return;
+@@ -284,3 +364,93 @@ export function createChartVNode(chart: Chart, subst: Record<string, string>): V
+     },
+   });
+ }
++
++// --- Zeitraeume -------------------------------------------------------------
++// Lokaler Zusatz: eine Leiste ueber den Diagrammen, mit der sich der Zeitraum
++// aller Diagramme eines Knotens gemeinsam umschalten laesst. Die Wahl bleibt
++// erhalten, solange die Seite offen ist, auch beim Wechsel des Knotens.
++
++const STANDARD_ZEITRAEUME: ChartRange[] = [
++  { name: "24 h", from: "now-24h" },
++  { name: "7 Tage", from: "now-7d" },
++  { name: "30 Tage", from: "now-30d" },
++];
++
++let gewaehlterZeitraum = 1;
++
++async function zeichneDiagramm(el: HTMLElement, chart: Chart, subst: Record<string, string>) {
++  const direkt = chart.datasourceType === "prometheus-direct";
++  const grafana = window.config.grafana;
++  const prometheus = window.config.prometheus;
++  if (direkt ? !prometheus : !grafana) {
++    console.warn(direkt ? `Prometheus config missing` : `Grafana config missing`);
++    return;
++  }
++  el.textContent = _.t("loading", { name: chart.name });
++  try {
++    const configMap = new Map((chart.series ?? []).map((s) => [s.name, s]));
++    const parsed = direkt
++      ? await fetchPrometheusDirect((prometheus!.url ?? "").replace(/\/$/, ""), chart, subst, configMap)
++      : parseResults(
++          (await fetchChartData((grafana!.url ?? "").replace(/\/$/, ""), grafana!.orgId ?? 1, chart, subst)).results ??
++            {},
++          configMap,
++        );
++    el.textContent = "";
++    if (parsed.series.length === 0 || !Number.isFinite(parsed.xDomain[0])) {
++      el.textContent = _.t("node.chartNoData", { name: chart.name });
++      return;
++    }
++    renderD3Chart(el, parsed, chart.format ?? ".2~s", chart.unitSuffix ?? "", configMap);
++  } catch {
++    el.textContent = _.t("node.chartError", { name: chart.name });
++  }
++}
++
++export function createChartsVNode(charts: Chart[], subst: Record<string, string>): VNode {
++  const zeitraeume = window.config.chartRanges ?? STANDARD_ZEITRAEUME;
++  if (gewaehlterZeitraum >= zeitraeume.length) gewaehlterZeitraum = 0;
++
++  return h("div", {
++    hook: {
++      insert: (vnode: VNode) => {
++        const wurzel = vnode.elm as HTMLElement;
++        const leiste = document.createElement("div");
++        leiste.className = "node-chart-ranges";
++        wurzel.appendChild(leiste);
++
++        const flaechen: HTMLElement[] = charts.map((chart) => {
++          const titel = document.createElement("h4");
++          titel.textContent = chart.name;
++          wurzel.appendChild(titel);
++          const el = document.createElement("div");
++          el.className = "node-chart";
++          wurzel.appendChild(el);
++          return el;
++        });
++
++        const zeichneAlle = () => {
++          const zeitraum = zeitraeume[gewaehlterZeitraum]!;
++          Array.from(leiste.children).forEach((b, i) => b.classList.toggle("active", i === gewaehlterZeitraum));
++          charts.forEach((chart, i) => {
++            flaechen[i]!.textContent = "";
++            void zeichneDiagramm(flaechen[i]!, { ...chart, from: zeitraum.from, to: chart.to ?? "now" }, subst);
++          });
++        };
++
++        zeitraeume.forEach((zeitraum, i) => {
++          const knopf = document.createElement("button");
++          knopf.type = "button";
++          knopf.textContent = zeitraum.name;
++          knopf.addEventListener("click", () => {
++            gewaehlterZeitraum = i;
++            zeichneAlle();
++          });
++          leiste.appendChild(knopf);
++        });
++
++        zeichneAlle();
++      },
++    },
++  });
++}
+diff --git a/lib/infobox/node.ts b/lib/infobox/node.ts
+index ef37925..21a488d 100644
+--- a/lib/infobox/node.ts
++++ b/lib/infobox/node.ts
+@@ -5,7 +5,7 @@ import { SortTable } from "../sorttable.js";
+ import * as helper from "../utils/helper.js";
+ import nodef, { Neighbour, Node as NodeData, NodeId } from "../utils/node.js";
+ import { NodeInfo } from "../config_default.js";
+-import { createChartVNode } from "./chart.js";
++import { createChartsVNode } from "./chart.js";
+ import { ObjectsLinksAndNodes } from "../datadistributor.js";
+ 
+ // `config.nodeAttr.value` may be either a function or a string. When it is a
+@@ -285,11 +285,8 @@ export function Node(el: HTMLElement, node: NodeData, linkScale: (t: any) => any
+ 
+       // Charts
+       if (config.nodeCharts.length) {
+-        const charts = config.nodeCharts.flatMap((chart) => [
+-          h("h4", chart.name),
+-          createChartVNode(chart, { node: node.node_id }),
+-        ]);
+-        containerChildren.push(h("div", charts));
++        // Eine gemeinsame Zeitraumleiste fuer alle Diagramme des Knotens
++        containerChildren.push(createChartsVNode(config.nodeCharts, { node: node.node_id }));
+       }
+ 
+       const newContainer = h("div", containerChildren);
 diff --git a/lib/map/labellayer.js b/lib/map/labellayer.js
 index d9ad076..fca4c99 100644
 --- a/lib/map/labellayer.js
@@ -244,3 +380,21 @@ index d9ad076..fca4c99 100644
  
        if (labelPoint.label.stroke) {
          ctx.strokeText(
+diff --git a/vite.config.js b/vite.config.js
+index 028fe79..7a8227d 100644
+--- a/vite.config.js
++++ b/vite.config.js
+@@ -91,7 +91,12 @@ export default defineConfig(({ command, mode }) => ({
+         globPatterns: ["**/*.{js,css,html,ico,png,svg,ttf,woff,woff2}"],
+         // Matched against pathname + search: keep the index.html fallback off
+         // real files, otherwise /sw.js is served as the app itself.
+-        navigateFallbackDenylist: [/\.[a-z0-9]+(\?|$)/i],
++        // Lokaler Zusatz: alles unter /grafana/ und /nf/ gehoert nicht zur
++        // Anwendung, sondern ist Grafana bzw. unsere Datenschnittstelle.
++        // Ohne diese Ausnahmen liefert der Service Worker dort die Karte
++        // selbst aus, und ein Link ins Grafana landet in der Ladeanzeige
++        // des Meshviewers (23.09.2026).
++        navigateFallbackDenylist: [/\.[a-z0-9]+(\?|$)/i, /^\/grafana\//, /^\/nf\//],
+         cleanupOutdatedCaches: true,
+       },
+       manifest: {

@@ -27,12 +27,8 @@ stammt aus [Adorfer/check_mk](https://github.com/Adorfer/check_mk), dort
 | `local/mapserver` | map6.freifunk.space | Tunnel, Sammler, Abschottung, Batman, je Domain einer |
 | `local/300/mapserver-web` | map6.freifunk.space | Web, alle fuenf Minuten |
 
-Der Kartenserver selbst liegt in `~/projekte/freifunk/mapserver`, die
-Hintergruende zu den Zusicherungen in dessen `docs/hintergrund.md`.
-
-Der Local check fuer mitfunken liegt noch beim Finder
-(`router-werkstatt/werkzeug/community-survey/checkmk-mitfunken`) und koennte
-bei Gelegenheit hierher ziehen.
+Der Kartenserver selbst liegt eine Ebene hoeher in diesem Repository, die
+Hintergruende zu den Zusicherungen in `../docs/hintergrund.md`.
 
 ## Ausspielen
 

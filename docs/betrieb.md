@@ -159,8 +159,8 @@ was das Netz getan hat, solange wir hingesehen haben.
 
 ## Überwachung
 
-Die Checks liegen in `~/projekte/freifunk/checkmk` und werden von dort
-ausgespielt (`sudo ./installieren.sh 'mapserver*'`). Auf der VM:
+Die Checks liegen in `checkmk/` und werden von dort ausgespielt
+(`sudo ./installieren.sh 'mapserver*'`). Auf der VM:
 
 ```
 /usr/lib/check_mk_agent/local/mapserver         jeder Agentenlauf

@@ -1,0 +1,17 @@
+# /etc/grafana/provisioning/datasources/victoriametrics.yaml
+#
+# VictoriaMetrics spricht die Prometheus-API, deshalb genuegt der eingebaute
+# Prometheus-Treiber; ein Plugin braucht es nicht.
+apiVersion: 1
+datasources:
+  - name: Neanderfunk
+    uid: neanderfunk
+    type: prometheus
+    access: proxy
+    url: http://127.0.0.1:8428
+    isDefault: true
+    editable: false
+    jsonData:
+      httpMethod: POST
+      # Die Sammelrunde laeuft alle fuenf Minuten
+      timeInterval: 5m

@@ -261,3 +261,17 @@ if [ -n "$falsch" ]; then
 else
     echo "0 mapserver-kennung - alle Schnittstellen mit Kennung aus Serie $serie"
 fi
+
+# --- Grafana -----------------------------------------------------------------
+# Vertiefung hinter dem Link im Knotenfenster. Die Diagramme in der Karte
+# selbst brauchen es nicht, ein Ausfall ist also kein Kartenausfall.
+if systemctl is-enabled -q grafana-server 2>/dev/null; then
+    gesund=$(curl -s -m 10 http://127.0.0.1:3000/grafana/api/health 2>/dev/null |
+        python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('database',''))" 2>/dev/null)
+    rss=$(( $(ps -o rss= -C grafana 2>/dev/null | awk '{s+=$1} END {print s+0}') / 1024 ))
+    if [ "$gesund" = ok ]; then
+        echo "0 mapserver-grafana speicher_mb=$rss Datenbank ok, ${rss} MB"
+    else
+        echo "1 mapserver-grafana speicher_mb=$rss Grafana antwortet nicht (nur die Vertiefung, nicht die Karte)"
+    fi
+fi

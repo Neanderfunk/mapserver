@@ -258,7 +258,41 @@ andere unter `/nf/prom/` gibt 403.
 - Aufbewahrung 180 Tage, Grenzen für Abfragen in
   `/etc/default/victoria-metrics`. VictoriaMetrics lauscht nur auf
   `127.0.0.1:8428`, die Paketvorgabe wäre `0.0.0.0` gewesen.
-- Einrichtung: `sudo ./zeitreihe/einrichten.sh`.
+- Einrichtung: `sudo ./zeitreihe/einrichten.sh`. Das Skript richtet auch
+  Grafana ein.
+
+### Diagramme im Knotenfenster
+
+meshviewer zeichnet sie seit 13.x selbst mit d3 als SVG, ohne iframe und ohne
+gerendertes Bild. Upstream holt die Daten über die Grafana-API; unser Patch
+(`web/patches/meshviewer.patch`) ergänzt `datasourceType: prometheus-direct`,
+das liest `query_range` direkt aus VictoriaMetrics. Dazu eine Leiste, mit der
+sich der Zeitraum aller Diagramme gemeinsam umschalten lässt.
+
+Konfiguriert wird beides in `web/konfig-erzeugen.py`: `DIAGRAMME`,
+`ZEITRAEUME`, `ZEITREIHE_URL`. Zwei Eigenheiten der Abfragesprache, beide
+gemessen:
+
+- keine Backslash-Escapes in den Namensmustern, der Punkt steht für sich
+- `rate()` wirft den Metriknamen weg, danach sind `rx` und `tx` nicht mehr
+  unterscheidbar; `keep_metric_names` hält ihn fest (VictoriaMetrics)
+
+### Grafana
+
+`https://neander.map.freifunk.space/grafana/`, verlinkt aus dem Knotenfenster
+(`VERTIEFUNG` in `web/konfig-erzeugen.py`, Platzhalter `{NODE_ID}`). Dort
+stehen Tagesbilanzen als Balken, freie Zeiträume und die Werte aus
+`neanderfunk-respondd`.
+
+- Lesend ohne Anmeldung, Anmeldemaske aus, keine Konten. Alles kommt aus
+  Dateien: `zeitreihe/grafana/` (systemd-Drop-in, Datenquelle, Dashboard).
+- Das Dashboard erzeugt `grafana/dashboard-erzeugen.py`, nicht die Oberfläche.
+  Änderungen in der Oberfläche sind nicht möglich und wären beim nächsten Lauf
+  weg.
+- nginx reicht `/grafana/` **ohne** Schrägstrich am Ende weiter
+  (`proxy_pass http://127.0.0.1:3000;`). Mit Schrägstrich fiele das Präfix
+  weg und Grafana leitete endlos auf sich selbst um.
+- Fällt Grafana aus, bleibt die Karte samt ihren Diagrammen heil.
 - Die `delete`-Abfrage, die yanic einmal am Tag an die Datenbank schickt,
   kennt VictoriaMetrics nicht; die Fehlermeldung im Log ist harmlos.
 

@@ -28,3 +28,34 @@
 .theme_dark .karte-dunkel {
 	filter: invert(1) hue-rotate(180deg) saturate(0.25) brightness(0.9) contrast(0.9);
 }
+
+/* Leiste ueber den Diagrammen im Knotenfenster, aus patches/meshviewer.patch.
+ * Bewusst schlicht: die Knoepfe sollen wie Reiter wirken, nicht wie Formular.
+ */
+.node-chart-ranges {
+	display: flex;
+	gap: .35rem;
+	margin: .6rem 0 .2rem;
+}
+
+.node-chart-ranges button {
+	border: 1px solid rgba(128, 128, 128, .45);
+	background: transparent;
+	color: inherit;
+	border-radius: 3px;
+	padding: .15rem .55rem;
+	font: inherit;
+	font-size: .85em;
+	cursor: pointer;
+	opacity: .75;
+}
+
+.node-chart-ranges button:hover {
+	opacity: 1;
+}
+
+.node-chart-ranges button.active {
+	opacity: 1;
+	border-color: currentColor;
+	font-weight: 600;
+}

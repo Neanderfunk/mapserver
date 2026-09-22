@@ -26,6 +26,27 @@ for i in $(seq 1 20); do
 done
 curl -sf -o /dev/null http://127.0.0.1:8428/health && echo "  laeuft auf 127.0.0.1:8428"
 
+echo "== Grafana =="
+# Nur die Vertiefung hinter dem Link im Knotenfenster. Die Karte selbst
+# zeichnet ihre Diagramme ohne Grafana.
+if ! dpkg -s grafana >/dev/null 2>&1; then
+	install -d -m 0755 /etc/apt/keyrings
+	curl -fsSL https://apt.grafana.com/gpg.key | gpg --dearmor -o /etc/apt/keyrings/grafana.gpg
+	echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" \
+		> /etc/apt/sources.list.d/grafana.list
+	apt-get update -qq
+	apt-get install -y -qq grafana
+fi
+install -d -m 0755 /etc/systemd/system/grafana-server.service.d /var/lib/grafana/dashboards
+install -m 0644 "$HIER/grafana/systemd-dropin.conf" /etc/systemd/system/grafana-server.service.d/neanderfunk.conf
+install -m 0644 "$HIER/grafana/datasource.yaml" /etc/grafana/provisioning/datasources/victoriametrics.yaml
+install -m 0644 "$HIER/grafana/dashboards.yaml" /etc/grafana/provisioning/dashboards/neanderfunk.yaml
+python3 "$HIER/grafana/dashboard-erzeugen.py" > /var/lib/grafana/dashboards/knoten.json
+chown -R grafana:grafana /var/lib/grafana/dashboards
+systemctl daemon-reload
+systemctl enable grafana-server
+systemctl restart grafana-server
+
 echo "== nginx =="
 install -d -m 0755 /etc/nginx/karte-en
 for g in $(python3 -c "import sys; sys.path.insert(0, '$HIER/../sammler'); exec(open('$HIER/../sammler/yanic-conf.py').read().split('def gemeldete_codes')[0]); print(' '.join(ZEITREIHE))"); do

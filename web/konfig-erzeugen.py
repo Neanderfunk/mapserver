@@ -131,6 +131,29 @@ DIAGRAMME = [
 ]
 
 
+# Waehlbare Zeitraeume ueber den Diagrammen. 400 Tage haelt die Datenbank,
+# ein Jahr ist also die sinnvolle Obergrenze.
+ZEITRAEUME = [
+    {'name': '24 h', 'from': 'now-24h'},
+    {'name': '7 Tage', 'from': 'now-7d'},
+    {'name': '30 Tage', 'from': 'now-30d'},
+    {'name': '1 Jahr', 'from': 'now-1y'},
+]
+
+
+# Vertiefung hinter einem Link: ein Grafana auf derselben Maschine, mit
+# denselben Zeitreihen. Dort gibt es Tagesbilanzen als Balken, freie
+# Zeitraeume und die Werte aus neanderfunk-respondd. meshviewer setzt
+# {NODE_ID} ein; ohne "image" wird daraus ein reiner Textlink, also kein
+# iframe und kein gerendertes Bild.
+VERTIEFUNG = [{
+    'name': 'Grafana',
+    'title': 'Ausführliche Statistik (Grafana)',
+    'href': 'https://neander.map.freifunk.space/grafana/d/nf-knoten/knoten'
+            '?var-node={NODE_ID}&from=now-30d&to=now',
+}]
+
+
 def diagramme():
     return [dict(d, datasourceType='prometheus-direct', datasourceUid='vm',
                  **{'from': 'now-7d', 'to': 'now', 'maxDataPoints': 300})
@@ -161,7 +184,8 @@ def konfig(titel, pfad, alle):
     # ueberall abgeschaltet, auch dort, wo die Liste gesetzt war.
     alt = ({'deprecation_enabled': True,
             'eol': altgeraete(daten), 'eol_text': ALTGERAETE_TEXT,
-            'prometheus': {'url': ZEITREIHE_URL}, 'nodeCharts': diagramme()}
+            'prometheus': {'url': ZEITREIHE_URL}, 'nodeCharts': diagramme(),
+            'chartRanges': ZEITRAEUME, 'nodeInfos': VERTIEFUNG}
            if community == 'neander' else {'deprecation_enabled': False})
     return {
         **alt,

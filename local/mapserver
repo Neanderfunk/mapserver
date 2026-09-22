@@ -196,3 +196,29 @@ grep -v '^#' "$KONF" | grep . | while read -r community code _ _ _ host _; do
     fi
     echo "$zustand mapserver-$community-$host originatoren=$orig;5:;1:|nachbarn=$nachbarn;1:;1:|gateways=$gws;1:;1:|clients=$clients|knoten_online=$on;1:;1:|alter_s=$alter;180;600 $text"
 done
+
+# --- Webserver-Konfiguration -------------------------------------------------
+# Ein laufender nginx bedient mit der Konfiguration, die er beim letzten
+# erfolgreichen Laden hatte. Ist die Datei auf der Platte seitdem kaputt, faellt
+# das erst beim naechsten Neustart auf, dann aber mit allen Karten auf einmal
+# (22.09.2026: server_names_hash_bucket_size, seit dem Ausbau auf 59 Vhosts).
+if fehler=$(nginx -t 2>&1); then
+    echo "0 mapserver-nginx-konfig - nginx -t ok, uebersteht einen Neustart"
+else
+    echo "2 mapserver-nginx-konfig - nginx -t schlaegt fehl, nach Neustart keine Karten: $(echo "$fehler" | grep -m1 emerg | cut -c1-160)"
+fi
+
+# --- Adressbuch fuer Sammler ausserhalb --------------------------------------
+# https://neander.map.freifunk.space/nf/targets.json, alle zwei Minuten neu.
+# Die Paketfeed-Session loest damit node_id in aktuelle Adressen auf.
+for datei in "$WEB"/api/*/targets.json; do
+    [ -f "$datei" ] || continue
+    c=$(basename "$(dirname "$datei")")
+    a=$(alter_von "$datei")
+    n=$(python3 -c "import json,sys; print(len(json.load(open(sys.argv[1]))['nodes']))" "$datei" 2>/dev/null || echo 0)
+    if [ "$a" -gt 900 ] || [ "$n" -eq 0 ]; then z=2
+    elif [ "$a" -gt 420 ]; then z=1
+    else z=0
+    fi
+    echo "$z mapserver-adressbuch-$c alter_s=$a;420;900|knoten=$n $n Knoten, ${a}s alt"
+done

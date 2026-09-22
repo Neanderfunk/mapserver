@@ -1,0 +1,342 @@
+diff --git a/data/statistics.go b/data/statistics.go
+index 05f5c75..adc13f0 100644
+--- a/data/statistics.go
++++ b/data/statistics.go
+@@ -34,6 +34,8 @@ type Statistics struct {
+ 	Switch    map[string]*SwitchPort `json:"switch,omitempty"`
+ 	Wireless  WirelessStatistics     `json:"wireless,omitempty"`
+ 	ProcStats *ProcStats             `json:"stat,omitempty"`
++	// Neanderfunk-Erweiterung, siehe statistics_neanderfunk.go
++	Neanderfunk *NeanderfunkStatistics `json:"neanderfunk,omitempty"`
+ }
+ 
+ // MeshVPNPeerLink struct
+diff --git a/data/statistics_neanderfunk.go b/data/statistics_neanderfunk.go
+new file mode 100644
+index 0000000..5f5c072
+--- /dev/null
++++ b/data/statistics_neanderfunk.go
+@@ -0,0 +1,70 @@
++package data
++
++// Neanderfunk-Erweiterung: statistics.neanderfunk aus dem Gluon-Paket
++// neanderfunk-respondd (Feed Neanderfunk/packages, ab bd33007, Temperatur ab
++// c5d5275). Lokaler Patch des Neanderfunk-Kartenservers, nicht upstream.
++//
++// Alles ist optional. Alt-Firmware liefert den Baum gar nicht, Knoten ohne
++// Sensor keine Temperatur, Knoten ohne zram keine zram-Werte. Deshalb Zeiger:
++// ein fehlender Wert bleibt nil und wird nicht als 0 gespeichert, sonst sahe
++// ein Knoten ohne Sensor aus wie einer bei null Grad.
++//
++// Zahlen als float64 aus demselben Grund wie im Rest von yanic: Lua-basierte
++// respondd-Module kennen keinen Ganzzahltyp.
++
++// NeanderfunkStatistics ist statistics.neanderfunk
++type NeanderfunkStatistics struct {
++	System      *NeanderfunkSystem              `json:"system,omitempty"`
++	Ethernet    map[string]*NeanderfunkEthernet `json:"ethernet,omitempty"`
++	SSIDChanger *NeanderfunkSSIDChanger         `json:"ssid_changer,omitempty"`
++	Wireless    map[string]*NeanderfunkRadio    `json:"wireless,omitempty"`
++	// Schluessel ist der Sensor (soc, mt7915_phy0, ...), Wert in Grad Celsius
++	Temperature map[string]*float64 `json:"temperature,omitempty"`
++}
++
++// NeanderfunkSystem ist statistics.neanderfunk.system
++type NeanderfunkSystem struct {
++	// Zaehler seit dem Start: Pagecache-Refaults (workingset_refault_file)
++	RefaultFile *float64 `json:"refault_file,omitempty"`
++	// doppelt memory.available, nicht gespeichert
++	MemAvailable *float64         `json:"mem_available,omitempty"`
++	Zram         *NeanderfunkZram `json:"zram,omitempty"`
++	// Zaehler seit dem Start
++	Forks *float64 `json:"forks,omitempty"`
++}
++
++// NeanderfunkZram in kB
++type NeanderfunkZram struct {
++	RAM  *float64 `json:"ram,omitempty"`
++	Data *float64 `json:"data,omitempty"`
++	Size *float64 `json:"size,omitempty"`
++}
++
++// NeanderfunkEthernet ist ein Port unter statistics.neanderfunk.ethernet
++type NeanderfunkEthernet struct {
++	Speed *float64 `json:"speed,omitempty"`
++	// Hoechste Rate in Mbit/s, die beide Seiten anbieten (advertising und
++	// lp_advertising verundet). 0 = nicht ermittelbar, etwa bei Link down.
++	// Auf dem Knoten gecacht, aendert sich nur mit speed. Alarmsignal ist
++	// possible > speed: ein 2,5G-Port, der nicht hochkam (RTL8221B).
++	Possible *float64 `json:"possible,omitempty"`
++	Duplex   string   `json:"duplex,omitempty"`
++	Carrier  *bool    `json:"carrier,omitempty"`
++}
++
++// NeanderfunkSSIDChanger sind Zaehler seit dem Start
++type NeanderfunkSSIDChanger struct {
++	GatewayLosses *float64 `json:"gateway_losses,omitempty"`
++	Offline       *float64 `json:"offline,omitempty"`
++	Switches      *float64 `json:"switches,omitempty"`
++}
++
++// NeanderfunkRadio ist Konfiguration, kein Messwert
++type NeanderfunkRadio struct {
++	TxPower *float64 `json:"txpower,omitempty"`
++	SSID    string   `json:"ssid,omitempty"`
++	Channel *float64 `json:"channel,omitempty"`
++	Mesh    *bool    `json:"mesh,omitempty"`
++	HTMode  string   `json:"htmode,omitempty"`
++	Country string   `json:"country,omitempty"`
++}
+diff --git a/database/influxdb/node.go b/database/influxdb/node.go
+index 74c0517..f57a13c 100644
+--- a/database/influxdb/node.go
++++ b/database/influxdb/node.go
+@@ -178,8 +178,18 @@ func (conn *Connection) InsertNode(node *runtime.Node) {
+ 		tags.SetString("frequency"+suffix, strconv.Itoa(int(airtime.Frequency)))
+ 	}
+ 
++	// Neanderfunk-Erweiterung (lokaler Patch), vor dem Schreiben des Knotens
++	nf := stats.Neanderfunk
++	if nf != nil {
++		nfNodeFields(nf, fields)
++	}
++
+ 	conn.addPoint(MeasurementNode, tags, fields, time)
+ 
++	if nf != nil {
++		conn.nfPoints(nf, tags, time)
++	}
++
+ 	// Add DHCP statistics
+ 	if dhcp := stats.DHCP; dhcp != nil {
+ 		fields := models.Fields{
+diff --git a/database/influxdb/node_neanderfunk.go b/database/influxdb/node_neanderfunk.go
+new file mode 100644
+index 0000000..d1b9a76
+--- /dev/null
++++ b/database/influxdb/node_neanderfunk.go
+@@ -0,0 +1,123 @@
++package influxdb
++
++// Neanderfunk-Erweiterung: schreibt statistics.neanderfunk (Gluon-Paket
++// neanderfunk-respondd) in die Datenbank. Lokaler Patch des
++// Neanderfunk-Kartenservers, nicht upstream.
++//
++// Einzelwerte je Knoten landen als Felder in der Messung node und tragen
++// damit alle Knoten-Tags (Modell, Firmware, site). Was es je Knoten mehrfach
++// gibt, bekommt eine eigene Messung mit dem Namen als Tag:
++//
++//   node         nf.refault_file, nf.forks        Zaehler seit dem Start
++//                nf.zram.ram/data/size            kB
++//                nf.ssid_changer.gateway_losses/offline/switches   Zaehler
++//   nf_ethernet  carrier (0/1), speed, possible   Tags port, duplex
++//   nf_temperature  celsius                       Tag sensor
++//   nf_wireless  txpower, channel, mesh (0/1)     Tags radio, ssid, htmode, country
++//
++// Fehlt ein Wert, wird er nicht geschrieben (nicht als 0).
++// system.mem_available doppelt memory.available und bleibt weg.
++
++import (
++	"time"
++
++	models "github.com/influxdata/influxdb1-client/models"
++
++	"github.com/FreifunkBremen/yanic/data"
++)
++
++const (
++	MeasurementNFEthernet    = "nf_ethernet"
++	MeasurementNFTemperature = "nf_temperature"
++	MeasurementNFWireless    = "nf_wireless"
++)
++
++func setze(fields models.Fields, name string, wert *float64) {
++	if wert != nil {
++		fields[name] = *wert
++	}
++}
++
++func bit(wert *bool) (int64, bool) {
++	if wert == nil {
++		return 0, false
++	}
++	if *wert {
++		return 1, true
++	}
++	return 0, true
++}
++
++// nfNodeFields ergaenzt die Felder der Messung node
++func nfNodeFields(nf *data.NeanderfunkStatistics, fields models.Fields) {
++	if sys := nf.System; sys != nil {
++		setze(fields, "nf.refault_file", sys.RefaultFile)
++		setze(fields, "nf.forks", sys.Forks)
++		if z := sys.Zram; z != nil {
++			setze(fields, "nf.zram.ram", z.RAM)
++			setze(fields, "nf.zram.data", z.Data)
++			setze(fields, "nf.zram.size", z.Size)
++		}
++	}
++	if sc := nf.SSIDChanger; sc != nil {
++		setze(fields, "nf.ssid_changer.gateway_losses", sc.GatewayLosses)
++		setze(fields, "nf.ssid_changer.offline", sc.Offline)
++		setze(fields, "nf.ssid_changer.switches", sc.Switches)
++	}
++}
++
++// nfPoints schreibt Ports, Sensoren und Radios als eigene Messungen
++func (conn *Connection) nfPoints(nf *data.NeanderfunkStatistics, tags models.Tags, t time.Time) {
++	for port, e := range nf.Ethernet {
++		if e == nil {
++			continue
++		}
++		f := models.Fields{}
++		if v, ok := bit(e.Carrier); ok {
++			f["carrier"] = v
++		}
++		setze(f, "speed", e.Speed)
++		setze(f, "possible", e.Possible)
++		if len(f) == 0 {
++			continue
++		}
++		tg := tags.Clone()
++		tg.SetString("port", port)
++		if e.Duplex != "" {
++			tg.SetString("duplex", e.Duplex)
++		}
++		conn.addPoint(MeasurementNFEthernet, tg, f, t)
++	}
++
++	for sensor, c := range nf.Temperature {
++		if c == nil {
++			continue
++		}
++		tg := tags.Clone()
++		tg.SetString("sensor", sensor)
++		conn.addPoint(MeasurementNFTemperature, tg, models.Fields{"celsius": *c}, t)
++	}
++
++	for radio, r := range nf.Wireless {
++		if r == nil {
++			continue
++		}
++		f := models.Fields{}
++		setze(f, "txpower", r.TxPower)
++		setze(f, "channel", r.Channel)
++		if v, ok := bit(r.Mesh); ok {
++			f["mesh"] = v
++		}
++		if len(f) == 0 {
++			continue
++		}
++		tg := tags.Clone()
++		tg.SetString("radio", radio)
++		for k, v := range map[string]string{"ssid": r.SSID, "htmode": r.HTMode, "country": r.Country} {
++			if v != "" {
++				tg.SetString(k, v)
++			}
++		}
++		conn.addPoint(MeasurementNFWireless, tg, f, t)
++	}
++}
+diff --git a/database/influxdb/node_neanderfunk_test.go b/database/influxdb/node_neanderfunk_test.go
+new file mode 100644
+index 0000000..f32f8d6
+--- /dev/null
++++ b/database/influxdb/node_neanderfunk_test.go
+@@ -0,0 +1,95 @@
++package influxdb
++
++import (
++	"encoding/json"
++	"testing"
++
++	"github.com/influxdata/influxdb1-client/v2"
++	"github.com/stretchr/testify/assert"
++
++	"github.com/FreifunkBremen/yanic/data"
++	"github.com/FreifunkBremen/yanic/runtime"
++)
++
++// Echtes Sample, dias-Testknoten 33f1, 22.09.2026, ergaenzt um die
++// Temperatur eines MT7915-Knotens und einen Port ohne Werte
++const nfSample = `{"node_id":"deadbeef","loadavg":0.5,"neanderfunk":{
++ "system":{"refault_file":0,"mem_available":16668,"zram":{"ram":0,"data":0,"size":0},"forks":13118},
++ "ethernet":{"wan":{"speed":1000,"possible":0,"duplex":"full","carrier":true},
++             "lan1":{"speed":100,"possible":0,"duplex":"full","carrier":false},
++             "leer":{}},
++ "ssid_changer":{"gateway_losses":0,"offline":0,"switches":2},
++ "wireless":{"radio0":{"txpower":23,"ssid":"Freifunk","channel":9,"mesh":true,"htmode":"HT20","country":"TW"}},
++ "temperature":{"soc":51.5,"mt7915_phy0":48}}}`
++
++func punkte(t *testing.T, stats string) map[string][]*client.Point {
++	var s data.Statistics
++	assert.NoError(t, json.Unmarshal([]byte(stats), &s))
++	node := &runtime.Node{Online: true, Statistics: &s,
++		Nodeinfo: &data.Nodeinfo{NodeID: "deadbeef", Hostname: "knoten"}}
++	conn := &Connection{points: make(chan *client.Point, 100), config: Config{}}
++	conn.InsertNode(node)
++	close(conn.points)
++	z := map[string][]*client.Point{}
++	for p := range conn.points {
++		z[p.Name()] = append(z[p.Name()], p)
++	}
++	return z
++}
++
++func TestNeanderfunk(t *testing.T) {
++	assert := assert.New(t)
++	z := punkte(t, nfSample)
++
++	f, _ := z["node"][0].Fields()
++	assert.EqualValues(13118, f["nf.forks"])
++	assert.EqualValues(0, f["nf.refault_file"])
++	assert.EqualValues(0, f["nf.zram.size"])
++	assert.EqualValues(2, f["nf.ssid_changer.switches"])
++	assert.NotContains(f, "nf.mem_available")
++
++	assert.Len(z["nf_ethernet"], 2, "der leere Port faellt weg")
++	for _, p := range z["nf_ethernet"] {
++		f, _ := p.Fields()
++		if p.Tags()["port"] == "wan" {
++			assert.EqualValues(1, f["carrier"])
++			assert.EqualValues(1000, f["speed"])
++			assert.Equal("full", p.Tags()["duplex"])
++			assert.Equal("deadbeef", p.Tags()["nodeid"])
++		} else {
++			assert.EqualValues(0, f["carrier"])
++		}
++	}
++
++	assert.Len(z["nf_temperature"], 2)
++	for _, p := range z["nf_temperature"] {
++		f, _ := p.Fields()
++		if p.Tags()["sensor"] == "soc" {
++			assert.EqualValues(51.5, f["celsius"])
++		}
++	}
++
++	assert.Len(z["nf_wireless"], 1)
++	w := z["nf_wireless"][0]
++	wf, _ := w.Fields()
++	assert.EqualValues(23, wf["txpower"])
++	assert.EqualValues(1, wf["mesh"])
++	assert.Equal("HT20", w.Tags()["htmode"])
++	assert.Equal("radio0", w.Tags()["radio"])
++}
++
++// Alt-Firmware ohne das Paket und Knoten ohne Sensor: nichts erfinden
++func TestNeanderfunkFehlt(t *testing.T) {
++	assert := assert.New(t)
++	z := punkte(t, `{"node_id":"deadbeef","loadavg":0.5}`)
++	f, _ := z["node"][0].Fields()
++	assert.NotContains(f, "nf.forks")
++	assert.Empty(z["nf_ethernet"])
++	assert.Empty(z["nf_temperature"])
++
++	z = punkte(t, `{"node_id":"deadbeef","neanderfunk":{"system":{"forks":5},"temperature":{}}}`)
++	f, _ = z["node"][0].Fields()
++	assert.EqualValues(5, f["nf.forks"])
++	assert.NotContains(f, "nf.refault_file")
++	assert.Empty(z["nf_temperature"])
++}

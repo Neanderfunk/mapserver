@@ -231,6 +231,23 @@ andere unter `/nf/prom/` gibt 403.
   `model`, `firmware_release`, `db` (= Community).
 - Beispiel: `curl -s 'https://neander.map.freifunk.space/nf/prom/api/v1/query' --data-urlencode 'query={__name__="node_memory.available",nodeid="bc7ec351c4a4"}'`
   (Metriknamen mit Punkt gehen nur über `__name__`).
+- **Neanderfunk-Felder** aus `statistics.neanderfunk` (Paket
+  neanderfunk-respondd) liest yanic erst durch `patches/yanic-neanderfunk.patch`:
+
+  | Metrik | Art | Labels zusätzlich |
+  | --- | --- | --- |
+  | `node_nf.refault_file` | Zähler seit Start, `rate()` | |
+  | `node_nf.forks` | Zähler seit Start | |
+  | `node_nf.zram.ram`, `.data`, `.size` | kB | |
+  | `node_nf.ssid_changer.gateway_losses`, `.offline`, `.switches` | Zähler | |
+  | `nf_ethernet_carrier` (0/1), `nf_ethernet_speed`, `nf_ethernet_possible` | Mbit/s, `possible` 0 = unbekannt | `port`, `duplex` |
+  | `nf_temperature_celsius` | °C | `sensor` |
+  | `nf_wireless_txpower`, `nf_wireless_channel`, `nf_wireless_mesh` (0/1) | Konfiguration | `radio`, `ssid`, `htmode`, `country` |
+
+  Fehlende Werte werden nicht als 0 geschrieben: Alt-Firmware ohne das Paket
+  und Knoten ohne Sensor tauchen einfach nicht auf. `system.mem_available`
+  doppelt `node_memory.available` und bleibt weg. Alarmsignal am Port ist
+  `possible > speed` (2,5G-Port, der nicht hochkam), nicht `possible` allein.
 - `owner` wird beim Empfang verworfen (`/etc/victoria-metrics/relabel.yml`),
   yanic kennt für diesen Ausgang kein `no_owner`.
 - Aufbewahrung 180 Tage, Grenzen für Abfragen in

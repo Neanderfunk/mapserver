@@ -24,10 +24,19 @@ if [ ! -d "$BAU/.git" ]; then
 fi
 git -C "$BAU" fetch -q --tags origin
 git -C "$BAU" checkout -q --force "$YANIC_TAG"
-# Unser einziger Eingriff in yanic: es fragt zusaetzlich Adressen aus einer
-# Datei mit. Noetig fuer Netze, die unseren Rundruf nicht an ihre Knoten
-# zustellen; siehe patches/yanic-seeds.patch und docs/hintergrund.md.
+# Neue Dateien aus den Patches sind unversioniert, checkout laesst sie
+# liegen, und git apply scheitert beim zweiten Lauf daran.
+git -C "$BAU" clean -fdq
+# Zwei lokale Eingriffe in yanic, beide nicht upstream:
+# - yanic-seeds.patch: fragt zusaetzlich Adressen aus einer Datei mit. Noetig
+#   fuer Netze, die unseren Rundruf nicht an ihre Knoten zustellen; siehe
+#   docs/hintergrund.md.
+# - yanic-neanderfunk.patch: liest statistics.neanderfunk (Gluon-Paket
+#   neanderfunk-respondd) und schreibt es in die Zeitreihen (22.09.2026,
+#   Auftrag adorfer fuer die Paketfeed-Session). Mit Tests.
 git -C "$BAU" apply "$HIER/patches/yanic-seeds.patch"
+git -C "$BAU" apply "$HIER/patches/yanic-neanderfunk.patch"
+( cd "$BAU" && GOFLAGS=-mod=mod go test ./data/ ./database/influxdb/ )
 ( cd "$BAU" && GOFLAGS=-mod=mod go build -o /usr/local/bin/yanic . )
 /usr/local/bin/yanic --version 2>&1 | head -2 || true
 

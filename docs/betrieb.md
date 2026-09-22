@@ -248,6 +248,11 @@ andere unter `/nf/prom/` gibt 403.
   und Knoten ohne Sensor tauchen einfach nicht auf. `system.mem_available`
   doppelt `node_memory.available` und bleibt weg. Alarmsignal am Port ist
   `possible > speed` (2,5G-Port, der nicht hochkam), nicht `possible` allein.
+  Ein ganz toter Port meldet `possible` 0 und fällt durch diesen Vergleich,
+  dafür `nf_ethernet_carrier == 0`. Portnamen sind nicht einheitlich: TR3000
+  meldet `eth0`/`eth1`, andere `wan`/`lan1`. Einen Alarm also nicht auf
+  `port="wan"` bauen, sondern über alle Ports oder über `model`
+  (gemessen 22.09.2026 an 80af: `eth0` carrier 0, der tote RTL8221B).
 - `owner` wird beim Empfang verworfen (`/etc/victoria-metrics/relabel.yml`),
   yanic kennt für diesen Ausgang kein `no_owner`.
 - Aufbewahrung 180 Tage, Grenzen für Abfragen in

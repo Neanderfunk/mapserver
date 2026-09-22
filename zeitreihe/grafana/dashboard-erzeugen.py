@@ -261,9 +261,15 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
 
     panel(2, 'Clients dahinter', [
         ziel('sum(' + DAHINTER % 'last_over_time({__name__="node_clients.total"}[15m])' + ')',
-             'Clients', 'A'),
+             'laut respondd', 'A'),
+        ziel('sum(last_over_time(tt_clients[15m]) * on(sndomain) group_left()'
+             ' (label_replace(last_over_time({__name__="node_load", hostname="$sn"}[15m]),'
+             ' "sndomain", "$1", "domain", "(.*)") * 0 + 1))', 'laut Uebersetzungstabelle', 'B'),
     ], 12, 5, min_=0,
-        beschreibung='Summe ueber alle Knoten, die gerade an dieser Instanz haengen.'),
+        beschreibung='Zwei Zaehlweisen. respondd summiert, was die Knoten melden, die '
+                     'gerade antworten. Die Uebersetzungstabelle kennt jede Station der '
+                     'Domain, auch hinter stummen Knoten, haelt sie aber noch ein paar '
+                     'Minuten nach dem Abmelden. Untergrenze und Obergrenze also.'),
 
     panel(3, 'Verkehr der Instanz', [
         ziel('rate({__name__="node_traffic.forward.bytes", hostname="$sn"}[$__rate_interval]) * 8',
@@ -290,20 +296,24 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
     ], 0, 21, einheit='percent', min_=0,
         beschreibung='TQ ueber alle Kanten. Faellt das Minimum, hat ein Knoten eine schlechte Anbindung.'),
 
-    panel(6, 'Last und Speicher', [
+    panel(6, 'Last der Maschine', [
         ziel('{__name__="node_load", hostname="$sn"}', 'loadavg', 'A'),
         ziel('{__name__="node_proc.running", hostname="$sn"}', 'laufende Prozesse', 'B'),
-    ], 12, 21, min_=0),
+    ], 12, 21, min_=0,
+        beschreibung='Gilt fuer die ganze Maschine, nicht fuer diese Domaininstanz: alle '
+                     '48 respondd-Instanzen eines Supernodes melden dieselben Systemwerte.'),
 
-    panel(7, 'Freier Speicher', [
+    panel(7, 'Speicher der Maschine', [
         ziel('{__name__="node_memory.available", hostname="$sn"} * 1024', 'verfuegbar', 'A'),
         ziel('{__name__="node_memory.total", hostname="$sn"} * 1024', 'gesamt', 'B'),
-    ], 0, 29, einheit='bytes', min_=0),
+    ], 0, 29, einheit='bytes', min_=0,
+        beschreibung='Ebenfalls maschinenweit, siehe nebenan.'),
 
     panel(8, 'Laufzeit', [
         ziel('{__name__="node_time.up", hostname="$sn"}', 'Laufzeit', 'A'),
     ], 12, 29, einheit='s',
-        beschreibung='Ein Sprung nach unten ist ein Neustart der Instanz.'),
+        beschreibung='Ein Sprung nach unten ist ein Neustart der Maschine, nicht nur '
+                     'dieser Instanz (23.09.2026 um 22:42 alle sechs, wegen batman-adv 2026.3).'),
 
     {
         'id': 9, 'title': 'Knoten an dieser Instanz', 'type': 'table', 'datasource': QUELLE,
@@ -325,6 +335,138 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
         'fieldConfig': {'defaults': {'custom': {'align': 'auto'}}, 'overrides': []},
     },
 ]
+
+
+# --- Domains ----------------------------------------------------------------
+# Eine Domain als Ganzes. Die Knotenmetriken tragen den gemeldeten site_code
+# (nef-05_mon, dus-30_sol_EOL), die Werte aus der Uebersetzungstabelle den
+# Domaincode (05_mon). Gemeinsam ist beiden die Nummer, also wird sie per
+# label_replace herausgezogen und darueber verbunden.
+DNUM_KNOTEN = ('label_replace(%s, "dnum", "$1", "site", ".*?([0-9]+)_.*")')
+DNUM_TT = ('label_replace(%s, "dnum", "$1", "domain", "([0-9]+)_.*")')
+
+
+def dnum(ausdruck, tt=False):
+    return (DNUM_TT if tt else DNUM_KNOTEN) % ausdruck
+
+
+def je_domain(ausdruck):
+    """Summe ueber die Knoten einer Domain, ausgewaehlt ueber $domain."""
+    return ('sum(' + dnum(ausdruck) + ' * on(dnum) group_left() ('
+            + dnum('last_over_time(tt_clients{domain="$domain"}[15m])', tt=True)
+            + ' * 0 + 1))')
+
+
+DOMAIN_VARIABLEN = [
+    {'name': 'domain', 'label': 'Domain', 'type': 'query', 'datasource': QUELLE,
+     'query': {'qryType': 1, 'query': 'label_values(tt_clients, domain)',
+               'refId': 'domain'},
+     'definition': 'label_values(tt_clients, domain)',
+     'refresh': 1, 'sort': 1, 'includeAll': False, 'multi': False,
+     'current': {}, 'options': []},
+]
+
+
+def zahl(nr, titel, ausdruck, x, w=6, einheit='', beschreibung='', warnung=None):
+    feld = {'unit': einheit, 'decimals': 0}
+    if warnung is not None:
+        feld['thresholds'] = {'mode': 'absolute', 'steps': [
+            {'color': 'green', 'value': None}, {'color': 'orange', 'value': warnung}]}
+    return {
+        'id': nr, 'title': titel, 'type': 'stat', 'datasource': QUELLE,
+        'description': beschreibung,
+        'gridPos': {'h': 5, 'w': w, 'x': x, 'y': 0},
+        'targets': [dict(ziel(ausdruck, '', 'A'), instant=True, range=False)],
+        'fieldConfig': {'defaults': feld, 'overrides': []},
+        'options': {'colorMode': 'value', 'graphMode': 'area', 'textMode': 'auto',
+                    'reduceOptions': {'calcs': ['lastNotNull'], 'fields': '', 'values': False}},
+    }
+
+
+DOMAIN_PANELS = [
+    zahl(100, 'Knoten im Mesh', 'last_over_time(tt_im_mesh{domain="$domain"}[15m])', 0,
+         beschreibung='Verschiedene Knoten, die batman in dieser Domain kennt.'),
+    zahl(101, 'Dunkle Knoten', 'last_over_time(tt_dunkel{domain="$domain"}[15m])', 6,
+         warnung=1,
+         beschreibung='Im Mesh sichtbar, aber keiner Karte zuzuordnen: batman-Knoten, '
+                      'deren respondd nicht antwortet. Ein Knoten dieser Art steckt '
+                      'seit dem 23.09.2026 in jeder Domain (02:a5:a7:99:f0:fa, '
+                      'antwortet weder auf respondd noch auf ping).'),
+    zahl(102, 'Clients laut Tabelle', 'last_over_time(tt_clients{domain="$domain"}[15m])', 12,
+         beschreibung='Stationen in der Uebersetzungstabelle, ohne die Knoten selbst.'),
+    zahl(103, 'Clients laut respondd',
+         je_domain('last_over_time({__name__="node_clients.total"}[15m])'), 18,
+         beschreibung='Summe ueber die Knoten, die gerade geantwortet haben.'),
+
+    panel(1, 'Clients', [
+        ziel('last_over_time(tt_clients{domain="$domain"}[15m])', 'Uebersetzungstabelle', 'A'),
+        ziel(je_domain('last_over_time({__name__="node_clients.total"}[15m])'), 'respondd', 'B'),
+    ], 0, 5, min_=0,
+        beschreibung='Obergrenze und Untergrenze. Die Tabelle haelt Stationen noch einige '
+                     'Minuten nach dem Abmelden, respondd verfehlt alles hinter stummen Knoten.'),
+
+    panel(2, 'Knoten', [
+        ziel('last_over_time(tt_im_mesh{domain="$domain"}[15m])', 'im Mesh', 'A'),
+        ziel('last_over_time(tt_dunkel{domain="$domain"}[15m])', 'dunkel', 'B'),
+        ziel('last_over_time(tt_originatoren{domain="$domain"}[15m])', 'Originatoren', 'C'),
+    ], 12, 5, min_=0,
+        beschreibung='Originatoren sind mehr als Knoten: jede Mesh-Schnittstelle zaehlt '
+                     'einzeln, im Schnitt etwa doppelt.'),
+
+    panel(3, 'Verkehr der Domain', [
+        ziel(je_domain('rate({__name__="node_traffic.rx.bytes"}[$__rate_interval])') + ' * 8',
+             'empfangen', 'A'),
+        ziel('- ' + je_domain('rate({__name__="node_traffic.tx.bytes"}[$__rate_interval])') + ' * 8',
+             'gesendet', 'B'),
+    ], 0, 13, einheit='bps',
+        beschreibung='Summe ueber alle Knoten der Domain, aus deren Sicht.'),
+
+    panel(4, 'Datenmenge je Tag', [
+        ziel(je_domain('increase({__name__="node_traffic.rx.bytes"}[1d])'), 'empfangen', 'A', '1d'),
+        ziel(je_domain('increase({__name__="node_traffic.tx.bytes"}[1d])'), 'gesendet', 'B', '1d'),
+    ], 12, 13, einheit='bytes', min_=0, balken=True, stapeln=True),
+
+    panel(5, 'Knoten mit wenig freiem Speicher', [
+        ziel('count(' + dnum('last_over_time({__name__="node_memory.available"}[15m]) < 10000')
+             + ' * on(dnum) group_left() ('
+             + dnum('last_over_time(tt_clients{domain="$domain"}[15m])', tt=True) + ' * 0 + 1))',
+             'unter 10 MB', 'A'),
+    ], 0, 21, min_=0,
+        beschreibung='Kandidaten fuer den Austausch, unabhaengig vom Geraetetyp.'),
+
+    panel(6, 'Laufzeit der Knoten', [
+        ziel('min(' + dnum('last_over_time({__name__="node_time.up"}[15m])')
+             + ' * on(dnum) group_left() ('
+             + dnum('last_over_time(tt_clients{domain="$domain"}[15m])', tt=True) + ' * 0 + 1))',
+             'kuerzeste', 'A'),
+        ziel('avg(' + dnum('last_over_time({__name__="node_time.up"}[15m])')
+             + ' * on(dnum) group_left() ('
+             + dnum('last_over_time(tt_clients{domain="$domain"}[15m])', tt=True) + ' * 0 + 1))',
+             'im Mittel', 'B'),
+    ], 12, 21, einheit='s', min_=0,
+        beschreibung='Faellt die kuerzeste Laufzeit staendig, startet dort etwas immer wieder neu.'),
+]
+
+
+DOMAIN = {
+    'uid': 'nf-domain',
+    'title': 'Domain',
+    'description': 'Eine Domain als Ganzes: Clients aus zwei Quellen, Knoten im '
+                   'Mesh, dunkle Knoten, Verkehr.',
+    'tags': ['neanderfunk'],
+    'timezone': 'browser',
+    'schemaVersion': 39,
+    'version': 1,
+    'refresh': '5m',
+    'time': {'from': 'now-7d', 'to': 'now'},
+    'templating': {'list': DOMAIN_VARIABLEN},
+    'panels': DOMAIN_PANELS,
+    'editable': False,
+    'graphTooltip': 1,
+    'links': [{'type': 'dashboards', 'tags': ['neanderfunk'], 'title': 'Weitere',
+               'asDropdown': True, 'icon': 'external link', 'includeVars': False,
+               'keepTime': True, 'targetBlank': False}],
+}
 
 
 DASHBOARD = {
@@ -371,8 +513,8 @@ SUPERNODE = {
 
 def main():
     was = sys.argv[1] if len(sys.argv) > 1 else 'knoten'
-    json.dump(SUPERNODE if was == 'supernode' else DASHBOARD, sys.stdout,
-              ensure_ascii=False, indent=1)
+    json.dump({'supernode': SUPERNODE, 'domain': DOMAIN}.get(was, DASHBOARD),
+              sys.stdout, ensure_ascii=False, indent=1)
     print()
     return 0
 

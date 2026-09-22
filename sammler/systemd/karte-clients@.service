@@ -1,0 +1,8 @@
+[Unit]
+Description=Clients je Domain aus der Uebersetzungstabelle, Community %i
+After=yanic@%i.service victoria-metrics.service
+
+[Service]
+Type=oneshot
+# Braucht batctl, das geht nur als root
+ExecStart=/usr/local/sbin/karte-clients %i

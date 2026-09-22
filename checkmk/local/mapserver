@@ -293,3 +293,26 @@ if systemctl is-enabled -q grafana-server 2>/dev/null; then
         echo "1 mapserver-grafana speicher_mb=$rss Grafana antwortet nicht (nur die Vertiefung, nicht die Karte)"
     fi
 fi
+
+# --- Clients und dunkle Knoten ----------------------------------------------
+# Aus der Uebersetzungstabelle, geschrieben von karte-clients. Dunkel heisst:
+# im Mesh sichtbar, aber keinem Knoten der Karte zuzuordnen, also ein
+# batman-Knoten ohne antwortendes respondd. Ein solcher steckt seit dem
+# 23.09.2026 in jeder Domain (02:a5:a7:99:f0:fa), deshalb liegt die Schwelle
+# nicht bei null.
+if systemctl is-enabled -q karte-clients@neander.timer 2>/dev/null; then
+    werte=$(curl -s -m 10 -G http://127.0.0.1:8428/api/v1/query \
+        --data-urlencode 'query=sum(last_over_time(tt_clients[15m])) or vector(-1)' 2>/dev/null |
+        python3 -c "import json,sys; r=json.load(sys.stdin)['data']['result']; print(int(float(r[0]['value'][1])) if r else -1)" 2>/dev/null || echo -1)
+    dunkel=$(curl -s -m 10 -G http://127.0.0.1:8428/api/v1/query \
+        --data-urlencode 'query=sum(last_over_time(tt_dunkel[15m])) or vector(-1)' 2>/dev/null |
+        python3 -c "import json,sys; r=json.load(sys.stdin)['data']['result']; print(int(float(r[0]['value'][1])) if r else -1)" 2>/dev/null || echo -1)
+    domains=$(echo "$codes" | grep -c .)
+    if [ "${werte:-0}" -le 0 ]; then
+        echo "2 mapserver-clients clients=0|dunkel=0 keine Zahlen aus der Uebersetzungstabelle"
+    elif [ "${dunkel:-0}" -gt $((domains + 12)) ]; then
+        echo "1 mapserver-clients clients=$werte|dunkel=$dunkel $werte Clients, aber $dunkel dunkle Knoten (erwartet etwa $domains)"
+    else
+        echo "0 mapserver-clients clients=$werte|dunkel=$dunkel $werte Clients in $domains Domains, $dunkel dunkle Knoten"
+    fi
+fi

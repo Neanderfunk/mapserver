@@ -43,6 +43,7 @@ install -m 0644 "$HIER/grafana/datasource.yaml" /etc/grafana/provisioning/dataso
 install -m 0644 "$HIER/grafana/dashboards.yaml" /etc/grafana/provisioning/dashboards/neanderfunk.yaml
 python3 "$HIER/grafana/dashboard-erzeugen.py" > /var/lib/grafana/dashboards/knoten.json
 python3 "$HIER/grafana/dashboard-erzeugen.py" supernode > /var/lib/grafana/dashboards/supernode.json
+python3 "$HIER/grafana/dashboard-erzeugen.py" domain > /var/lib/grafana/dashboards/domain.json
 chown -R grafana:grafana /var/lib/grafana/dashboards
 systemctl daemon-reload
 systemctl enable grafana-server

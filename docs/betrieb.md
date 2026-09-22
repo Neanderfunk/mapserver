@@ -293,6 +293,35 @@ gemessen:
 - `rate()` wirft den Metriknamen weg, danach sind `rx` und `tx` nicht mehr
   unterscheidbar; `keep_metric_names` hält ihn fest (VictoriaMetrics)
 
+### Clients und dunkle Knoten
+
+`sammler/clients-zaehlen.py`, alle fünf Minuten als `karte-clients@neander`.
+Es zählt aus der Übersetzungstabelle von batman, die uns als Mesh-Mitglied
+ohnehin zugestellt wird (48 Abfragen kosten zusammen 0,13 Sekunden):
+
+| Metrik | Bedeutung |
+| --- | --- |
+| `tt_clients` | Stationen der Domain, ohne die Knoten selbst |
+| `tt_eintraege` | alle Einträge der Tabelle |
+| `tt_originatoren` | Originatoren im Mesh, **etwa doppelt so viele wie Knoten**, weil jede Mesh-Schnittstelle einzeln zählt |
+| `tt_im_mesh` | verschiedene Knoten dahinter |
+| `tt_dunkel` | Originatoren, die zu keinem bekannten Knoten gehören |
+
+Zwei Zählweisen für Clients, und beide sind richtig: respondd summiert, was
+die antwortenden Knoten melden (Untergrenze), die Tabelle kennt jede Station
+der Domain, hält sie aber noch einige Minuten nach dem Abmelden (Obergrenze).
+Gemessen am 23.09.2026: 2243 gegen 2945.
+
+**Dunkle Knoten** sind batman-Knoten ohne antwortendes respondd. Wer
+Originatoren mit Knoten vergleicht, erfindet sie: 1763 Originatoren sind 1070
+Knoten. Richtig gezählt wird über die Mesh-MACs aus `nodes.json`. Stand
+23.09.2026 gibt es genau zwei im ganzen Netz, einer davon in allen 48 Domains:
+
+- `02:a5:a7:99:f0:fa`, erreichbar über den jeweiligen Supernode, antwortet
+  weder auf respondd noch auf ping. Nicht unsere Maschine, unsere MACs sind
+  `02:45:4e:*`. Ungeklärt, wem er gehört.
+- `0a:ed:b7:74:e0:a3`, nur in `22_dusukn`.
+
 ### Grafana
 
 `https://neander.map.freifunk.space/grafana/`, verlinkt aus dem Knotenfenster

@@ -57,6 +57,10 @@ install -m 0755 "$HIER/ziele-ernten.py" /usr/local/sbin/karte-ziele-ernten
 install -m 0644 "$HIER/systemd/karte-ziele.service" "$HIER/systemd/karte-ziele.timer" /etc/systemd/system/
 # Adressbuch node_id -> Adressen fuer Sammler ausserhalb, bisher nur neander
 install -m 0755 "$HIER/adressbuch.py" /usr/local/sbin/karte-adressbuch
+# Clients je Domain aus der Uebersetzungstabelle, genauer als die Summe der
+# respondd-Antworten (siehe clients-zaehlen.py)
+install -m 0755 "$HIER/clients-zaehlen.py" /usr/local/sbin/karte-clients
+install -m 0644 "$HIER/systemd/karte-clients@.service" "$HIER/systemd/karte-clients@.timer" /etc/systemd/system/
 install -m 0644 "$HIER/systemd/karte-adressbuch@.service" "$HIER/systemd/karte-adressbuch@.timer" /etc/systemd/system/
 install -d -m 0755 -o yanic -g www-data /var/lib/karte/adressbuch /var/www/karte-en/api
 [ -f /etc/karte-en/sitecodes.conf ] || install -m 0644 "$HIER/sitecodes.conf" /etc/karte-en/sitecodes.conf
@@ -68,7 +72,7 @@ for g in $communities; do
 	chmod 0644 "/etc/yanic-$g.conf"
 	systemctl enable --now "yanic@$g.service"
 done
-systemctl enable --now karte-adressbuch@neander.timer
+systemctl enable --now karte-adressbuch@neander.timer karte-clients@neander.timer
 sleep 20
 for g in $communities; do
 	printf '  %-10s %s, %s Schnittstellen\n' "$g" \

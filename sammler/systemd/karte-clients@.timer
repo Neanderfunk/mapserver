@@ -1,0 +1,10 @@
+[Unit]
+Description=Clients je Domain zaehlen, alle fuenf Minuten
+
+[Timer]
+OnBootSec=7min
+OnUnitActiveSec=5min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

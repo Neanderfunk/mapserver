@@ -99,6 +99,17 @@ werkzeug/respondd-probe.py bat-ffha
 Antwortet dort etwas und yanic nicht, liegt es an `/etc/yanic.conf`
 (Schnittstellenname falsch) oder an Rechten.
 
+**Originatoren da, Probe antwortet, yanic sammelt trotzdem nichts.** Der
+Sammler hängt an einer Schnittstelle, die es nicht mehr gibt:
+
+```bash
+ss -uanp | grep yanic | grep '%if[0-9]'
+```
+
+Jede Zeile ist eine stumme Domain. Der Wächter startet den Sammler dann
+innerhalb von fünf Minuten neu; von Hand `systemctl restart yanic@<community>`.
+Hintergrund in `docs/kartenausfall-diagnose.md` der Router-Werkstatt.
+
 **Karte lädt, bleibt aber leer.** Browserkonsole ansehen. Meist ist es
 `config.json` oder `data/meshviewer.json`, beide müssen unter dem Vhost-Namen
 200 liefern:
@@ -165,6 +176,10 @@ Beide lassen sich von Hand aufrufen und geben ihre Zeilen direkt aus.
 | `mapserver-Abschottung` | eine RA-Route auftaucht, ein Standardweg über bat führt oder Forwarding an ist |
 | `mapserver-Batman` | weniger L2TP-Schnittstellen da sind als Domains |
 | `mapserver-EN-<ort>` | kein Nachbar, keine Originatoren, kein Gateway oder alte Datei |
+| `mapserver-nginx-konfig` | `nginx -t` scheitert; der laufende nginx merkt das erst beim Neustart |
+| `mapserver-adressbuch-<community>` | `targets.json` älter als 7 bzw. 15 Minuten oder leer |
+| `mapserver-zeitreihe` | VictoriaMetrics antwortet nicht, keine frischen Werte, oder die Platte wird knapp |
+| `mapserver-kennung` | eine bat- oder td-Schnittstelle nicht die MAC aus dem Schema trägt |
 | `mapserver-Web` | eine der neun Karten oder ihre Daten nicht mit 200 antworten |
 
 Die aussagekräftigste Größe je Domain sind die **Originatoren**, nicht die
@@ -177,6 +192,53 @@ ein fremdes Netz, siehe [hintergrund.md](hintergrund.md).
 
 Nicht überwacht wird von hier aus der Weg von außen, also Proxy und
 Zertifikat auf twin2. Das gehört in einen Check dort.
+
+## Schnittstellen für andere
+
+Beides lesend, ohne Anmeldung, dual-stack über den Proxy auf twin2. Genutzt
+von der Paketfeed-Session (nfcollect, Release-Abnahme).
+
+### Adressbuch
+
+`https://neander.map.freifunk.space/nf/targets.json`, node_id auf aktuelle
+Adressen. Die node_id bleibt, das öffentliche Präfix wandert mit dem
+Supernode.
+
+```
+{"generated": "...Z", "source": "...Z", "community": "neander",
+ "nodes": {"<node_id>": {"hostname", "site_code", "domain",
+                         "addresses": [öffentlich..., ULA...],
+                         "last_seen": "...Z", "online": true}}}
+```
+
+- `site_code` wie gemeldet (`nef-10_wlf`, `..._EOL`), `domain` normalisiert
+  über `sitecodes.conf`. Supernodes melden nur `domain_code` (`ffnefd01`).
+- Erzeugt von `karte-adressbuch@neander.timer` alle zwei Minuten aus
+  `nodes.json`. Eigener Bestand in `/var/lib/karte/adressbuch/`: wen yanic
+  vergisst, der bleibt mit altem `last_seen` und `online: false` stehen.
+
+### Zeitreihen
+
+`https://neander.map.freifunk.space/nf/prom/api/v1/...`, Prometheus-API von
+VictoriaMetrics. Freigegeben sind nur `query`, `query_range`, `series`,
+`labels`, `label/<name>/values`, `export`, `status/tsdb` und `federate`, alles
+andere unter `/nf/prom/` gibt 403.
+
+- Quelle: yanic schreibt über seinen Influx-Ausgang (`ZEITREIHE` in
+  `sammler/yanic-conf.py`), nur die Community neander. Metriknamen sind
+  `<measurement>_<feld>`, etwa `node_memory.available`, `node_time.up`,
+  `node_load`, `link_tq`; Labels u.a. `nodeid`, `hostname`, `site`, `domain`,
+  `model`, `firmware_release`, `db` (= Community).
+- Beispiel: `curl -s 'https://neander.map.freifunk.space/nf/prom/api/v1/query' --data-urlencode 'query={__name__="node_memory.available",nodeid="bc7ec351c4a4"}'`
+  (Metriknamen mit Punkt gehen nur über `__name__`).
+- `owner` wird beim Empfang verworfen (`/etc/victoria-metrics/relabel.yml`),
+  yanic kennt für diesen Ausgang kein `no_owner`.
+- Aufbewahrung 180 Tage, Grenzen für Abfragen in
+  `/etc/default/victoria-metrics`. VictoriaMetrics lauscht nur auf
+  `127.0.0.1:8428`, die Paketvorgabe wäre `0.0.0.0` gewesen.
+- Einrichtung: `sudo ./zeitreihe/einrichten.sh`.
+- Die `delete`-Abfrage, die yanic einmal am Tag an die Datenbank schickt,
+  kennt VictoriaMetrics nicht; die Fehlermeldung im Log ist harmlos.
 
 ## Neustart der Maschine
 

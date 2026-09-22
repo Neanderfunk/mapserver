@@ -142,6 +142,9 @@ API = """	location /nf/ {
 		add_header Cache-Control "no-cache";
 		add_header Access-Control-Allow-Origin "*";
 	}
+	# Zeitreihen, falls fuer diese Community eingerichtet (zeitreihe/). Das
+	# Muster mit Stern macht das include optional.
+	include /etc/nginx/karte-en/prom-%(community)s*.conf;
 """
 
 

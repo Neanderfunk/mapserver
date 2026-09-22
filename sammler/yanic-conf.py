@@ -46,6 +46,12 @@ ABFRAGE = {'neander': 'ff02::1'}
 # sitecodes-ermitteln.py die Codes im Netz und legt sie hier ab.
 SITE_KONF = '/etc/karte-en/sitecodes.conf'
 
+# Zeitreihen je Community: yanic schreibt ueber seinen Influx-Ausgang in
+# VictoriaMetrics (zeitreihe/einrichten.sh). Der Name landet dort als Label
+# db, damit sich die Communities trennen lassen. Nur neander: EN hat seine
+# Karte wieder selbst (adorfer 22.09.2026, Auftrag der Paketfeed-Session).
+ZEITREIHE = {'neander': 'http://127.0.0.1:8428'}
+
 
 def gemeldete_codes():
     try:
@@ -198,6 +204,18 @@ def main():
     t.append('delete_after = "90d"')
     t.append('delete_interval = "1d"')
     t.append('')
+    if community in ZEITREIHE:
+        t.append('# Zeitreihen. Die Kontaktangabe schreibt yanic hier als Tag owner,')
+        t.append('# no_owner gibt es fuer diesen Ausgang nicht; VictoriaMetrics wirft')
+        t.append('# das Label beim Empfang weg (/etc/victoria-metrics/relabel.yml).')
+        t.append('# delete_after wirkt hier nicht, die Aufbewahrung regelt VictoriaMetrics.')
+        t.append('[[database.connection.influxdb]]')
+        t.append('enable = true')
+        t.append(f'address = "{ZEITREIHE[community]}"')
+        t.append(f'database = "{community}"')
+        t.append('username = ""')
+        t.append('password = ""')
+        t.append('')
     t.append('[[database.connection.logging]]')
     t.append('enable = false')
     t.append('path = "/var/log/yanic.log"')

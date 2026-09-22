@@ -1,0 +1,9 @@
+# Wird auf alles angewandt, was hereinkommt, vor dem Speichern.
+#
+# yanic schreibt in den Influx-Ausgang die Kontaktangabe des Knotens als Tag
+# "owner". no_owner gibt es nur fuer die Kartenausgaben, nicht fuer die
+# Datenbank. Die Zeitreihen sind ueber /nf/prom/ oeffentlich lesbar, und wer
+# einen Kontakt in seinen Knoten eingetragen hat, hat das nicht fuer unsere
+# Veroeffentlichung getan (docs/hintergrund.md, no_owner).
+- action: labeldrop
+  regex: owner

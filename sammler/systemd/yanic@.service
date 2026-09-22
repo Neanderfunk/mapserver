@@ -1,8 +1,11 @@
 [Unit]
 Description=yanic, respondd-Sammler der Community %i
 Documentation=https://codeberg.org/FreifunkBremen/yanic
-After=network-online.target
+After=network-online.target victoria-metrics.service
 Wants=network-online.target
+# yanic prueft beim Start, ob die Zeitreihen-Datenbank antwortet, und beendet
+# sich sonst. Nur fuer Communities mit Zeitreihe relevant, schadet den anderen
+# nicht, weil After ohne Wants nichts nachzieht.
 StartLimitIntervalSec=0
 
 [Service]

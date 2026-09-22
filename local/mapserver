@@ -222,3 +222,42 @@ for datei in "$WEB"/api/*/targets.json; do
     fi
     echo "$z mapserver-adressbuch-$c alter_s=$a;420;900|knoten=$n $n Knoten, ${a}s alt"
 done
+
+# --- Zeitreihen --------------------------------------------------------------
+# yanic -> VictoriaMetrics, oeffentlich lesend unter /nf/prom/. Gezaehlt
+# werden Knoten mit einem Wert aus der letzten Viertelstunde, dazu Platte.
+if systemctl is-enabled -q victoria-metrics 2>/dev/null; then
+    n=$(curl -s -m 10 http://127.0.0.1:8428/api/v1/query \
+        --data-urlencode 'query=count(last_over_time({__name__="node_load"}[15m]))' 2>/dev/null |
+        python3 -c "import json,sys; r=json.load(sys.stdin)['data']['result']; print(r[0]['value'][1] if r else 0)" 2>/dev/null || echo -1)
+    mb=$(( $(du -sk /var/lib/victoria-metrics 2>/dev/null | cut -f1) / 1024 ))
+    voll=$(df --output=pcent /var/lib/victoria-metrics 2>/dev/null | tail -1 | tr -dc 0-9)
+    if [ "$n" = -1 ];            then z=2; t="VictoriaMetrics antwortet nicht"
+    elif [ "${voll:-0}" -ge 90 ]; then z=2; t="Platte ${voll}% voll, Zeitreihen ${mb} MB"
+    elif [ "$n" -eq 0 ] && [ "$laeuft" -gt 900 ]; then z=2; t="keine Werte der letzten 15 Minuten"
+    elif [ "${voll:-0}" -ge 80 ]; then z=1; t="Platte ${voll}% voll, Zeitreihen ${mb} MB"
+    else z=0; t="$n Knoten mit frischen Werten, ${mb} MB, Platte ${voll}%"
+    fi
+    echo "$z mapserver-zeitreihe knoten=$n|groesse_mb=$mb|platte_pct=${voll:-0};80;90 $t"
+fi
+
+# --- Kennung -----------------------------------------------------------------
+# Unsere MACs in fremden Netzen folgen einem Schema (docs/hintergrund.md), damit
+# man uns dort zuordnen kann. Am 22.09.2026 trug bat-42_siwil stattdessen eine
+# Zufalls-MAC, unbemerkt seit dem Aufbau.
+serie=$(cat /etc/karte-en/kennung 2>/dev/null || echo 0)
+falsch=''
+while read -r _com code _ordner _port id _rest; do
+    case "$_com" in \#*|'') continue ;; esac
+    for art in bat:01 td:00; do
+        f=/sys/class/net/${art%:*}-$code/address
+        [ -r "$f" ] || continue
+        soll=$(printf '02:45:4e:%02x:%s:%02x' "$serie" "${art#*:}" "$id")
+        [ "$(cat "$f")" = "$soll" ] || falsch="$falsch ${art%:*}-$code"
+    done
+done < "$KONF"
+if [ -n "$falsch" ]; then
+    echo "1 mapserver-kennung - MAC nicht nach Schema:$falsch"
+else
+    echo "0 mapserver-kennung - alle Schnittstellen mit Kennung aus Serie $serie"
+fi

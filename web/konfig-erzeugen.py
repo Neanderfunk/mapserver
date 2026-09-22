@@ -92,6 +92,51 @@ ALTGERAETE_TEXT = (
 )
 
 
+# Zeitreihen im Knotenfenster. meshviewer zeichnet sie selbst mit d3 als SVG
+# im Browser; kein iframe, kein PNG aus einem Grafana. Upstream holt die Daten
+# ueber die Grafana-API, unser Patch patches/meshviewer-chart.patch kann sie
+# auch direkt aus einer Prometheus-API lesen, also aus unserem
+# VictoriaMetrics. Damit brauchen wir kein Grafana als Uebersetzer.
+#
+# $node ersetzt meshviewer durch die node_id.
+# Eigenheiten der Abfragesprache, beide gemessen am 23.09.2026:
+#   - keine Backslash-Escapes in den Namensmustern, der Punkt darf hier fuer
+#     sich stehen
+#   - rate() wirft den Metriknamen weg, danach sind rx und tx nicht mehr
+#     unterscheidbar ("duplicate output timeseries"); keep_metric_names haelt
+#     ihn fest, das ist eine Erweiterung von VictoriaMetrics
+ZEITREIHE_URL = 'https://neander.map.freifunk.space/nf/prom'
+
+DIAGRAMME = [
+    {'name': 'Clients',
+     'query': 'last_over_time({__name__="node_clients.total", nodeid="$node"}[10m])',
+     'legendFormat': 'Clients', 'format': ',.0f'},
+    {'name': 'Bandbreite',
+     'query': 'label_replace(rate({__name__=~"node_traffic.(rx|tx).bytes", nodeid="$node"}[15m])'
+              ' keep_metric_names, "richtung", "$1", "__name__",'
+              ' "node_traffic.(rx|tx).bytes") * 8',
+     'legendFormat': '{{richtung}}', 'unitSuffix': 'bit/s', 'format': '.2~s',
+     # Senden nach unten, Empfangen nach oben
+     'series': [{'name': 'tx', 'negate': True}]},
+    {'name': 'Airtime',
+     'query': 'label_replace({__name__=~"node_airtime11(g|a).chan_util", nodeid="$node"},'
+              ' "band", "$1", "__name__", "node_airtime11(g|a).chan_util")',
+     'legendFormat': '{{band}}', 'unitSuffix': '%', 'format': '.0f'},
+    {'name': 'Laufzeit',
+     'query': '{__name__="node_time.up", nodeid="$node"} / 86400',
+     'legendFormat': 'Tage', 'unitSuffix': ' d', 'format': '.1f'},
+    {'name': 'Freier Speicher',
+     'query': '{__name__="node_memory.available", nodeid="$node"} * 1024',
+     'legendFormat': 'verfügbar', 'unitSuffix': 'B', 'format': '.2~s'},
+]
+
+
+def diagramme():
+    return [dict(d, datasourceType='prometheus-direct', datasourceUid='vm',
+                 **{'from': 'now-7d', 'to': 'now', 'maxDataPoints': 300})
+            for d in DIAGRAMME]
+
+
 def altgeraete(datei):
     """Modelle, die in den Daten auf einer _EOL-Domain stehen."""
     gefunden = set(ALTGERAETE)
@@ -115,7 +160,8 @@ def konfig(titel, pfad, alle):
     # deprecation_enabled False. Es kam nach dieser Stelle und hat den Hinweis
     # ueberall abgeschaltet, auch dort, wo die Liste gesetzt war.
     alt = ({'deprecation_enabled': True,
-            'eol': altgeraete(daten), 'eol_text': ALTGERAETE_TEXT}
+            'eol': altgeraete(daten), 'eol_text': ALTGERAETE_TEXT,
+            'prometheus': {'url': ZEITREIHE_URL}, 'nodeCharts': diagramme()}
            if community == 'neander' else {'deprecation_enabled': False})
     return {
         **alt,

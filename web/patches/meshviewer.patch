@@ -1,0 +1,246 @@
+diff --git a/lib/config_default.ts b/lib/config_default.ts
+index 5612ab1..a0aca70 100644
+--- a/lib/config_default.ts
++++ b/lib/config_default.ts
+@@ -58,6 +58,12 @@ export interface GrafanaConfig {
+   url: string;
+   orgId?: number;
+ }
++// Lokaler Zusatz: Zeitreihen direkt aus einer Prometheus-API lesen
++// (VictoriaMetrics), ohne ein Grafana dazwischen. Ein Chart nimmt diesen Weg
++// mit datasourceType "prometheus-direct".
++export interface PrometheusConfig {
++  url: string;
++}
+ 
+ export interface ChartSeries {
+   name: string;
+@@ -67,6 +73,9 @@ export interface ChartSeries {
+ 
+ export interface Chart {
+   name: string;
++  // Nur fuer prometheus-direct: Beschriftung der Reihen, {{label}} wird
++  // durch den Wert des Labels ersetzt
++  legendFormat?: string;
+   datasourceUid: string;
+   datasourceType: string;
+   query: string;
+@@ -136,6 +145,18 @@ export interface Config {
+     other: string;
+   };
+   map: {
++    // Beschriftung der Knoten auf der Karte. Ohne diese drei Werte nimmt die
++    // Beschriftungsebene die Farben des Seitenkoerpers, und im Dunkelmodus
++    // heisst das helle Schrift mit dunklem Saum. Auf einer hellen Karte, die
++    // nicht mit invert-in-dark-mode umgedreht wird, ist das unlesbar.
++    // Leer oder 0 laesst alles wie gehabt. Die Dark-Varianten gelten,
++    // solange das Dunkelthema aktiv ist; sind sie leer, bleibt es dort beim
++    // Verhalten des Themas.
++    labelShadowColor: string;
++    labelColor: string;
++    labelShadowColorDark: string;
++    labelColorDark: string;
++    labelOffset: number;
+     labelNewColor: string;
+     tqFrom: string;
+     tqTo: string;
+@@ -197,6 +218,7 @@ export interface Config {
+   linkInfos: LinkInfo[];
+   nodeInfos: NodeInfo[];
+   grafana?: GrafanaConfig;
++  prometheus?: PrometheusConfig;
+   nodeCharts: Chart[];
+   linkCharts: Chart[];
+   globalCharts: Chart[];
+@@ -341,6 +363,11 @@ export const config: Config = {
+     other: "rgba(227, 166, 25, 0.7)",
+   },
+   map: {
++    labelShadowColor: "",
++    labelColor: "",
++    labelShadowColorDark: "",
++    labelColorDark: "",
++    labelOffset: 0,
+     labelNewColor: "#459C18",
+     tqFrom: "#F02311",
+     tqTo: "#04C714",
+diff --git a/lib/infobox/chart.ts b/lib/infobox/chart.ts
+index 0f8b2a0..5da48ab 100644
+--- a/lib/infobox/chart.ts
++++ b/lib/infobox/chart.ts
+@@ -92,6 +92,82 @@ async function fetchChartData(
+   return response.json();
+ }
+ 
++// --- prometheus-direct ------------------------------------------------------
++// Unser Weg ohne Grafana: die Prometheus-API von VictoriaMetrics beantwortet
++// query_range direkt. Grafana wuerde hier nur uebersetzen und dafuer als
++// eigener Dienst laufen. Alles Weitere, Zeichnen und Tabelle, bleibt gleich.
++
++function promName(metric: Record<string, string>, legendFormat?: string): string {
++  if (legendFormat) {
++    return legendFormat.replace(/{{\s*([\w.]+)\s*}}/g, (_m, k: string) => metric[k] ?? "");
++  }
++  const n = metric["__name__"];
++  if (n) return n.replace(/^\w+[._]/, "");
++  const rest = Object.entries(metric).filter(([k]) => k !== "__name__");
++  return rest.length ? rest.map(([k, v]) => `${k}=${v}`).join(" ") : "Wert";
++}
++
++async function fetchPrometheusDirect(
++  baseUrl: string,
++  chart: Chart,
++  subst: Record<string, string>,
++  configMap: Map<string, ChartSeries>,
++): Promise<ParsedChart> {
++  const from = parseRelativeMs(chart.from ?? "now-7d");
++  const to = parseRelativeMs(chart.to ?? "now-1m");
++  const maxDataPoints = chart.maxDataPoints ?? 300;
++  // Die Sammelrunde laeuft alle fuenf Minuten, feiner hat es keinen Sinn.
++  const step = Math.max(300, Math.round((to - from) / 1000 / maxDataPoints));
++  const params = new URLSearchParams({
++    query: applySubst(chart.query, subst),
++    start: String(Math.floor(from / 1000)),
++    end: String(Math.floor(to / 1000)),
++    step: String(step),
++  });
++  const response = await fetch(`${baseUrl}/api/v1/query_range?${params.toString()}`, {
++    method: "GET",
++    mode: "cors",
++    credentials: "omit",
++  });
++  if (!response.ok) throw new Error(`HTTP ${response.status}`);
++  const json = await response.json();
++
++  const series: Series[] = [];
++  let tMin = Infinity,
++    tMax = -Infinity,
++    vMin = Infinity,
++    vMax = -Infinity;
++  for (const result of json?.data?.result ?? []) {
++    const name = promName(result.metric ?? {}, chart.legendFormat);
++    // negate wie beim Grafana-Weg: damit sich Senden und Empfangen
++    // gegenueberstellen lassen
++    const negate = configMap.get(name)?.negate ?? false;
++    const points: { t: Date; v: number | null }[] = [];
++    let last: number | null = null;
++    for (const [ts, raw] of result.values ?? []) {
++      const t = ts * 1000;
++      // Fehlende Runden als Luecke zeichnen und nicht als gerade Linie
++      if (last !== null && t - last > step * 2000) {
++        points.push({ t: new Date(last + step * 1000), v: null });
++      }
++      const v = Number(raw);
++      const wert = Number.isFinite(v) ? (negate ? -v : v) : null;
++      points.push({ t: new Date(t), v: wert });
++      last = t;
++      if (t < tMin) tMin = t;
++      if (t > tMax) tMax = t;
++      if (wert !== null) {
++        if (wert < vMin) vMin = wert;
++        if (wert > vMax) vMax = wert;
++      }
++    }
++    if (points.length) {
++      series.push({ name, points });
++    }
++  }
++  return { series, xDomain: [tMin, tMax], yDomain: [Math.min(vMin, 0), Math.max(vMax, 1)] };
++}
++
+ function parseResults(results: Record<string, any>, configMap: Map<string, ChartSeries>): ParsedChart {
+   const series: Series[] = [];
+   let tMin = Infinity,
+@@ -252,14 +328,17 @@ function renderD3Chart(
+ }
+ 
+ export function createChartVNode(chart: Chart, subst: Record<string, string>): VNode {
++  const direkt = chart.datasourceType === "prometheus-direct";
+   const grafana = window.config.grafana;
+-  if (!grafana) {
+-    console.warn(`Grafana config missing`);
++  const prometheus = window.config.prometheus;
++  if (direkt ? !prometheus : !grafana) {
++    console.warn(direkt ? `Prometheus config missing` : `Grafana config missing`);
+     return h("div");
+   }
+ 
+-  const grafanaUrl = grafana.url.replace(/\/$/, "");
+-  const orgId = grafana.orgId ?? 1;
++  const grafanaUrl = (grafana?.url ?? "").replace(/\/$/, "");
++  const promUrl = (prometheus?.url ?? "").replace(/\/$/, "");
++  const orgId = grafana?.orgId ?? 1;
+ 
+   return h("div", {
+     class: { "node-chart": true },
+@@ -268,10 +347,11 @@ export function createChartVNode(chart: Chart, subst: Record<string, string>): V
+         const el = vnode.elm as HTMLElement;
+         el.textContent = _.t("loading", { name: chart.name });
+         try {
+-          const json = await fetchChartData(grafanaUrl, orgId, chart, subst);
+-          el.textContent = "";
+           const configMap = new Map((chart.series ?? []).map((s) => [s.name, s]));
+-          const parsed = parseResults(json.results ?? {}, configMap);
++          const parsed = direkt
++            ? await fetchPrometheusDirect(promUrl, chart, subst, configMap)
++            : parseResults((await fetchChartData(grafanaUrl, orgId, chart, subst)).results ?? {}, configMap);
++          el.textContent = "";
+           if (parsed.series.length === 0 || !Number.isFinite(parsed.xDomain[0])) {
+             el.textContent = _.t("node.chartNoData", { name: chart.name });
+             return;
+diff --git a/lib/map/labellayer.js b/lib/map/labellayer.js
+index d9ad076..fca4c99 100644
+--- a/lib/map/labellayer.js
++++ b/lib/map/labellayer.js
+@@ -21,6 +21,7 @@ let labelLocations = [
+   ["right", "ideographic", 3 / 8],
+ ];
+ let labelShadow;
++let labelFill;
+ let bodyStyle = { fontFamily: "sans-serif" };
+ let nodeRadius = 4;
+ 
+@@ -270,10 +271,13 @@ export const LabelLayer = L.GridLayer.extend({
+     // - label (string)
+     // - color (string)
+ 
+-    let labelsOnline = nodes.online.map(prepareLabel(null, 11, 8, true));
+-    let labelsOffline = nodes.offline.map(prepareLabel(config.icon.offline.color, 9, 5, false));
+-    let labelsNew = nodes.new.map(prepareLabel(config.map.labelNewColor, 11, 8, true));
+-    let labelsLost = nodes.lost.map(prepareLabel(config.icon.lost.color, 11, 8, true));
++    // Zusaetzlicher Abstand zwischen Knotenpunkt und Beschriftung
++    let extra = config.map.labelOffset || 0;
++
++    let labelsOnline = nodes.online.map(prepareLabel(null, 11, 8 + extra, true));
++    let labelsOffline = nodes.offline.map(prepareLabel(config.icon.offline.color, 9, 5 + extra, false));
++    let labelsNew = nodes.new.map(prepareLabel(config.map.labelNewColor, 11, 8 + extra, true));
++    let labelsLost = nodes.lost.map(prepareLabel(config.icon.lost.color, 11, 8 + extra, true));
+ 
+     let labels = [].concat(labelsNew).concat(labelsLost).concat(labelsOnline).concat(labelsOffline);
+ 
+@@ -375,8 +379,15 @@ export const LabelLayer = L.GridLayer.extend({
+ 
+     let size = tilePoint.multiplyBy(tileSize);
+     let map = this._map;
++    let config = window.config;
++    // Im Dunkelthema eigene Werte, sonst bleibt es dort beim Thema
++    let dark = document.documentElement.classList.contains("theme_dark");
++    labelFill = dark ? config.map.labelColorDark : config.map.labelColor;
++
+     bodyStyle = window.getComputedStyle(document.querySelector("body"));
+-    labelShadow = bodyStyle.backgroundColor.replace(/rgb/i, "rgba").replace(/\)/i, ",0.7)");
++    labelShadow =
++      (dark ? config.map.labelShadowColorDark : config.map.labelShadowColor) ||
++      bodyStyle.backgroundColor.replace(/rgb/i, "rgba").replace(/\)/i, ",0.7)");
+ 
+     function projectNodes(d) {
+       let point = map.project(d.label.position);
+@@ -399,7 +410,7 @@ export const LabelLayer = L.GridLayer.extend({
+       ctx.font = labelPoint.label.font;
+       ctx.textAlign = labelPoint.label.anchor[0];
+       ctx.textBaseline = labelPoint.label.anchor[1];
+-      ctx.fillStyle = labelPoint.label.fillStyle === null ? bodyStyle.color : labelPoint.label.fillStyle;
++      ctx.fillStyle = labelPoint.label.fillStyle === null ? labelFill || bodyStyle.color : labelPoint.label.fillStyle;
+ 
+       if (labelPoint.label.stroke) {
+         ctx.strokeText(

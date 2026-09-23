@@ -287,6 +287,14 @@ andere unter `/nf/prom/` gibt 403.
   - alle Abfragen fassen zusammen (`max by (band)`, `sum by (richtung)`, sonst
     `max(...)`). Das deckt auch ältere Daten und Firmwarewechsel ab, bei denen
     sich `firmware_release` ändert.
+- **Namen von hinten kürzen, nicht von vorn.** Unsere Hostnamen unterscheiden
+  sich am Ende (`wlf-uk-Schulstr7-AP01-c4a4`), der Anfang ist über ein ganzes
+  Haus gleich. Grafana schneidet auf schmalen Anzeigen aber hinten ab.
+  Gemessen: von links auf 16 Zeichen gekürzt sind 397 von 1076 Namen nicht
+  mehr unterscheidbar, von rechts nur fünf. Wo Hostnamen in Legenden oder
+  Tabellen stehen, erzeugt `kurzname()` deshalb ein Label `kurz` mit den
+  letzten beiden Namensteilen und stellt es voran; der volle Name steht
+  daneben.
 - `owner` wird beim Empfang verworfen (`/etc/victoria-metrics/relabel.yml`),
   yanic kennt für diesen Ausgang kein `no_owner`.
 - Aufbewahrung 180 Tage, Grenzen für Abfragen in

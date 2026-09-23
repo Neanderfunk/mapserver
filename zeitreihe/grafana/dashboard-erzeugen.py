@@ -18,6 +18,18 @@ import sys
 
 QUELLE = {'type': 'prometheus', 'uid': 'neanderfunk'}
 
+# Hostnamen unterscheiden sich bei uns am Ende, nicht am Anfang: ein ganzes
+# Haus heisst vorn gleich (wlf-uk-Schulstr7-...). Auf schmalen Anzeigen
+# schneidet Grafana aber hinten ab, und dann sehen alle Eintraege gleich aus.
+# Gemessen am 23.09.2026: von links auf 16 Zeichen gekuerzt sind 397 von 1076
+# Namen nicht mehr unterscheidbar, von rechts nur fuenf. Deshalb steht in
+# Legenden und Tabellen das Ende vorn, der volle Name daneben.
+KURZ = '.*?([^-_]+[-_][^-_]+)'
+
+
+def kurzname(ausdruck, quelle='hostname'):
+    return f'label_replace({ausdruck}, "kurz", "$1", "{quelle}", "{KURZ}")'
+
 
 # Alle Abfragen fassen zusammen. yanic haengt Labels wie Frequenz oder
 # Firmwareversion an jeden Punkt; jede Aenderung waere sonst eine neue Reihe
@@ -342,14 +354,19 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
         'id': 9, 'title': 'Knoten an dieser Instanz', 'type': 'table', 'datasource': QUELLE,
         'description': 'Momentaufnahme mit Linkqualitaet, absteigend nach TQ.',
         'gridPos': {'h': 10, 'w': 24, 'x': 0, 'y': 37},
-        'targets': [dict(ziel('last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m])',
+        'targets': [dict(ziel(kurzname('last_over_time({__name__="link_tq",'
+                              ' "target.hostname"="$sn"}[15m])', 'source.hostname'),
                               '', 'A'), instant=True, range=False, format='table')],
         'transformations': [
             {'id': 'organize', 'options': {
                 'excludeByName': {'Time': True, '__name__': True, 'db': True,
                                   'target.addr': True, 'target.hostname': True,
                                   'target.id': True, 'source.addr': True},
-                'renameByName': {'source.hostname': 'Knoten', 'source.id': 'node_id',
+                # Das Unterscheidende zuerst, der volle Name dahinter
+                'indexByName': {'kurz': 0, 'Value': 1, 'source.hostname': 2,
+                                'type': 3, 'source.id': 4},
+                'renameByName': {'kurz': 'Knoten', 'source.hostname': 'voller Name',
+                                 'source.id': 'node_id',
                                  'type': 'Art', 'Value': 'TQ'}}},
             {'id': 'sortBy', 'options': {'fields': {},
                                          'sort': [{'field': 'TQ', 'desc': False}]}},

@@ -260,9 +260,15 @@ def dunkelliste(dunkle, community):
         bestand = json.load(open(bestand_pfad, encoding='utf-8'))
     except (OSError, ValueError):
         bestand = {}
+    # Was gerade nicht mehr da ist, bleibt in der Liste, aber als vergangen
+    # gekennzeichnet. Ohne das liest sich der Bestand, als seien alle
+    # Eintraege aktuell; die meisten sind Kurzauftritte (24.09.2026).
+    for mac, e in bestand.items():
+        e['aktuell'] = False
     for mac, e in dunkle.items():
         alt = bestand.get(mac, {})
         bestand[mac] = {
+            'aktuell': True,
             'domains': sorted(e['domains']),
             'ankuendigungen': e['ankuendigungen'],
             'respondd_gruppe': e['respondd_gruppe'],
@@ -271,6 +277,12 @@ def dunkelliste(dunkle, community):
             'erste_sichtung': alt.get('erste_sichtung', jetzt),
             'letzte_sichtung': jetzt,
         }
+    # Nach einem Monat ohne Sichtung faellt ein Eintrag heraus
+    grenze = (datetime.datetime.now(datetime.timezone.utc)
+              - datetime.timedelta(days=30)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    bestand = {m: e for m, e in bestand.items()
+               if e.get('letzte_sichtung', '') >= grenze}
+
     os.makedirs(BESTAND, exist_ok=True)
     for pfad in (bestand_pfad, f'{API}/{community}/dunkel.json'):
         os.makedirs(os.path.dirname(pfad), exist_ok=True)

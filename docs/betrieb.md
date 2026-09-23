@@ -406,7 +406,9 @@ Unterscheiden lassen sie sich an dem, was sie tun:
 
 Die Liste steht unter `https://neander.map.freifunk.space/nf/dunkel.json`, mit
 erster und letzter Sichtung, den Domains, der Zahl der Ankündigungen und dem
-nächsten Schritt dorthin. Stand 23.09.2026 gibt es genau zwei:
+nächsten Schritt dorthin. `aktuell` sagt, ob der Eintrag gerade sichtbar ist;
+die meisten sind Kurzauftritte von wenigen Stunden. Nach einem Monat ohne
+Sichtung fällt ein Eintrag heraus. Stand 23.09.2026 gibt es genau zwei:
 
 - `0a:ed:b7:74:e0:a3` in `22_dusukn`, neun Ankündigungen, **kündigt die
   respondd-Gruppe an**, antwortet aber weder auf respondd noch auf ping. Ein

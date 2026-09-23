@@ -147,9 +147,10 @@ DIAGRAMME = [
               ' "richtung", "gesendet", "richtung", "tx"),'
               ' "richtung", "weitergereicht", "richtung", "forward")',
      'legendFormat': '{{richtung}}', 'unitSuffix': 'bit/s', 'format': '.2~s',
-     # Senden nach unten, Empfangen nach oben; weitergereicht bleibt oben,
-     # es ist keine Richtung, sondern Durchgangsverkehr
-     'series': [{'name': 'gesendet', 'negate': True}]},
+     # Alle Betraege positiv, wie in Grafana. Die Spiegelung von "gesendet"
+     # nach unten war als Gegenueberstellung gedacht, liest sich aber
+     # eigenartig (adorfer 23.09.2026).
+     },
     {'name': 'Airtime',
      'query': 'max by (band) (label_replace('
               '{__name__=~"node_airtime11(g|a).chan_util", nodeid="$node"},'

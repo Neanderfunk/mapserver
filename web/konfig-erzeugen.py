@@ -125,20 +125,27 @@ ALTGERAETE_TEXT = (
 #     ihn fest, das ist eine Erweiterung von VictoriaMetrics
 ZEITREIHE_URL = 'https://neander.map.freifunk.space/nf/prom'
 
+# Alle Abfragen fassen zusammen (max by / sum by): yanic haengt Labels wie die
+# Frequenz oder die Firmwareversion an jeden Punkt, und jede Aenderung daran
+# waere sonst eine neue Reihe mit eigener Farbe und eigenem Eintrag in der
+# Legende. Bei einem Knoten, der mehrfach neu startet, wird daraus eine sehr
+# lange Legende (adorfer 23.09.2026).
 DIAGRAMME = [
     {'name': 'Clients',
-     'query': 'last_over_time({__name__="node_clients.total", nodeid="$node"}[10m])',
+     'query': 'max(last_over_time({__name__="node_clients.total", nodeid="$node"}[10m]))',
      'legendFormat': 'Clients', 'format': ',.0f'},
     {'name': 'Bandbreite',
-     'query': 'label_replace(rate({__name__=~"node_traffic.(rx|tx).bytes", nodeid="$node"}[15m])'
+     'query': 'sum by (richtung) (label_replace('
+              'rate({__name__=~"node_traffic.(rx|tx).bytes", nodeid="$node"}[15m])'
               ' keep_metric_names, "richtung", "$1", "__name__",'
-              ' "node_traffic.(rx|tx).bytes") * 8',
+              ' "node_traffic.(rx|tx).bytes")) * 8',
      'legendFormat': '{{richtung}}', 'unitSuffix': 'bit/s', 'format': '.2~s',
      # Senden nach unten, Empfangen nach oben
      'series': [{'name': 'tx', 'negate': True}]},
     {'name': 'Airtime',
-     'query': 'label_replace({__name__=~"node_airtime11(g|a).chan_util", nodeid="$node"},'
-              ' "band", "$1", "__name__", "node_airtime11(g|a).chan_util")',
+     'query': 'max by (band) (label_replace('
+              '{__name__=~"node_airtime11(g|a).chan_util", nodeid="$node"},'
+              ' "band", "$1", "__name__", "node_airtime11(g|a).chan_util"))',
      'legendFormat': '{{band}}', 'unitSuffix': '%', 'format': '.0f'},
     {'name': 'Ausfälle laut Knoten',
      # Zaehler des SSID-Changers seit dem letzten Start: wie oft der Knoten
@@ -146,15 +153,16 @@ DIAGRAMME = [
      # weil er danach hoeher dasteht; der Knoten selbst kann waehrenddessen
      # nichts melden (adorfer 23.09.2026). Nur Knoten mit dem Paket
      # neanderfunk-respondd.
-     'query': 'label_replace({__name__=~"node_nf.ssid_changer.(offline|gateway_losses|switches)",'
+     'query': 'max by (was) (label_replace('
+              '{__name__=~"node_nf.ssid_changer.(offline|gateway_losses|switches)",'
               ' nodeid="$node"}, "was", "$1", "__name__",'
-              ' "node_nf.ssid_changer.(offline|gateway_losses|switches)")',
+              ' "node_nf.ssid_changer.(offline|gateway_losses|switches)"))',
      'legendFormat': '{{was}}', 'format': ',.0f'},
     {'name': 'Laufzeit',
-     'query': '{__name__="node_time.up", nodeid="$node"} / 86400',
+     'query': 'max({__name__="node_time.up", nodeid="$node"}) / 86400',
      'legendFormat': 'Tage', 'unitSuffix': ' d', 'format': '.1f'},
     {'name': 'Freier Speicher',
-     'query': '{__name__="node_memory.available", nodeid="$node"} * 1024',
+     'query': 'max({__name__="node_memory.available", nodeid="$node"}) * 1024',
      'legendFormat': 'verfügbar', 'unitSuffix': 'B', 'format': '.2~s'},
 ]
 

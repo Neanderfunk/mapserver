@@ -19,6 +19,15 @@ import sys
 QUELLE = {'type': 'prometheus', 'uid': 'neanderfunk'}
 
 
+# Alle Abfragen fassen zusammen. yanic haengt Labels wie Frequenz oder
+# Firmwareversion an jeden Punkt; jede Aenderung waere sonst eine neue Reihe
+# mit eigener Farbe und eigenem Eintrag in der Legende. Ein Knoten, der
+# mehrfach neu startet, fuellt damit die halbe Kachel (adorfer 23.09.2026).
+# Die Frequenzlabels wirft VictoriaMetrics inzwischen schon beim Empfang weg,
+# fuer aeltere Daten und fuer Firmwarewechsel bleibt die Zusammenfassung
+# noetig.
+
+
 def ziel(expr, legende='', refid='A', schritt=''):
     z = {'refId': refid, 'expr': expr, 'legendFormat': legende,
          'datasource': QUELLE, 'range': True, 'editorMode': 'code'}
@@ -117,86 +126,86 @@ KOPF = [
 
 PANELS = KOPF + [
     panel(1, 'Clients', [
-        ziel('{__name__="node_clients.total", nodeid="$node"}', 'gesamt', 'A'),
-        ziel('{__name__="node_clients.wifi24", nodeid="$node"}', '2,4 GHz', 'B'),
-        ziel('{__name__="node_clients.wifi5", nodeid="$node"}', '5 GHz', 'C'),
+        ziel('max({__name__="node_clients.total", nodeid="$node"})', 'gesamt', 'A'),
+        ziel('max({__name__="node_clients.wifi24", nodeid="$node"})', '2,4 GHz', 'B'),
+        ziel('max({__name__="node_clients.wifi5", nodeid="$node"})', '5 GHz', 'C'),
     ], 0, 5, min_=0, beschreibung='Gleichzeitig verbundene Geraete.'),
 
     panel(2, 'Bandbreite', [
-        ziel('rate({__name__="node_traffic.rx.bytes", nodeid="$node"}[$__rate_interval]) * 8',
+        ziel('sum(rate({__name__="node_traffic.rx.bytes", nodeid="$node"}[$__rate_interval])) * 8',
              'Empfangen', 'A'),
-        ziel('- rate({__name__="node_traffic.tx.bytes", nodeid="$node"}[$__rate_interval]) * 8',
+        ziel('- sum(rate({__name__="node_traffic.tx.bytes", nodeid="$node"}[$__rate_interval])) * 8',
              'Gesendet', 'B'),
     ], 12, 5, einheit='bps',
         beschreibung='Gesendet nach unten, damit sich beide Richtungen vergleichen lassen.'),
 
     panel(3, 'Datenmenge je Tag', [
-        ziel('increase({__name__="node_traffic.rx.bytes", nodeid="$node"}[1d])',
+        ziel('sum(increase({__name__="node_traffic.rx.bytes", nodeid="$node"}[1d]))',
              'Empfangen', 'A', '1d'),
-        ziel('increase({__name__="node_traffic.tx.bytes", nodeid="$node"}[1d])',
+        ziel('sum(increase({__name__="node_traffic.tx.bytes", nodeid="$node"}[1d]))',
              'Gesendet', 'B', '1d'),
     ], 0, 13, einheit='bytes', min_=0, balken=True, stapeln=True,
         beschreibung='Tagesbilanz. Bei Zeitraeumen unter zwei Tagen bleibt das Bild leer.'),
 
     panel(4, 'Airtime', [
-        ziel('label_replace({__name__=~"node_airtime11(g|a).chan_util", nodeid="$node"},'
-             ' "band", "$1", "__name__", "node_airtime11(g|a).chan_util")',
+        ziel('max by (band) (label_replace({__name__=~"node_airtime11(g|a).chan_util", nodeid="$node"},'
+             ' "band", "$1", "__name__", "node_airtime11(g|a).chan_util"))',
              '{{band}} belegt', 'A'),
-        ziel('label_replace({__name__=~"node_airtime11(g|a).rx_util", nodeid="$node"},'
-             ' "band", "$1", "__name__", "node_airtime11(g|a).rx_util")',
+        ziel('max by (band) (label_replace({__name__=~"node_airtime11(g|a).rx_util", nodeid="$node"},'
+             ' "band", "$1", "__name__", "node_airtime11(g|a).rx_util"))',
              '{{band}} Empfang', 'B'),
-        ziel('label_replace({__name__=~"node_airtime11(g|a).tx_util", nodeid="$node"},'
-             ' "band", "$1", "__name__", "node_airtime11(g|a).tx_util")',
+        ziel('max by (band) (label_replace({__name__=~"node_airtime11(g|a).tx_util", nodeid="$node"},'
+             ' "band", "$1", "__name__", "node_airtime11(g|a).tx_util"))',
              '{{band}} Senden', 'C'),
     ], 12, 13, einheit='percent', min_=0,
         beschreibung='g ist 2,4 GHz, a ist 5 GHz. Dauerhaft ueber 60 Prozent belegt heisst: der Kanal ist voll.'),
 
     panel(5, 'Speicher', [
-        ziel('{__name__="node_memory.available", nodeid="$node"} * 1024', 'verfuegbar', 'A'),
-        ziel('{__name__="node_memory.free", nodeid="$node"} * 1024', 'frei', 'B'),
+        ziel('max({__name__="node_memory.available", nodeid="$node"}) * 1024', 'verfuegbar', 'A'),
+        ziel('max({__name__="node_memory.free", nodeid="$node"}) * 1024', 'frei', 'B'),
     ], 0, 21, einheit='bytes', min_=0,
         beschreibung='Verfuegbar ist der Wert, auf den es ankommt; frei allein sagt wenig.'),
 
     panel(6, 'Last', [
-        ziel('{__name__="node_load", nodeid="$node"}', 'loadavg', 'A'),
-        ziel('{__name__="node_proc.running", nodeid="$node"}', 'laufende Prozesse', 'B'),
+        ziel('max({__name__="node_load", nodeid="$node"})', 'loadavg', 'A'),
+        ziel('max({__name__="node_proc.running", nodeid="$node"})', 'laufende Prozesse', 'B'),
     ], 12, 21, min_=0),
 
     panel(7, 'Laufzeit', [
-        ziel('{__name__="node_time.up", nodeid="$node"}', 'Laufzeit', 'A'),
+        ziel('max({__name__="node_time.up", nodeid="$node"})', 'Laufzeit', 'A'),
     ], 0, 29, einheit='s',
         beschreibung='Ein Sprung nach unten ist ein Neustart.'),
 
     panel(8, 'Nachbarn und Gegenstelle', [
-        ziel('{__name__="node_neighbours.batadv", nodeid="$node"}', 'batman', 'A'),
-        ziel('{__name__="node_neighbours.vpn", nodeid="$node"}', 'VPN', 'B'),
+        ziel('max({__name__="node_neighbours.batadv", nodeid="$node"})', 'batman', 'A'),
+        ziel('max({__name__="node_neighbours.vpn", nodeid="$node"})', 'VPN', 'B'),
     ], 12, 29, min_=0),
 
     panel(9, 'Temperatur', [
-        ziel('nf_temperature_celsius{nodeid="$node"}', '{{sensor}}', 'A'),
+        ziel('max by (sensor) (nf_temperature_celsius{nodeid="$node"})', '{{sensor}}', 'A'),
     ], 0, 37, einheit='celsius',
         beschreibung='Nur Knoten mit Sensor und dem Paket neanderfunk-respondd.'),
 
     panel(10, 'Pagecache-Refaults', [
-        ziel('rate({__name__="node_nf.refault_file", nodeid="$node"}[$__rate_interval])',
+        ziel('sum(rate({__name__="node_nf.refault_file", nodeid="$node"}[$__rate_interval]))',
              'Refaults je Sekunde', 'A'),
     ], 12, 37, min_=0,
         beschreibung='Fruehindikator fuer Speichermangel: der Knoten liest staendig nach, '
                      'was er gerade verworfen hat. Braucht das Paket neanderfunk-respondd.'),
 
     panel(11, 'Ethernet', [
-        ziel('nf_ethernet_speed{nodeid="$node"}', '{{port}} ausgehandelt', 'A'),
-        ziel('nf_ethernet_possible{nodeid="$node"}', '{{port}} moeglich', 'B'),
+        ziel('max by (port) (nf_ethernet_speed{nodeid="$node"})', '{{port}} ausgehandelt', 'A'),
+        ziel('max by (port) (nf_ethernet_possible{nodeid="$node"})', '{{port}} moeglich', 'B'),
     ], 0, 45, einheit='Mbits', min_=0,
         beschreibung='Moeglich groesser als ausgehandelt heisst: der Port kam nicht hoch. '
                      'Ein toter Port meldet beides als 0, dafuer nf_ethernet_carrier.'),
 
     panel(13, 'Ausfaelle laut Knoten', [
-        ziel('{__name__="node_nf.ssid_changer.offline", nodeid="$node"}',
+        ziel('max({__name__="node_nf.ssid_changer.offline", nodeid="$node"})',
              'offline gegangen', 'A'),
-        ziel('{__name__="node_nf.ssid_changer.gateway_losses", nodeid="$node"}',
+        ziel('max({__name__="node_nf.ssid_changer.gateway_losses", nodeid="$node"})',
              'Gateway verloren', 'B'),
-        ziel('{__name__="node_nf.ssid_changer.switches", nodeid="$node"}',
+        ziel('max({__name__="node_nf.ssid_changer.switches", nodeid="$node"})',
              'SSID gewechselt', 'C'),
     ], 0, 53, min_=0,
         beschreibung='Zaehler des SSID-Changers seit dem letzten Start. Ein Knoten kann '
@@ -206,8 +215,8 @@ PANELS = KOPF + [
                      'Paket neanderfunk-respondd.'),
 
     panel(12, 'zram', [
-        ziel('{__name__="node_nf.zram.data", nodeid="$node"} * 1024', 'Daten', 'A'),
-        ziel('{__name__="node_nf.zram.ram", nodeid="$node"} * 1024', 'im RAM', 'B'),
+        ziel('max({__name__="node_nf.zram.data", nodeid="$node"}) * 1024', 'Daten', 'A'),
+        ziel('max({__name__="node_nf.zram.ram", nodeid="$node"}) * 1024', 'im RAM', 'B'),
     ], 12, 45, einheit='bytes', min_=0,
         beschreibung='Wie viel komprimiert im Speicher liegt. Braucht das Paket neanderfunk-respondd.'),
 ]
@@ -286,11 +295,11 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
                      'Minuten nach dem Abmelden. Untergrenze und Obergrenze also.'),
 
     panel(3, 'Verkehr der Instanz', [
-        ziel('rate({__name__="node_traffic.forward.bytes", hostname="$sn"}[$__rate_interval]) * 8',
+        ziel('sum(rate({__name__="node_traffic.forward.bytes", hostname="$sn"}[$__rate_interval])) * 8',
              'weitergereicht', 'A'),
-        ziel('rate({__name__="node_traffic.rx.bytes", hostname="$sn"}[$__rate_interval]) * 8',
+        ziel('sum(rate({__name__="node_traffic.rx.bytes", hostname="$sn"}[$__rate_interval])) * 8',
              'empfangen', 'B'),
-        ziel('- rate({__name__="node_traffic.tx.bytes", hostname="$sn"}[$__rate_interval]) * 8',
+        ziel('- sum(rate({__name__="node_traffic.tx.bytes", hostname="$sn"}[$__rate_interval])) * 8',
              'gesendet', 'C'),
     ], 0, 13, einheit='bps',
         beschreibung='Weitergereicht ist bei einem Supernode der eigentliche Wert.'),
@@ -311,20 +320,20 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
         beschreibung='TQ ueber alle Kanten. Faellt das Minimum, hat ein Knoten eine schlechte Anbindung.'),
 
     panel(6, 'Last der Maschine', [
-        ziel('{__name__="node_load", hostname="$sn"}', 'loadavg', 'A'),
-        ziel('{__name__="node_proc.running", hostname="$sn"}', 'laufende Prozesse', 'B'),
+        ziel('max({__name__="node_load", hostname="$sn"})', 'loadavg', 'A'),
+        ziel('max({__name__="node_proc.running", hostname="$sn"})', 'laufende Prozesse', 'B'),
     ], 12, 21, min_=0,
         beschreibung='Gilt fuer die ganze Maschine, nicht fuer diese Domaininstanz: alle '
                      '48 respondd-Instanzen eines Supernodes melden dieselben Systemwerte.'),
 
     panel(7, 'Speicher der Maschine', [
-        ziel('{__name__="node_memory.available", hostname="$sn"} * 1024', 'verfuegbar', 'A'),
-        ziel('{__name__="node_memory.total", hostname="$sn"} * 1024', 'gesamt', 'B'),
+        ziel('max({__name__="node_memory.available", hostname="$sn"}) * 1024', 'verfuegbar', 'A'),
+        ziel('max({__name__="node_memory.total", hostname="$sn"}) * 1024', 'gesamt', 'B'),
     ], 0, 29, einheit='bytes', min_=0,
         beschreibung='Ebenfalls maschinenweit, siehe nebenan.'),
 
     panel(8, 'Laufzeit', [
-        ziel('{__name__="node_time.up", hostname="$sn"}', 'Laufzeit', 'A'),
+        ziel('max({__name__="node_time.up", hostname="$sn"})', 'Laufzeit', 'A'),
     ], 12, 29, einheit='s',
         beschreibung='Ein Sprung nach unten ist ein Neustart der Maschine, nicht nur '
                      'dieser Instanz (23.09.2026 um 22:42 alle sechs, wegen batman-adv 2026.3).'),

@@ -276,6 +276,17 @@ andere unter `/nf/prom/` gibt 403.
   meldet `eth0`/`eth1`, andere `wan`/`lan1`. Einen Alarm also nicht auf
   `port="wan"` bauen, sondern über alle Ports oder über `model`
   (gemessen 22.09.2026 an 80af: `eth0` carrier 0, der tote RTL8221B).
+- **Eine Reihe je Sache, nicht je Zustand.** yanic hängt Labels wie die
+  Frequenz oder die Firmwareversion an jeden Punkt. Wechselt ein Knoten den
+  Kanal, etwa nach einem Neustart, entsteht dadurch eine neue Zeitreihe mit
+  eigener Farbe und eigenem Eintrag in der Legende; ein Gerät kam so an einem
+  Tag auf 16 Reihen. Zwei Gegenmaßnahmen, beide nötig:
+  - die Frequenzlabels wirft VictoriaMetrics beim Empfang weg
+    (`relabel.yml`). Die Frequenz bleibt als Messwert
+    `node_airtime11a.frequency` erhalten.
+  - alle Abfragen fassen zusammen (`max by (band)`, `sum by (richtung)`, sonst
+    `max(...)`). Das deckt auch ältere Daten und Firmwarewechsel ab, bei denen
+    sich `firmware_release` ändert.
 - `owner` wird beim Empfang verworfen (`/etc/victoria-metrics/relabel.yml`),
   yanic kennt für diesen Ausgang kein `no_owner`.
 - Aufbewahrung 180 Tage, Grenzen für Abfragen in

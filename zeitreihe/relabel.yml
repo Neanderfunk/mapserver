@@ -7,3 +7,11 @@
 # Veroeffentlichung getan (docs/hintergrund.md, no_owner).
 - action: labeldrop
   regex: owner
+
+# yanic haengt die Frequenz je Band als Label an jeden Punkt. Wechselt ein
+# Knoten den Kanal, etwa nach einem Neustart, entsteht dadurch eine neue
+# Zeitreihe: neue Farbe, neuer Eintrag in der Legende. Ein Geraet kam so in 24
+# Stunden auf 16 Reihen (23.09.2026). Die Frequenz geht dabei nicht verloren,
+# sie steht als eigener Messwert node_airtime11a.frequency daneben.
+- action: labeldrop
+  regex: frequency11.*

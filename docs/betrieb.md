@@ -260,6 +260,13 @@ andere unter `/nf/prom/` gibt 403.
   | `nf_temperature_celsius` | °C | `sensor` |
   | `nf_wireless_txpower`, `nf_wireless_channel`, `nf_wireless_mesh` (0/1) | Konfiguration | `radio`, `ssid`, `htmode`, `country` |
 
+  Der Zähler `node_nf.ssid_changer.offline` beantwortet eine Frage, die sonst
+  niemand beantworten kann: **wie oft war dieser Knoten weg, ohne neu zu
+  starten?** Ein Knoten kann nicht melden, dass er offline ist, aber der
+  Zähler steht danach höher da. Er steht deshalb im Knotenfenster der Karte
+  (Diagramm "Ausfälle laut Knoten") und im Grafana-Dashboard. Springt er auf
+  null, hat der Knoten neu gestartet, dann zählt `node_time.up`.
+
   Fehlende Werte werden nicht als 0 geschrieben: Alt-Firmware ohne das Paket
   und Knoten ohne Sensor tauchen einfach nicht auf. `system.mem_available`
   doppelt `node_memory.available` und bleibt weg. Alarmsignal am Port ist

@@ -191,6 +191,20 @@ PANELS = KOPF + [
         beschreibung='Moeglich groesser als ausgehandelt heisst: der Port kam nicht hoch. '
                      'Ein toter Port meldet beides als 0, dafuer nf_ethernet_carrier.'),
 
+    panel(13, 'Ausfaelle laut Knoten', [
+        ziel('{__name__="node_nf.ssid_changer.offline", nodeid="$node"}',
+             'offline gegangen', 'A'),
+        ziel('{__name__="node_nf.ssid_changer.gateway_losses", nodeid="$node"}',
+             'Gateway verloren', 'B'),
+        ziel('{__name__="node_nf.ssid_changer.switches", nodeid="$node"}',
+             'SSID gewechselt', 'C'),
+    ], 0, 53, min_=0,
+        beschreibung='Zaehler des SSID-Changers seit dem letzten Start. Ein Knoten kann '
+                     'nicht melden, dass er offline ist; dieser Zaehler steht danach aber '
+                     'hoeher da und zeigt damit auch kurze Stoerungen ohne Neustart. '
+                     'Springt er auf null, hat der Knoten neu gestartet. Nur mit dem '
+                     'Paket neanderfunk-respondd.'),
+
     panel(12, 'zram', [
         ziel('{__name__="node_nf.zram.data", nodeid="$node"} * 1024', 'Daten', 'A'),
         ziel('{__name__="node_nf.zram.ram", nodeid="$node"} * 1024', 'im RAM', 'B'),

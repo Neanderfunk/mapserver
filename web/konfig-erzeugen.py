@@ -140,6 +140,16 @@ DIAGRAMME = [
      'query': 'label_replace({__name__=~"node_airtime11(g|a).chan_util", nodeid="$node"},'
               ' "band", "$1", "__name__", "node_airtime11(g|a).chan_util")',
      'legendFormat': '{{band}}', 'unitSuffix': '%', 'format': '.0f'},
+    {'name': 'Ausfälle laut Knoten',
+     # Zaehler des SSID-Changers seit dem letzten Start: wie oft der Knoten
+     # sich selbst als offline gesehen hat. Der Wert ueberlebt den Ausfall,
+     # weil er danach hoeher dasteht; der Knoten selbst kann waehrenddessen
+     # nichts melden (adorfer 23.09.2026). Nur Knoten mit dem Paket
+     # neanderfunk-respondd.
+     'query': 'label_replace({__name__=~"node_nf.ssid_changer.(offline|gateway_losses|switches)",'
+              ' nodeid="$node"}, "was", "$1", "__name__",'
+              ' "node_nf.ssid_changer.(offline|gateway_losses|switches)")',
+     'legendFormat': '{{was}}', 'format': ',.0f'},
     {'name': 'Laufzeit',
      'query': '{__name__="node_time.up", nodeid="$node"} / 86400',
      'legendFormat': 'Tage', 'unitSuffix': ' d', 'format': '.1f'},

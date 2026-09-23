@@ -319,6 +319,21 @@ gemessen:
 - `rate()` wirft den Metriknamen weg, danach sind `rx` und `tx` nicht mehr
   unterscheidbar; `keep_metric_names` hält ihn fest (VictoriaMetrics)
 
+### Kartenebenen
+
+Drei zur Auswahl, CARTO ist die Vorgabe: CARTO hell, OpenStreetMap deutsch
+(entsättigt) und **Luftbilder NRW**, die amtlichen Orthophotos, eingebunden
+wie auf `map.eulenfunk.de`.
+
+- Die Luftbilder kommen als **WMS**, nicht als Kachelsatz. meshviewer legt von
+  sich aus nur Kachelebenen an; `web/patches/meshviewer.patch` erkennt eine
+  WMS-Ebene daran, dass `layers` gesetzt ist.
+- Den WMTS-Host des Landes kennt unser Kachel-Proxy nicht (gemessen: 404),
+  den WMS-Host schon. Alles läuft weiter über `tiles.ffdus.de`, aus dem
+  Browser geht keine Anfrage direkt zum Land.
+- Die Luftbilder tragen bewusst **kein** `karte-dunkel`: ein umgedrehtes
+  Luftbild ist unbrauchbar.
+
 ### Clients und dunkle Knoten
 
 `sammler/clients-zaehlen.py`, alle fünf Minuten als `karte-clients@neander`.

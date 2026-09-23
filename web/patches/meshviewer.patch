@@ -1,5 +1,5 @@
 diff --git a/lib/config_default.ts b/lib/config_default.ts
-index 5612ab1..ed78cea 100644
+index 5612ab1..faa6872 100644
 --- a/lib/config_default.ts
 +++ b/lib/config_default.ts
 @@ -58,6 +58,27 @@ export interface GrafanaConfig {
@@ -44,7 +44,20 @@ index 5612ab1..ed78cea 100644
    datasourceUid: string;
    datasourceType: string;
    query: string;
-@@ -136,6 +164,18 @@ export interface Config {
+@@ -92,6 +120,12 @@ export interface MapLayer {
+     end?: number; // Hour
+     order: number;
+     invertInDarkMode?: boolean;
++    // Lokaler Zusatz: ist "layers" gesetzt, ist es eine WMS-Ebene und wird
++    // als solche angelegt. Amtliche Luftbilder gibt es nur so.
++    layers?: string;
++    format?: string;
++    transparent?: boolean;
++    version?: string;
+   };
+ }
+ 
+@@ -136,6 +170,18 @@ export interface Config {
      other: string;
    };
    map: {
@@ -63,7 +76,7 @@ index 5612ab1..ed78cea 100644
      labelNewColor: string;
      tqFrom: string;
      tqTo: string;
-@@ -197,6 +237,9 @@ export interface Config {
+@@ -197,6 +243,9 @@ export interface Config {
    linkInfos: LinkInfo[];
    nodeInfos: NodeInfo[];
    grafana?: GrafanaConfig;
@@ -73,7 +86,7 @@ index 5612ab1..ed78cea 100644
    nodeCharts: Chart[];
    linkCharts: Chart[];
    globalCharts: Chart[];
-@@ -341,6 +384,11 @@ export const config: Config = {
+@@ -341,6 +390,11 @@ export const config: Config = {
      other: "rgba(227, 166, 25, 0.7)",
    },
    map: {
@@ -85,7 +98,7 @@ index 5612ab1..ed78cea 100644
      labelNewColor: "#459C18",
      tqFrom: "#F02311",
      tqTo: "#04C714",
-@@ -511,6 +559,7 @@ export const config: Config = {
+@@ -511,6 +565,7 @@ export const config: Config = {
    linkInfos: [],
    nodeInfos: [],
    nodeCharts: [],
@@ -433,6 +446,40 @@ index ef37925..0cae94f 100644
        }
  
        const newContainer = h("div", containerChildren);
+diff --git a/lib/map.ts b/lib/map.ts
+index 7464151..51418ea 100644
+--- a/lib/map.ts
++++ b/lib/map.ts
+@@ -105,15 +105,21 @@ export const Map = function (linkScale: (t: any) => any, sidebar: ReturnType<typ
+               maxZoom: layerConfig.maxZoom,
+               className: layerConfig.className,
+             } as L.LeafletMaplibreGLOptions)
+-          : L.tileLayer(
+-              layer.url.replace(
+-                "{format}",
+-                document.createElement("canvas").toDataURL("image/webp").indexOf("data:image/webp") === 0
+-                  ? "webp"
+-                  : "png",
++          : layerConfig.layers
++            ? // Lokaler Zusatz: WMS statt Kachelsatz. Erkennbar an "layers",
++              // dem Pflichtfeld jeder WMS-Anfrage. Gebraucht fuer die
++              // amtlichen Luftbilder von NRW, die es als Kachelsatz nur ueber
++              // einen Host gibt, den unser Kachel-Proxy nicht kennt.
++              L.tileLayer.wms(layer.url, layerConfig as L.WMSOptions)
++            : L.tileLayer(
++                layer.url.replace(
++                  "{format}",
++                  document.createElement("canvas").toDataURL("image/webp").indexOf("data:image/webp") === 0
++                    ? "webp"
++                    : "png",
++                ),
++                layerConfig,
+               ),
+-              layerConfig,
+-            ),
+     };
+   });
+ 
 diff --git a/lib/map/labellayer.js b/lib/map/labellayer.js
 index d9ad076..fca4c99 100644
 --- a/lib/map/labellayer.js

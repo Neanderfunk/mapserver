@@ -307,6 +307,25 @@ def konfig(titel, pfad, alle):
              # aus denselben Kacheln eine dunkle Karte.
              'config': {'type': 'osm', 'maxZoom': 19, 'className': 'entsaettigt karte-dunkel',
                         'attribution': OSM_ATTR + ', Kacheln: <a href="https://www.openstreetmap.de/">OpenStreetMap Deutschland</a>'}},
+            {'name': 'Luftbilder NRW',
+             # Amtliche Digitale Orthophotos des Landes, wie auf
+             # map.eulenfunk.de eingebunden. Kein Kachelsatz, sondern WMS;
+             # den WMTS-Host kennt unser Kachel-Proxy nicht (23.09.2026
+             # gemessen: 404). Braucht patches/meshviewer.patch, upstream legt
+             # nur einfache Kachelebenen an.
+             #
+             # Bewusst ohne karte-dunkel: ein umgedrehtes Luftbild ist
+             # unbrauchbar.
+             'url': KACHEL + '/www.wms.nrw.de/geobasis/wms_nw_dop?',
+             'config': {'maxZoom': 20, 'layers': 'nw_dop_rgb',
+                        'format': 'image/jpeg',
+                        'attribution': (
+                            '<a href="https://www.bezreg-koeln.nrw.de/geobasis-nrw/'
+                            'produkte-und-dienste/luftbild-und-satellitenbildinformationen/'
+                            'aktuelle-luftbild-und-0">DOP20</a>, Land NRW, '
+                            'Datenlizenz Deutschland - Namensnennung - Version 2.0 '
+                            '(<a href="https://www.govdata.de/dl-de/by-2-0">'
+                            'www.govdata.de/dl-de/by-2-0</a>)')}},
         ],
         'fixedCenter': rahmen(daten),
         'siteNames': [{'site': d['code'], 'name': d['name']} for d in alle],

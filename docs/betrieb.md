@@ -334,6 +334,29 @@ wie auf `map.eulenfunk.de`.
 - Die Luftbilder tragen bewusst **kein** `karte-dunkel`: ein umgedrehtes
   Luftbild ist unbrauchbar.
 
+### Erstsichtung aus der alten Karte
+
+Unsere Karte kennt einen Knoten erst, seit wir messen; im Knotenfenster stünde
+sonst überall der 20.09.2026. `sammler/erstsichtung-uebernehmen.py` holt die
+Erstsichtung aus der `nodes.json` von `map.eulenfunk.de`, derselben Community,
+und trägt sie in den Zustand von yanic ein.
+
+- Übernommen wird **nur, was älter ist**. Ein zweiter Lauf ändert nichts, und
+  der Zustand wird nie jünger.
+- Knoten, die nur die andere Karte kennt, werden **nicht** erfunden.
+- yanic hält den Zustand im Speicher und schreibt ihn jede Minute, muss für
+  den Lauf also stehen:
+
+```bash
+sudo systemctl stop yanic@neander
+sudo /usr/local/sbin/karte-erstsichtung
+sudo systemctl start yanic@neander
+```
+
+Lauf vom 24.09.2026: 1110 von 1110 Knoten bekamen ein älteres Datum, die
+älteste Sichtung stammt vom 19.07.2020. Sicherung unter
+`/var/lib/yanic/neander.json.vor-erstsichtung`.
+
 ### Clients und dunkle Knoten
 
 `sammler/clients-zaehlen.py`, alle fünf Minuten als `karte-clients@neander`.

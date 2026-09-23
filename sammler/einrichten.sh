@@ -60,6 +60,8 @@ install -m 0755 "$HIER/adressbuch.py" /usr/local/sbin/karte-adressbuch
 # Clients je Domain aus der Uebersetzungstabelle, genauer als die Summe der
 # respondd-Antworten (siehe clients-zaehlen.py)
 install -m 0755 "$HIER/clients-zaehlen.py" /usr/local/sbin/karte-clients
+# Einmalig nach dem Aufbau: Erstsichtung aus der aelteren Karte uebernehmen
+install -m 0755 "$HIER/erstsichtung-uebernehmen.py" /usr/local/sbin/karte-erstsichtung
 install -m 0644 "$HIER/systemd/karte-clients@.service" "$HIER/systemd/karte-clients@.timer" /etc/systemd/system/
 install -m 0644 "$HIER/systemd/karte-adressbuch@.service" "$HIER/systemd/karte-adressbuch@.timer" /etc/systemd/system/
 install -d -m 0755 -o yanic -g www-data /var/lib/karte/adressbuch /var/www/karte-en/api

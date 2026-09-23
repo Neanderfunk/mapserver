@@ -1,5 +1,5 @@
 diff --git a/lib/config_default.ts b/lib/config_default.ts
-index 5612ab1..edbf678 100644
+index 5612ab1..40ddd1a 100644
 --- a/lib/config_default.ts
 +++ b/lib/config_default.ts
 @@ -58,6 +58,17 @@ export interface GrafanaConfig {
@@ -20,17 +20,21 @@ index 5612ab1..edbf678 100644
  
  export interface ChartSeries {
    name: string;
-@@ -67,6 +78,9 @@ export interface ChartSeries {
+@@ -67,6 +78,13 @@ export interface ChartSeries {
  
  export interface Chart {
    name: string;
 +  // Nur fuer prometheus-direct: Beschriftung der Reihen, {{label}} wird
 +  // durch den Wert des Labels ersetzt
 +  legendFormat?: string;
++  // Werte, die es nur ganzzahlig gibt (Clients, Zaehler). Dann bekommt die
++  // Achse auch nur ganze Zahlen; sonst setzt d3 Striche bei 0,5 und 1,5, und
++  // ein Format ohne Nachkommastellen macht daraus zweimal 0 und zweimal 1.
++  integer?: boolean;
    datasourceUid: string;
    datasourceType: string;
    query: string;
-@@ -136,6 +150,18 @@ export interface Config {
+@@ -136,6 +154,18 @@ export interface Config {
      other: string;
    };
    map: {
@@ -49,7 +53,7 @@ index 5612ab1..edbf678 100644
      labelNewColor: string;
      tqFrom: string;
      tqTo: string;
-@@ -197,6 +223,8 @@ export interface Config {
+@@ -197,6 +227,8 @@ export interface Config {
    linkInfos: LinkInfo[];
    nodeInfos: NodeInfo[];
    grafana?: GrafanaConfig;
@@ -58,7 +62,7 @@ index 5612ab1..edbf678 100644
    nodeCharts: Chart[];
    linkCharts: Chart[];
    globalCharts: Chart[];
-@@ -341,6 +369,11 @@ export const config: Config = {
+@@ -341,6 +373,11 @@ export const config: Config = {
      other: "rgba(227, 166, 25, 0.7)",
    },
    map: {
@@ -71,7 +75,7 @@ index 5612ab1..edbf678 100644
      tqFrom: "#F02311",
      tqTo: "#04C714",
 diff --git a/lib/infobox/chart.ts b/lib/infobox/chart.ts
-index 0f8b2a0..5158365 100644
+index 0f8b2a0..001f886 100644
 --- a/lib/infobox/chart.ts
 +++ b/lib/infobox/chart.ts
 @@ -9,7 +9,7 @@ import { timeFormat } from "d3-time-format";
@@ -166,7 +170,36 @@ index 0f8b2a0..5158365 100644
  function parseResults(results: Record<string, any>, configMap: Map<string, ChartSeries>): ParsedChart {
    const series: Series[] = [];
    let tMin = Infinity,
-@@ -252,14 +328,17 @@ function renderD3Chart(
+@@ -136,6 +212,7 @@ function renderD3Chart(
+   spec: string,
+   suffix: string,
+   configMap: Map<string, ChartSeries> = new Map(),
++  ganzzahlig = false,
+ ) {
+   const { series: seriesList, xDomain, yDomain } = parsed;
+   const seriesColor = (s: Series, i: number) =>
+@@ -157,6 +234,20 @@ function renderD3Chart(
+     .ticks(4)
+     .tickFormat((d) => fmt(d));
+ 
++  // Ganzzahlige Groessen bekommen auch ganzzahlige Striche. Bei kleinen
++  // Wertebereichen jeder Schritt, bei grossen nur jeder n-te, damit es nicht
++  // zu eng wird.
++  if (ganzzahlig) {
++    const [u, o] = yScale.domain() as [number, number];
++    const von = Math.floor(u);
++    const bis = Math.ceil(o);
++    const schritt = Math.max(1, Math.ceil((bis - von) / 4));
++    const werte: number[] = [];
++    for (let v = von; v <= bis; v += schritt) werte.push(v);
++    yScale.domain([von, Math.max(bis, von + 1)]);
++    yAxis.tickValues(werte.length > 1 ? werte : [von, von + 1]);
++  }
++
+   // Probe y-axis label width by rendering into a temporary SVG in the DOM
+   const svgEl = select(container).append("svg").attr("width", "100%");
+   const probeG = svgEl.append("g").call(yAxis);
+@@ -252,14 +343,17 @@ function renderD3Chart(
  }
  
  export function createChartVNode(chart: Chart, subst: Record<string, string>): VNode {
@@ -188,7 +221,7 @@ index 0f8b2a0..5158365 100644
  
    return h("div", {
      class: { "node-chart": true },
-@@ -268,10 +347,11 @@ export function createChartVNode(chart: Chart, subst: Record<string, string>): V
+@@ -268,10 +362,11 @@ export function createChartVNode(chart: Chart, subst: Record<string, string>): V
          const el = vnode.elm as HTMLElement;
          el.textContent = _.t("loading", { name: chart.name });
          try {
@@ -203,7 +236,7 @@ index 0f8b2a0..5158365 100644
            if (parsed.series.length === 0 || !Number.isFinite(parsed.xDomain[0])) {
              el.textContent = _.t("node.chartNoData", { name: chart.name });
              return;
-@@ -284,3 +364,93 @@ export function createChartVNode(chart: Chart, subst: Record<string, string>): V
+@@ -284,3 +379,93 @@ export function createChartVNode(chart: Chart, subst: Record<string, string>): V
      },
    });
  }
@@ -244,7 +277,7 @@ index 0f8b2a0..5158365 100644
 +      el.textContent = _.t("node.chartNoData", { name: chart.name });
 +      return;
 +    }
-+    renderD3Chart(el, parsed, chart.format ?? ".2~s", chart.unitSuffix ?? "", configMap);
++    renderD3Chart(el, parsed, chart.format ?? ".2~s", chart.unitSuffix ?? "", configMap, chart.integer);
 +  } catch {
 +    el.textContent = _.t("node.chartError", { name: chart.name });
 +  }

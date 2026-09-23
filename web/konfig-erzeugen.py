@@ -133,7 +133,7 @@ ZEITREIHE_URL = 'https://neander.map.freifunk.space/nf/prom'
 DIAGRAMME = [
     {'name': 'Clients',
      'query': 'max(last_over_time({__name__="node_clients.total", nodeid="$node"}[10m]))',
-     'legendFormat': 'Clients', 'format': ',.0f'},
+     'legendFormat': 'Clients', 'format': ',.0f', 'integer': True},
     {'name': 'Bandbreite',
      'query': 'sum by (richtung) (label_replace('
               'rate({__name__=~"node_traffic.(rx|tx).bytes", nodeid="$node"}[15m])'
@@ -146,7 +146,7 @@ DIAGRAMME = [
      'query': 'max by (band) (label_replace('
               '{__name__=~"node_airtime11(g|a).chan_util", nodeid="$node"},'
               ' "band", "$1", "__name__", "node_airtime11(g|a).chan_util"))',
-     'legendFormat': '{{band}}', 'unitSuffix': '%', 'format': '.0f'},
+     'legendFormat': '{{band}}', 'unitSuffix': '%', 'format': '.0f', 'integer': True},
     {'name': 'Ausfälle laut Knoten',
      # Zaehler des SSID-Changers seit dem letzten Start: wie oft der Knoten
      # sich selbst als offline gesehen hat. Der Wert ueberlebt den Ausfall,
@@ -157,7 +157,7 @@ DIAGRAMME = [
               '{__name__=~"node_nf.ssid_changer.(offline|gateway_losses|switches)",'
               ' nodeid="$node"}, "was", "$1", "__name__",'
               ' "node_nf.ssid_changer.(offline|gateway_losses|switches)"))',
-     'legendFormat': '{{was}}', 'format': ',.0f'},
+     'legendFormat': '{{was}}', 'format': ',.0f', 'integer': True},
     {'name': 'Laufzeit',
      'query': 'max({__name__="node_time.up", nodeid="$node"}) / 86400',
      'legendFormat': 'Tage', 'unitSuffix': ' d', 'format': '.1f'},

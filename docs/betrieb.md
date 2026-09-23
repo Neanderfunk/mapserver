@@ -370,6 +370,7 @@ ohnehin zugestellt wird (48 Abfragen kosten zusammen 0,13 Sekunden):
 | `tt_originatoren` | Originatoren im Mesh, **etwa doppelt so viele wie Knoten**, weil jede Mesh-Schnittstelle einzeln zählt |
 | `tt_im_mesh` | verschiedene Knoten dahinter |
 | `tt_dunkel` | Originatoren, die zu keinem bekannten Knoten gehören |
+| `tt_ungeklaert` | davon die, die auch nicht in `bekannte-macs.conf` stehen |
 
 Dazu die Liste `api/<community>/dunkel.json` mit den Merkmalen je MAC.
 
@@ -410,11 +411,16 @@ nächsten Schritt dorthin. Stand 23.09.2026 gibt es genau zwei:
 - `0a:ed:b7:74:e0:a3` in `22_dusukn`, neun Ankündigungen, **kündigt die
   respondd-Gruppe an**, antwortet aber weder auf respondd noch auf ping. Ein
   Knoten mit passender Firmware, dessen respondd steht: Fall 1.
-- `02:a5:a7:99:f0:fa` in **allen 48 Domains**, je vier Ankündigungen, ohne
-  respondd-Gruppe, erreichbar über den jeweiligen Supernode. Dieselbe MAC
-  überall, also eine Maschine, die wie wir in allen Domains hängt, anders als
-  wir aber ohne eigene MAC je Domain. Nicht unsere: unsere sind `02:45:4e:*`,
-  und batman führt einen Knoten nie in seiner eigenen Tabelle. Ungeklärt.
+- `02:a5:a7:99:f0:fa` in **allen 48 Domains**: das ist **eulenmap1**, der
+  Sammler der alten Karte `map.eulenfunk.de` (adorfer 24.09.2026, per
+  `ip a` auf der Maschine bestätigt). Er hängt wie wir in allen Domains,
+  anders als wir aber mit **derselben MAC auf allen 49 bat-Schnittstellen**;
+  unsere tragen je Domain eine eigene (`02:45:4e:*`).
+
+Bekannte Maschinen dieser Art stehen in `sammler/bekannte-macs.conf`
+(ausgespielt nach `/etc/karte-en/bekannte-macs.conf`). Sie zählen weiter als
+dunkel, gelten aber nicht als ungeklärt: dafür gibt es `tt_ungeklaert`, und
+nur darauf schlägt der Check an.
 
 ### Grafana
 

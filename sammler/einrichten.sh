@@ -60,6 +60,7 @@ install -m 0755 "$HIER/adressbuch.py" /usr/local/sbin/karte-adressbuch
 # Clients je Domain aus der Uebersetzungstabelle, genauer als die Summe der
 # respondd-Antworten (siehe clients-zaehlen.py)
 install -m 0755 "$HIER/clients-zaehlen.py" /usr/local/sbin/karte-clients
+[ -f /etc/karte-en/bekannte-macs.conf ] || install -m 0644 "$HIER/bekannte-macs.conf" /etc/karte-en/bekannte-macs.conf
 # Einmalig nach dem Aufbau: Erstsichtung aus der aelteren Karte uebernehmen
 install -m 0755 "$HIER/erstsichtung-uebernehmen.py" /usr/local/sbin/karte-erstsichtung
 install -m 0644 "$HIER/systemd/karte-clients@.service" "$HIER/systemd/karte-clients@.timer" /etc/systemd/system/

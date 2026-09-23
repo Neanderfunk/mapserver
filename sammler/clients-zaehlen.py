@@ -37,10 +37,26 @@ KONF = '/etc/karte-en/domains.conf'
 WEB = '/var/www/karte-en/sites'
 ZIEL = 'http://127.0.0.1:8428/write'
 BESTAND = '/var/lib/karte/adressbuch'
+# Maschinen, die dunkel sind, aber bekannt (etwa der Sammler der alten Karte)
+BEKANNT_KONF = '/etc/karte-en/bekannte-macs.conf'
 API = '/var/www/karte-en/api'
 
 FELDER = ('community', 'code', 'ordner', 'port', 'id', 'host', 'mtu', 'broker',
           'prefix6', 'prefix4', 'name')
+
+
+def bekannte():
+    """MAC -> Beschreibung fuer dunkle Knoten, die wir zuordnen koennen."""
+    z = {}
+    try:
+        for zeile in open(BEKANNT_KONF, encoding='utf-8'):
+            zeile = zeile.strip()
+            if zeile and not zeile.startswith('#'):
+                mac, _, text = zeile.partition(' ')
+                z[mac.lower()] = text.strip()
+    except OSError:
+        pass
+    return z
 
 
 def domains(community):
@@ -93,7 +109,7 @@ def mesh_macs(community):
     return zu
 
 
-def mesh(iface, zu, dunkle=None, ankuendiger=None, domain=''):
+def mesh(iface, zu, dunkle=None, ankuendiger=None, domain='', bekannt=None):
     """(Originatoren, verschiedene Knoten, dunkle Knoten) einer Domain.
 
     Ein Knoten taucht mit jeder seiner Mesh-Schnittstellen als Originator auf,
@@ -121,10 +137,12 @@ def mesh(iface, zu, dunkle=None, ankuendiger=None, domain=''):
                 naechster[f[0].lower()] = weiter[0]
     knoten = {zu[m] for m in orig if m in zu}
     fremd = [m for m in orig if m not in zu]
+    ungeklaert = [m for m in fremd if m not in (bekannt or {})]
     if dunkle is not None:
         for m in fremd:
             e = dunkle.setdefault(m, {'domains': [], 'ankuendigungen': 0,
-                                      'respondd_gruppe': False, 'ueber': []})
+                                      'respondd_gruppe': False, 'ueber': [],
+                                      'bekannt': (bekannt or {}).get(m)})
             e['domains'].append(domain)
             angesagt = (ankuendiger or {}).get(m, [])
             e['ankuendigungen'] += len(angesagt)
@@ -132,7 +150,7 @@ def mesh(iface, zu, dunkle=None, ankuendiger=None, domain=''):
                 e['respondd_gruppe'] = True
             if naechster.get(m) and naechster[m] not in e['ueber']:
                 e['ueber'].append(naechster[m])
-    return len(orig), len(knoten), len(fremd)
+    return len(orig), len(knoten), len(fremd), len(ungeklaert)
 
 
 # Die Multicast-Gruppe, auf der respondd lauscht (ff05::2:1001). Wer sie
@@ -187,6 +205,7 @@ def main():
 
     knoten = knoten_macs(community)
     zuordnung = mesh_macs(community)
+    bekannt = bekannte()
     dunkle = {}
     zeilen = []
     for d in domains(community):
@@ -199,17 +218,18 @@ def main():
         # Die Domainnummer steckt vorn im Code (05_mon) und ist zugleich die
         # Nummer, unter der die Supernodes ihre Instanz melden (ffnefd05).
         nummer = d['code'].split('_')[0]
-        orig, im_mesh, dunkel = mesh(iface, zuordnung, dunkle, ankuendiger,
-                                     d['code'])
+        orig, im_mesh, dunkel, ungeklaert = mesh(iface, zuordnung, dunkle,
+                                                 ankuendiger, d['code'], bekannt)
         zeilen.append(f'tt,domain={d["code"]},sndomain=ffnefd{nummer} '
                       f'clients={len(clients)}i,eintraege={len(eintraege)}i,'
                       f'knoten={len(eintraege) - len(clients)}i,'
-                      f'originatoren={orig}i,im_mesh={im_mesh}i,dunkel={dunkel}i')
+                      f'originatoren={orig}i,im_mesh={im_mesh}i,dunkel={dunkel}i,'
+                      f'ungeklaert={ungeklaert}i')
         if zeigen:
             print(f'{d["code"]:12} {len(clients):5} Clients, '
                   f'{len(eintraege):5} Eintraege, '
                   f'{orig:4} Originatoren, {im_mesh:4} Knoten, '
-                  f'{dunkel:3} dunkel')
+                  f'{dunkel:3} dunkel, davon {ungeklaert} ungeklaert')
 
     if not zeilen:
         print('keine Tabelle lesbar, laeuft das als root?', file=sys.stderr)
@@ -218,7 +238,8 @@ def main():
         for mac, e in sorted(dunkle.items()):
             print(f'dunkel {mac}  {len(e["domains"]):2} Domains, '
                   f'{e["ankuendigungen"]:3} Ankuendigungen, '
-                  f'respondd-Gruppe {"ja" if e["respondd_gruppe"] else "nein"}')
+                  f'respondd-Gruppe {"ja" if e["respondd_gruppe"] else "nein"}'
+                  + (f'  [{e["bekannt"]}]' if e.get('bekannt') else '  ungeklaert'))
         return 0
     schreiben(zeilen, community)
     dunkelliste(dunkle, community)
@@ -246,6 +267,7 @@ def dunkelliste(dunkle, community):
             'ankuendigungen': e['ankuendigungen'],
             'respondd_gruppe': e['respondd_gruppe'],
             'ueber': sorted(e['ueber']),
+            'bekannt': e.get('bekannt'),
             'erste_sichtung': alt.get('erste_sichtung', jetzt),
             'letzte_sichtung': jetzt,
         }

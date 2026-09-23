@@ -145,11 +145,19 @@ PANELS = KOPF + [
 
     panel(2, 'Bandbreite', [
         ziel('sum(rate({__name__="node_traffic.rx.bytes", nodeid="$node"}[$__rate_interval])) * 8',
-             'Empfangen', 'A'),
-        ziel('- sum(rate({__name__="node_traffic.tx.bytes", nodeid="$node"}[$__rate_interval])) * 8',
-             'Gesendet', 'B'),
-    ], 12, 5, einheit='bps',
-        beschreibung='Gesendet nach unten, damit sich beide Richtungen vergleichen lassen.'),
+             'empfangen', 'A'),
+        ziel('sum(rate({__name__="node_traffic.tx.bytes", nodeid="$node"}[$__rate_interval])) * 8',
+             'gesendet', 'B'),
+        ziel('sum(rate({__name__="node_traffic.mgmt_rx.bytes", nodeid="$node"}[$__rate_interval])) * 8',
+             'Verwaltung empfangen', 'C'),
+        ziel('sum(rate({__name__="node_traffic.mgmt_tx.bytes", nodeid="$node"}[$__rate_interval])) * 8',
+             'Verwaltung gesendet', 'D'),
+        ziel('sum(rate({__name__="node_traffic.forward.bytes", nodeid="$node"}[$__rate_interval])) * 8',
+             'weitergereicht', 'E'),
+    ], 12, 5, einheit='bps', min_=0,
+        beschreibung='Alle Betraege positiv. Verwaltung ist der batman-eigene Verkehr '
+                     '(OGMs und Nachbarschaft), weitergereicht ist Verkehr fuer andere '
+                     'Knoten im Mesh.'),
 
     panel(3, 'Datenmenge je Tag', [
         ziel('sum(increase({__name__="node_traffic.rx.bytes", nodeid="$node"}[1d]))',
@@ -311,17 +319,25 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
              'weitergereicht', 'A'),
         ziel('sum(rate({__name__="node_traffic.rx.bytes", hostname="$sn"}[$__rate_interval])) * 8',
              'empfangen', 'B'),
-        ziel('- sum(rate({__name__="node_traffic.tx.bytes", hostname="$sn"}[$__rate_interval])) * 8',
+        ziel('sum(rate({__name__="node_traffic.tx.bytes", hostname="$sn"}[$__rate_interval])) * 8',
              'gesendet', 'C'),
-    ], 0, 13, einheit='bps',
+        ziel('sum(rate({__name__="node_traffic.mgmt_rx.bytes", hostname="$sn"}[$__rate_interval])) * 8',
+             'Verwaltung empfangen', 'D'),
+        ziel('sum(rate({__name__="node_traffic.mgmt_tx.bytes", hostname="$sn"}[$__rate_interval])) * 8',
+             'Verwaltung gesendet', 'E'),
+    ], 0, 13, einheit='bps', min_=0,
         beschreibung='Weitergereicht ist bei einem Supernode der eigentliche Wert.'),
 
     panel(4, 'Verkehr der angebundenen Knoten', [
         ziel('sum(' + DAHINTER % 'rate({__name__="node_traffic.rx.bytes"}[$__rate_interval])' + ') * 8',
              'empfangen', 'A'),
-        ziel('- sum(' + DAHINTER % 'rate({__name__="node_traffic.tx.bytes"}[$__rate_interval])' + ') * 8',
+        ziel('sum(' + DAHINTER % 'rate({__name__="node_traffic.tx.bytes"}[$__rate_interval])' + ') * 8',
              'gesendet', 'B'),
-    ], 12, 13, einheit='bps',
+        ziel('sum(' + DAHINTER % 'rate({__name__="node_traffic.mgmt_rx.bytes"}[$__rate_interval])' + ') * 8',
+             'Verwaltung empfangen', 'C'),
+        ziel('sum(' + DAHINTER % 'rate({__name__="node_traffic.mgmt_tx.bytes"}[$__rate_interval])' + ') * 8',
+             'Verwaltung gesendet', 'D'),
+    ], 12, 13, einheit='bps', min_=0,
         beschreibung='Aus Sicht der Knoten, nicht der Instanz. Die Differenz zum Verkehr '
                      'der Instanz ist Mesh-Verkehr, der nie zum Supernode laeuft.'),
 
@@ -456,10 +472,15 @@ DOMAIN_PANELS = [
     panel(3, 'Verkehr der Domain', [
         ziel(je_domain('rate({__name__="node_traffic.rx.bytes"}[$__rate_interval])') + ' * 8',
              'empfangen', 'A'),
-        ziel('- ' + je_domain('rate({__name__="node_traffic.tx.bytes"}[$__rate_interval])') + ' * 8',
+        ziel(je_domain('rate({__name__="node_traffic.tx.bytes"}[$__rate_interval])') + ' * 8',
              'gesendet', 'B'),
-    ], 0, 13, einheit='bps',
-        beschreibung='Summe ueber alle Knoten der Domain, aus deren Sicht.'),
+        ziel(je_domain('rate({__name__="node_traffic.mgmt_rx.bytes"}[$__rate_interval])') + ' * 8',
+             'Verwaltung empfangen', 'C'),
+        ziel(je_domain('rate({__name__="node_traffic.mgmt_tx.bytes"}[$__rate_interval])') + ' * 8',
+             'Verwaltung gesendet', 'D'),
+    ], 0, 13, einheit='bps', min_=0,
+        beschreibung='Summe ueber alle Knoten der Domain, aus deren Sicht. Alle Betraege '
+                     'positiv; Verwaltung ist der batman-eigene Verkehr.'),
 
     panel(4, 'Datenmenge je Tag', [
         ziel(je_domain('increase({__name__="node_traffic.rx.bytes"}[1d])'), 'empfangen', 'A', '1d'),

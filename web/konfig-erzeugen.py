@@ -169,6 +169,45 @@ DIAGRAMME = [
 
 # Waehlbare Zeitraeume ueber den Diagrammen. 400 Tage haelt die Datenbank,
 # ein Jahr ist also die sinnvolle Obergrenze.
+# Zeilen der Attributtabelle im Knotenfenster. Wie die Vorgabe von meshviewer,
+# aber ohne node.ram: der Speicherbalken sagt wenig, und den Verlauf gibt es
+# unten als Diagramm (adorfer 23.09.2026).
+ATTRIBUTE = [
+    {'name': 'node.status', 'value': 'Status'},
+    {'name': 'node.gateway', 'value': 'Gateway'},
+    {'name': 'node.coordinates', 'value': 'GeoURI'},
+    {'name': 'node.hardware', 'value': 'model'},
+    {'name': 'node.primaryMac', 'value': 'mac'},
+    {'name': 'node.firmware', 'value': 'Firmware'},
+    {'name': 'node.uptime', 'value': 'Uptime'},
+    {'name': 'node.firstSeen', 'value': 'FirstSeen'},
+    {'name': 'node.systemLoad', 'value': 'Load'},
+    {'name': 'node.ipAddresses', 'value': 'IPs'},
+    {'name': 'node.update', 'value': 'Autoupdate'},
+    {'name': 'node.domain', 'value': 'Domain'},
+    {'name': 'node.clients', 'value': 'Clients'},
+]
+
+# Die belegten Funkkanaele. Sie stehen in keiner Kartendatei, respondd meldet
+# sie aber als Frequenz je Band (node_airtime11g.frequency). Der Kanal ergibt
+# sich daraus: unter 3 GHz (f - 2407) / 5, darueber (f - 5000) / 5. Geraete
+# ohne Funk liefern nichts, dann faellt die Zeile weg.
+_FREQ = ('max by (band) (label_replace({__name__=~"node_airtime11(g|a).frequency",'
+         ' nodeid="$node"}, "band", "$1", "__name__",'
+         ' "node_airtime11(g|a).frequency"))')
+_KANAL = (f'({_FREQ} < bool 3000) * (({_FREQ} - 2407) / 5)'
+          f' + ({_FREQ} >= bool 3000) * (({_FREQ} - 5000) / 5)')
+
+WERTE = [{
+    'name': 'Kanäle',
+    # Bandkennung lesbar machen: g ist 2,4 GHz, a ist 5 GHz
+    'query': ('label_replace(label_replace(' + _KANAL + ','
+              ' "band", "2,4 GHz", "band", "g"), "band", "5 GHz", "band", "a")'),
+    'legendFormat': '{{band}}',
+    'format': '.0f',
+}]
+
+
 ZEITRAEUME = [
     {'name': '24 h', 'from': 'now-24h'},
     {'name': '7 Tage', 'from': 'now-7d'},
@@ -221,7 +260,8 @@ def konfig(titel, pfad, alle):
     alt = ({'deprecation_enabled': True,
             'eol': altgeraete(daten), 'eol_text': ALTGERAETE_TEXT,
             'prometheus': {'url': ZEITREIHE_URL}, 'nodeCharts': diagramme(),
-            'chartRanges': ZEITRAEUME, 'nodeInfos': VERTIEFUNG}
+            'chartRanges': ZEITRAEUME, 'nodeInfos': VERTIEFUNG,
+            'nodeAttr': ATTRIBUTE, 'nodeValues': WERTE}
            if community == 'neander' else {'deprecation_enabled': False})
     return {
         **alt,

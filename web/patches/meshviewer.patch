@@ -1,8 +1,8 @@
 diff --git a/lib/config_default.ts b/lib/config_default.ts
-index 5612ab1..40ddd1a 100644
+index 5612ab1..ed78cea 100644
 --- a/lib/config_default.ts
 +++ b/lib/config_default.ts
-@@ -58,6 +58,17 @@ export interface GrafanaConfig {
+@@ -58,6 +58,27 @@ export interface GrafanaConfig {
    url: string;
    orgId?: number;
  }
@@ -17,10 +17,20 @@ index 5612ab1..40ddd1a 100644
 +  name: string;
 +  from: string;
 +}
++// Lokaler Zusatz: eine Zeile in der Attributtabelle des Knotens, deren Wert
++// aus den Zeitreihen kommt. Fuer Dinge, die respondd zwar misst, aber nicht in
++// nodes.json schreibt, etwa die belegten Funkkanaele.
++export interface NodeValue {
++  name: string;
++  query: string;
++  legendFormat?: string;
++  format?: string;
++  unitSuffix?: string;
++}
  
  export interface ChartSeries {
    name: string;
-@@ -67,6 +78,13 @@ export interface ChartSeries {
+@@ -67,6 +88,13 @@ export interface ChartSeries {
  
  export interface Chart {
    name: string;
@@ -34,7 +44,7 @@ index 5612ab1..40ddd1a 100644
    datasourceUid: string;
    datasourceType: string;
    query: string;
-@@ -136,6 +154,18 @@ export interface Config {
+@@ -136,6 +164,18 @@ export interface Config {
      other: string;
    };
    map: {
@@ -53,16 +63,17 @@ index 5612ab1..40ddd1a 100644
      labelNewColor: string;
      tqFrom: string;
      tqTo: string;
-@@ -197,6 +227,8 @@ export interface Config {
+@@ -197,6 +237,9 @@ export interface Config {
    linkInfos: LinkInfo[];
    nodeInfos: NodeInfo[];
    grafana?: GrafanaConfig;
 +  prometheus?: PrometheusConfig;
++  nodeValues?: NodeValue[];
 +  chartRanges?: ChartRange[];
    nodeCharts: Chart[];
    linkCharts: Chart[];
    globalCharts: Chart[];
-@@ -341,6 +373,11 @@ export const config: Config = {
+@@ -341,6 +384,11 @@ export const config: Config = {
      other: "rgba(227, 166, 25, 0.7)",
    },
    map: {
@@ -74,8 +85,16 @@ index 5612ab1..40ddd1a 100644
      labelNewColor: "#459C18",
      tqFrom: "#F02311",
      tqTo: "#04C714",
+@@ -511,6 +559,7 @@ export const config: Config = {
+   linkInfos: [],
+   nodeInfos: [],
+   nodeCharts: [],
++  nodeValues: [],
+   linkCharts: [],
+   globalCharts: [],
+   node_custom: "",
 diff --git a/lib/infobox/chart.ts b/lib/infobox/chart.ts
-index 0f8b2a0..001f886 100644
+index 0f8b2a0..4656bf2 100644
 --- a/lib/infobox/chart.ts
 +++ b/lib/infobox/chart.ts
 @@ -9,7 +9,7 @@ import { timeFormat } from "d3-time-format";
@@ -83,7 +102,7 @@ index 0f8b2a0..001f886 100644
  import { schemeTableau10 } from "d3-scale-chromatic";
  import { _ } from "../utils/language.js";
 -import { Chart, ChartSeries } from "../config_default.js";
-+import { Chart, ChartRange, ChartSeries } from "../config_default.js";
++import { Chart, ChartRange, ChartSeries, NodeValue } from "../config_default.js";
  
  interface Series {
    name: string;
@@ -236,7 +255,7 @@ index 0f8b2a0..001f886 100644
            if (parsed.series.length === 0 || !Number.isFinite(parsed.xDomain[0])) {
              el.textContent = _.t("node.chartNoData", { name: chart.name });
              return;
-@@ -284,3 +379,93 @@ export function createChartVNode(chart: Chart, subst: Record<string, string>): V
+@@ -284,3 +379,138 @@ export function createChartVNode(chart: Chart, subst: Record<string, string>): V
      },
    });
  }
@@ -330,8 +349,53 @@ index 0f8b2a0..001f886 100644
 +    },
 +  });
 +}
++
++// --- Wertezeilen ------------------------------------------------------------
++// Lokaler Zusatz: ein einzelner Wert aus den Zeitreihen als Zeile in der
++// Attributtabelle. Liefert die Abfrage nichts, verschwindet die ganze Zeile;
++// ein Geraet ohne Funk soll keine leere Kanalzeile bekommen.
++
++export function createNodeValueVNode(wert: NodeValue, subst: Record<string, string>): VNode {
++  return h("td", {
++    hook: {
++      insert: async (vnode: VNode) => {
++        const el = vnode.elm as HTMLElement;
++        const prometheus = window.config.prometheus;
++        if (!prometheus) {
++          el.parentElement?.remove();
++          return;
++        }
++        try {
++          const url = `${prometheus.url.replace(/\/$/, "")}/api/v1/query?query=${encodeURIComponent(
++            applySubst(wert.query, subst),
++          )}`;
++          const antwort = await fetch(url, { mode: "cors", credentials: "omit" });
++          if (!antwort.ok) throw new Error(`HTTP ${antwort.status}`);
++          const json = await antwort.json();
++          const reihen: any[] = json?.data?.result ?? [];
++          const fmt = d3Format(wert.format ?? ".0f");
++          const teile = reihen
++            .map((r) => {
++              const v = Number(r.value?.[1]);
++              if (!Number.isFinite(v)) return null;
++              const name = promName(r.metric ?? {}, wert.legendFormat);
++              return `${name ? name + ": " : ""}${fmt(v)}${wert.unitSuffix ?? ""}`;
++            })
++            .filter((t): t is string => t !== null);
++          if (!teile.length) {
++            el.parentElement?.remove();
++            return;
++          }
++          el.textContent = teile.join(" \u00b7 ");
++        } catch {
++          el.parentElement?.remove();
++        }
++      },
++    },
++  });
++}
 diff --git a/lib/infobox/node.ts b/lib/infobox/node.ts
-index ef37925..21a488d 100644
+index ef37925..0cae94f 100644
 --- a/lib/infobox/node.ts
 +++ b/lib/infobox/node.ts
 @@ -5,7 +5,7 @@ import { SortTable } from "../sorttable.js";
@@ -339,11 +403,23 @@ index ef37925..21a488d 100644
  import nodef, { Neighbour, Node as NodeData, NodeId } from "../utils/node.js";
  import { NodeInfo } from "../config_default.js";
 -import { createChartVNode } from "./chart.js";
-+import { createChartsVNode } from "./chart.js";
++import { createChartsVNode, createNodeValueVNode } from "./chart.js";
  import { ObjectsLinksAndNodes } from "../datadistributor.js";
  
  // `config.nodeAttr.value` may be either a function or a string. When it is a
-@@ -285,11 +285,8 @@ export function Node(el: HTMLElement, node: NodeData, linkScale: (t: any) => any
+@@ -236,6 +236,11 @@ export function Node(el: HTMLElement, node: NodeData, linkScale: (t: any) => any
+         }
+       });
+       attributeRows.push(h("tr", [h("th", _.t("node.gateway")), showGateway(node)]));
++
++      // Zeilen, deren Wert aus den Zeitreihen kommt (lokaler Zusatz)
++      for (const wert of config.nodeValues ?? []) {
++        attributeRows.push(h("tr", [h("th", wert.name), createNodeValueVNode(wert, { node: node.node_id })]));
++      }
+       const attributeTable = h("table", { props: { className: "attributes" } }, attributeRows);
+ 
+       // Deprecation warning
+@@ -285,11 +290,8 @@ export function Node(el: HTMLElement, node: NodeData, linkScale: (t: any) => any
  
        // Charts
        if (config.nodeCharts.length) {

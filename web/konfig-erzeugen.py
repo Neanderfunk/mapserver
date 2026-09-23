@@ -135,13 +135,21 @@ DIAGRAMME = [
      'query': 'max(last_over_time({__name__="node_clients.total", nodeid="$node"}[10m]))',
      'legendFormat': 'Clients', 'format': ',.0f', 'integer': True},
     {'name': 'Bandbreite',
-     'query': 'sum by (richtung) (label_replace('
-              'rate({__name__=~"node_traffic.(rx|tx).bytes", nodeid="$node"}[15m])'
+     # Drei Reihen: was der Knoten selbst empfaengt und sendet, und was er fuer
+     # andere durchs Mesh reicht (adorfer 23.09.2026). Die Bezeichnungen macht
+     # label_replace lesbar, sonst staende dort rx, tx und forward.
+     'query': 'label_replace(label_replace(label_replace('
+              'sum by (richtung) (label_replace('
+              'rate({__name__=~"node_traffic.(rx|tx|forward).bytes", nodeid="$node"}[15m])'
               ' keep_metric_names, "richtung", "$1", "__name__",'
-              ' "node_traffic.(rx|tx).bytes")) * 8',
+              ' "node_traffic.(rx|tx|forward).bytes")) * 8,'
+              ' "richtung", "empfangen", "richtung", "rx"),'
+              ' "richtung", "gesendet", "richtung", "tx"),'
+              ' "richtung", "weitergereicht", "richtung", "forward")',
      'legendFormat': '{{richtung}}', 'unitSuffix': 'bit/s', 'format': '.2~s',
-     # Senden nach unten, Empfangen nach oben
-     'series': [{'name': 'tx', 'negate': True}]},
+     # Senden nach unten, Empfangen nach oben; weitergereicht bleibt oben,
+     # es ist keine Richtung, sondern Durchgangsverkehr
+     'series': [{'name': 'gesendet', 'negate': True}]},
     {'name': 'Airtime',
      'query': 'max by (band) (label_replace('
               '{__name__=~"node_airtime11(g|a).chan_util", nodeid="$node"},'

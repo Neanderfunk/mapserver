@@ -1,9 +1,9 @@
 diff --git a/tests/test_offloader_by_ap.py b/tests/test_offloader_by_ap.py
 new file mode 100644
-index 0000000..dfc1704
+index 0000000..44e2985
 --- /dev/null
 +++ b/tests/test_offloader_by_ap.py
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,207 @@
 +#!/usr/bin/env python3
 +"""Tests fuer den lokalen Zusatz offloader_by_ap (Neanderfunk).
 +
@@ -144,6 +144,73 @@ index 0000000..dfc1704
 +    assert knoten.system.site_code == "lvrmo-33_lvrmo"
 +    assert knoten.system.domain_code == "lvrmo-33_lvrmo"
 +    assert knoten.to_dict()["system"]["site_code"] == "lvrmo-33_lvrmo"
++
++
++def _knoten(lat, lon):
++    from unifi_respondd.respondd_client import ResponddClient
++    from unifi_respondd.unifi_client import Accesspoint, Accesspoints
++    ap = Accesspoint(
++        name="ap", mac="0c:ea:14:00:00:0c", snmp_location="",
++        client_count=0, client_count24=0, client_count5=0, channel5=None,
++        rx_bytes5=None, tx_bytes5=None, channel24=6, rx_bytes24=1, tx_bytes24=2,
++        latitude=lat, longitude=lon, model="U6-Lite", firmware="6.6.77",
++        uptime=1, contact="", load_avg=0.1, mem_used=1, mem_total=2, mem_buffer=1,
++        tx_bytes=2, rx_bytes=1, gateway="gw", gateway6="gw6",
++        gateway_nexthop="bbbbbbbbbb02", neighbour_macs=[ECHTER_ROUTER],
++        domain_code="lvrmo-33_lvrmo",
++    )
++    client = ResponddClient.__new__(ResponddClient)
++    client._aps = Accesspoints(accesspoints=[ap])
++    return client.getNodeInfos()[0].to_dict()
++
++
++def test_ohne_koordinaten_kein_ort():
++    """Ohne Koordinaten fehlt der Ort ganz, statt 0/0 (Null Island)."""
++    assert "location" not in _knoten(None, None)
++
++
++def test_mit_koordinaten_ort():
++    assert _knoten(51.2506, 6.9746)["location"] == {"latitude": 51.2506, "longitude": 6.9746}
++
++
++@patch("unifi_respondd.unifi_client.config.load_config")
++@patch("unifi_respondd.unifi_client.config.Config.from_dict")
++@patch("unifi_respondd.unifi_client.scrape")
++@patch("unifi_respondd.unifi_client.Controller")
++@patch("unifi_respondd.unifi_client.Nominatim")
++@patch("unifi_respondd.unifi_client.get_client_count_for_ap")
++@patch("unifi_respondd.unifi_client.get_ap_channel_usage")
++def test_leeres_und_nulleins_feld_ergibt_keinen_ort(
++    mock_chan, mock_clients, mock_nominatim, mock_controller,
++    mock_scrape, mock_from_dict, mock_load,
++):
++    cfg = Mock()
++    cfg.nodelist = "http://example.invalid/meshviewer.json"
++    cfg.ssid_regex = ".*freifunk.*"
++    cfg.version = "v5"
++    cfg.offloader_mac = {"fflvr": SITE_ROUTER}
++    cfg.fallback_domain = "unifi_respondd_fallback"
++    cfg.offloader_by_ap = ""
++    mock_from_dict.return_value = cfg
++    mock_load.return_value = {}
++    mock_scrape.return_value = {"nodes": [{"mac": SITE_ROUTER, "domain": "11_lvr"}]}
++    c = Mock()
++    mock_controller.return_value = c
++    c.get_sites.return_value = [{"name": "default", "desc": "fflvr"}]
++    leer = _ap("leer", "0c:ea:14:00:00:0d")
++    leer["snmp_location"] = ""
++    null = _ap("null", "0c:ea:14:00:00:0e")
++    null["snmp_location"] = "0, 0"
++    gut = _ap("gut", "0c:ea:14:00:00:0f")
++    c.get_aps.return_value = [leer, null, gut]
++    c.get_clients.return_value = []
++    mock_clients.return_value = (0, 0, 0)
++    mock_chan.return_value = (None, None, None, 6, 1, 2)
++
++    aps = {a.name: a for a in get_infos().accesspoints}
++    assert aps["leer"].latitude is None and aps["leer"].longitude is None
++    assert aps["null"].latitude is None and aps["null"].longitude is None
++    assert (aps["gut"].latitude, aps["gut"].longitude) == (51.2506, 6.9746)
 diff --git a/unifi_respondd/config.py b/unifi_respondd/config.py
 index 8a6025f..2abfdb1 100644
 --- a/unifi_respondd/config.py
@@ -168,9 +235,18 @@ index 8a6025f..2abfdb1 100644
  
  
 diff --git a/unifi_respondd/respondd_client.py b/unifi_respondd/respondd_client.py
-index 7065938..2ae6378 100644
+index 7065938..8eba5ab 100644
 --- a/unifi_respondd/respondd_client.py
 +++ b/unifi_respondd/respondd_client.py
+@@ -8,7 +8,7 @@ import time
+ import zlib
+ from typing import Dict, List
+ 
+-from dataclasses_json import dataclass_json
++from dataclasses_json import config, dataclass_json
+ 
+ from unifi_respondd import logger, unifi_client
+ 
 @@ -86,6 +86,13 @@ class NetworkInfo:
  @dataclasses.dataclass
  class SystemInfo:
@@ -185,7 +261,33 @@ index 7065938..2ae6378 100644
  
  
  @dataclass_json
-@@ -287,7 +294,9 @@ class ResponddClient:
+@@ -104,7 +111,11 @@ class NodeInfo:
+     software: SoftwareInfo
+     hostname: str
+     node_id: str
+-    location: LocationInfo
++    # Lokaler Zusatz (Neanderfunk): ohne Koordinaten fehlt der Ort ganz,
++    # statt als 0/0 gemeldet zu werden
++    location: LocationInfo = dataclasses.field(
++        metadata=config(exclude=lambda wert: wert is None)
++    )
+     hardware: HardwareInfo
+     owner: OwnerInfo
+     network: NetworkInfo
+@@ -278,7 +289,11 @@ class ResponddClient:
+                     ),
+                     hostname=ap.name,
+                     node_id=ap.mac.replace(":", ""),
+-                    location=LocationInfo(latitude=ap.latitude, longitude=ap.longitude),
++                    location=(
++                        LocationInfo(latitude=ap.latitude, longitude=ap.longitude)
++                        if ap.latitude is not None and ap.longitude is not None
++                        else None
++                    ),
+                     hardware=HardwareInfo(model=ap.model),
+                     owner=OwnerInfo(contact=ap.contact),
+                     network=NetworkInfo(
+@@ -287,7 +302,9 @@ class ResponddClient:
                              "bat0": IntInfo(interfaces=InterfacesInfo(other=[ap.mac]))
                          },
                      ),
@@ -197,7 +299,7 @@ index 7065938..2ae6378 100644
              )
          return nodes
 diff --git a/unifi_respondd/unifi_client.py b/unifi_respondd/unifi_client.py
-index c2ba18b..a9b65ea 100644
+index c2ba18b..6fef985 100644
 --- a/unifi_respondd/unifi_client.py
 +++ b/unifi_respondd/unifi_client.py
 @@ -1,6 +1,7 @@
@@ -249,20 +351,41 @@ index c2ba18b..a9b65ea 100644
      aps = Accesspoints(accesspoints=[])
      for site in c.get_sites():
          if cfg.version == "UDMP-unifiOS":
-@@ -226,15 +254,17 @@ def get_infos():
-                             )
+@@ -217,7 +245,12 @@ def get_infos():
+                         tx_bytes24,
+                     ) = get_ap_channel_usage(ssids, cfg)
+ 
+-                    lat, lon = 0, 0
++                    # Lokaler Zusatz (Neanderfunk): ohne Koordinaten kein Ort,
++                    # statt 0/0. Ein AP ohne Ort steht dann in Liste und Graph
++                    # an seinem Router, aber nicht auf der Karte. Mit 0/0 stand
++                    # er auf "Null Island" im Golf von Guinea und zog den
++                    # Kartenausschnitt bis nach Afrika auf.
++                    lat, lon = None, None
+                     neighbour_macs = []
+                     if ap.get("snmp_location", None):
+                         try:
+@@ -227,14 +260,24 @@ def get_infos():
                          except Exception:
                              pass
-+                    # Lokaler Zusatz (Neanderfunk): gemessener Router je AP vor
-+                    # dem Router der Site
-+                    offloader_mac = offloader_by_ap.get(
-+                        (ap.get("mac") or "").lower()
-+                    ) or cfg.offloader_mac.get(site["desc"], "")
                      try:
 -                        neighbour_macs.append(cfg.offloader_mac.get(site["desc"], None))
 -                        offloader_id = cfg.offloader_mac.get(site["desc"], "").replace(
 -                            ":", ""
 -                        )
++                        if lat is not None and lon is not None:
++                            lat, lon = float(lat), float(lon)
++                            # 0/0 ist kein Ort, sondern ein Eingabefehler
++                            if abs(lat) < 0.5 and abs(lon) < 0.5:
++                                lat, lon = None, None
++                    except (TypeError, ValueError):
++                        lat, lon = None, None
++                    # Lokaler Zusatz (Neanderfunk): gemessener Router je AP vor
++                    # dem Router der Site
++                    offloader_mac = offloader_by_ap.get(
++                        (ap.get("mac") or "").lower()
++                    ) or cfg.offloader_mac.get(site["desc"], "")
++                    try:
 +                        neighbour_macs.append(offloader_mac or None)
 +                        offloader_id = offloader_mac.replace(":", "")
                          offloader = list(
@@ -273,3 +396,14 @@ index c2ba18b..a9b65ea 100644
                                  ffnodes["nodes"],
                              )
                          )[0]
+@@ -264,8 +307,8 @@ def get_infos():
+                             channel24=channel24,
+                             rx_bytes24=rx_bytes24,
+                             tx_bytes24=tx_bytes24,
+-                            latitude=float(lat),
+-                            longitude=float(lon),
++                            latitude=lat,
++                            longitude=lon,
+                             model=ap.get("model", None),
+                             firmware=ap.get("version", None),
+                             uptime=ap.get("uptime", None),

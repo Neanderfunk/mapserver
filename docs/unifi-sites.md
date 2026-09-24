@@ -263,6 +263,23 @@ Einrichtung (`wuelfrath-wir-haus`), damit die Rechte getrennt bleiben.
   `https://neander.map.freifunk.space/data/meshviewer.json`. Daraus erbt jeder
   AP Domain und Gateway seines Offloaders.
 
+### Ohne Koordinaten: in Liste und Graph, nicht auf der Karte
+
+Koordinaten braucht nur die geografische Karte. Liste, Graphansicht,
+Statistik und Grafana kommen ohne aus, dort hängt der AP an seinem gemessenen
+Router (adorfer 25.09.2026: "im Mesh müssten die doch auch so angezeigt
+werden können").
+
+Dafür musste unifi_respondd lernen, **keinen** Ort zu melden: im Original
+setzt er ohne Koordinaten 0/0, und alle APs stünden auf "Null Island" im Golf
+von Guinea. Der Patch lässt den Ort dann ganz weg, ebenso bei einer
+eingetragenen 0/0. Zusätzlich übergeht der Generator der Kartenausschnitte
+(`rahmen()` in `web/konfig-erzeugen.py`) Punkte bei 0/0, damit auch ein
+einzelner Gluon-Knoten mit 0/0 den Ausschnitt nicht aufzieht.
+
+Damit sind die Koordinaten beim LVR kein Hindernis mehr für den Start, nur
+noch für die Kartenansicht.
+
 ### Koordinaten: Zahlen, kein Freitext
 
 Steht im Feld SNMP Location ein Freitext statt eines Koordinatenpaars, schickt

@@ -70,9 +70,15 @@ def rahmen(datei, rand=0.02):
             knoten = json.load(f).get('nodes', [])
     except (OSError, ValueError):
         return vorgabe
+    # Punkte bei 0/0 zaehlen nicht: das ist kein Ort, sondern ein fehlender
+    # oder falsch eingetragener ("Null Island"). Ein einziger solcher Punkt
+    # zoege den Ausschnitt bis in den Golf von Guinea auf.
     orte = [k['location'] for k in knoten if k.get('location')]
-    lat = [o['latitude'] for o in orte if -90 < o.get('latitude', 0) < 90]
-    lon = [o['longitude'] for o in orte if -180 < o.get('longitude', 0) < 180]
+    orte = [o for o in orte
+            if -90 < o.get('latitude', 0) < 90 and -180 < o.get('longitude', 0) < 180
+            and not (abs(o.get('latitude', 0)) < 0.5 and abs(o.get('longitude', 0)) < 0.5)]
+    lat = [o['latitude'] for o in orte]
+    lon = [o['longitude'] for o in orte]
     if len(lat) < 3:
         return vorgabe
     return [[round(max(lat) + rand, 4), round(min(lon) - rand, 4)],

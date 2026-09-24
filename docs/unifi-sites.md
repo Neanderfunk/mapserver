@@ -109,8 +109,9 @@ Beim Blick in den Controller (lesend, eigenes Konto):
 1. **Zugang zu den beiden kleinen Sites.** Unser Lesekonto sieht sie nicht.
 2. **LVR ausklammern oder aufteilen.** unifi_respondd kennt keine Auswahl von
    Sites, er verarbeitet jede, die das Konto sieht. Eine Site ohne
-   eingetragenen Offloader fällt nicht heraus: ihre APs erscheinen ohne
-   Domain und ohne Gateway. Die beiden kleinen Sites lassen sich deshalb vor
+   eingetragenen Offloader fällt nicht heraus: ihre APs erscheinen mit der
+   Ersatzdomain `fallback_domain` (Vorgabe `unifi_respondd_fallback`), ohne
+   Gateway und ohne Verbindung zu einem Freifunk-Router. Die beiden kleinen Sites lassen sich deshalb vor
    der LVR-Aufteilung anbinden, wenn entweder ein eigenes Lesekonto nur sie
    sieht, oder ein kleiner lokaler Patch Sites ohne Offloader überspringt.
 3. **Koordinaten.** Ohne sie stehen die APs nur in der Liste, nicht auf der
@@ -121,6 +122,31 @@ Beim Blick in den Controller (lesend, eigenes Konto):
    unifi_respondd antwortet per Multicast auf einer Schnittstelle oder schickt
    per Unicast an einen festen Empfänger, und unser yanic hört bisher nur auf
    den bat-Schnittstellen.
+
+### Eine Site je Domain oder je Router?
+
+Ein AP erbt alles Netzbezogene vom **einen** Offloader seiner Site
+(`unifi_client.py`): die Domain (`domain_code`), das Gateway
+(`gateway`, `gateway6`), den nächsten Sprung (`gateway_nexthop`) und die
+Verbindungslinie auf der Karte (`neighbour_macs`).
+
+- **Eine Site je Domain ist das Minimum.** Damit stimmen Domain, Domainkarte,
+  Statistik und Gateway. Hängen die APs einer Domain aber hinter mehreren
+  Routern, zeichnet die Karte sie alle am selben, eingetragenen Router.
+- **Eine Site je Router** braucht es nur, wenn die Karte auch zeigen soll,
+  hinter welchem Router jeder AP wirklich hängt.
+
+Beim LVR (615 APs hinter 95 Routern in sieben Domains) wären das 95 Sites,
+deshalb die Aufteilung je Domain in der Anleitung für die dortige IT.
+
+**Namen der Sites:** unifi_respondd deutet den Namen nicht, zugeordnet wird
+über `offloader_mac` in unserer Konfiguration, Schlüssel ist der
+Anzeigename der Site. Er muss also nur eindeutig und stabil sein und exakt so
+geschrieben werden. Als Schema nehmen wir den Namen der Domain auf unserer
+Karte (Spalte `host` in `tunnel/domains.conf`, z.B. `lvr-hph-nordost`,
+`dus-unterkuenfte-west`, `wuelfrath`). Teilen sich mehrere Einrichtungen eine
+Domain auf unserem Controller, bekommt jede ihre eigene Site mit angehängter
+Einrichtung (`wuelfrath-wir-haus`), damit die Rechte getrennt bleiben.
 
 ### Offene Einstellungen für die Inbetriebnahme
 

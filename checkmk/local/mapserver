@@ -15,6 +15,7 @@
 #   mapserver-Abschottung kein Standardweg und kein Forwarding in ihr Netz
 #   mapserver-Batman      Version von Modul und Werkzeug, L2TP-Schnittstellen
 #   mapserver-<community>-<ort> je Domain: Originatoren, Gateways, Clients, Knoten
+#                         (nur in der Rolle local/60/mapserver-domains, siehe unten)
 #
 # Die wichtigste Groesse je Domain ist nicht die Knotenzahl, sondern die Zahl
 # der Originatoren: sie faellt sofort, wenn der Tunnel abreisst, waehrend die

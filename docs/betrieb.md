@@ -179,9 +179,30 @@ Die Checks liegen in `checkmk/` und werden von dort ausgespielt
 (`sudo ./installieren.sh 'mapserver*'`). Auf der VM:
 
 ```
-/usr/lib/check_mk_agent/local/mapserver         jeder Agentenlauf
-/usr/lib/check_mk_agent/local/300/mapserver-web alle fünf Minuten
+/usr/lib/check_mk_agent/local/mapserver             jeder Agentenlauf
+/usr/lib/check_mk_agent/local/60/mapserver-domains  jede Minute, im Hintergrund
+/usr/lib/check_mk_agent/local/300/mapserver-web     alle fünf Minuten
 ```
+
+`mapserver` und `60/mapserver-domains` sind **dieselbe Datei** und erkennen am
+eigenen Namen, welche Rolle sie haben. Im Repo ist die zweite ein Verweis auf
+die erste, `installieren.sh` kopiert beide. Die 48 Domain-Checks kosten rund
+190 `batctl`-Aufrufe und ändern sich langsam; im Vordergrund ließen sie den
+Agentenlauf auf fast 8 Sekunden wachsen, und der Host flackerte im Dashboard.
+
+Laufzeiten, gemessen am 24.09.2026:
+
+| | vorher | nachher |
+| --- | --- | --- |
+| `mapserver` je Lauf | 5,8 s | 0,96 s |
+| `60/mapserver-domains`, im Hintergrund | (war im Vordergrund) | 1,8 s |
+| ganzer Agent | 7,8 s | 3,0 s |
+
+Neben der Trennung wurde der Check selbst billiger: je Tunnel drei
+`systemctl`-Aufrufe und je Kartendatei ein eigener Python-Start sind durch je
+einen Sammelaufruf ersetzt. Wer hier etwas ergänzt: **keine Programmstarts in
+Schleifen über Domains oder Tunnel**, das summiert sich bei 48 Domains
+schnell auf Sekunden.
 
 Beide lassen sich von Hand aufrufen und geben ihre Zeilen direkt aus.
 

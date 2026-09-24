@@ -1,0 +1,10 @@
+[Unit]
+Description=Router je UniFi-Accesspoint, alle fuenf Minuten
+
+[Timer]
+OnBootSec=8min
+OnUnitActiveSec=5min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

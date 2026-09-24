@@ -1,0 +1,222 @@
+diff --git a/tests/test_offloader_by_ap.py b/tests/test_offloader_by_ap.py
+new file mode 100644
+index 0000000..f141b01
+--- /dev/null
++++ b/tests/test_offloader_by_ap.py
+@@ -0,0 +1,116 @@
++#!/usr/bin/env python3
++"""Tests fuer den lokalen Zusatz offloader_by_ap (Neanderfunk).
++
++Der Router je Accesspoint kommt aus einer Datei, die der Kartenserver aus
++der batman-Uebersetzungstabelle erzeugt. Er gilt vor dem Router der Site.
++"""
++
++import json
++from unittest.mock import Mock, patch
++
++from unifi_respondd.unifi_client import get_infos, load_offloader_by_ap
++
++SITE_ROUTER = "aa:aa:aa:aa:aa:01"
++ECHTER_ROUTER = "bb:bb:bb:bb:bb:02"
++
++
++class TestLoadOffloaderByAp:
++    def test_ohne_pfad(self):
++        assert load_offloader_by_ap("") == {}
++
++    def test_kein_text(self):
++        # Ein falsch gesetzter Wert wirkt wie ein fehlender
++        assert load_offloader_by_ap(Mock()) == {}
++        assert load_offloader_by_ap(None) == {}
++
++    def test_datei_fehlt(self, tmp_path):
++        assert load_offloader_by_ap(str(tmp_path / "gibt-es-nicht.json")) == {}
++
++    def test_kaputtes_json(self, tmp_path):
++        p = tmp_path / "zuordnung.json"
++        p.write_text("{ kein json")
++        assert load_offloader_by_ap(str(p)) == {}
++
++    def test_gueltig_und_klein(self, tmp_path):
++        p = tmp_path / "zuordnung.json"
++        p.write_text(json.dumps({"aps": {
++            "0C:EA:14:65:42:03": {"router": "B0:19:21:8C:7F:C6", "name": "x"},
++            "0c:ea:14:00:00:01": {"name": "ohne router"},
++            "0c:ea:14:00:00:02": "kein objekt",
++        }}))
++        assert load_offloader_by_ap(str(p)) == {
++            "0c:ea:14:65:42:03": "b0:19:21:8c:7f:c6"
++        }
++
++
++def _ap(name, mac):
++    return {
++        "name": name,
++        "mac": mac,
++        "state": 1,
++        "type": "uap",
++        "snmp_location": "51.2506, 6.9746",
++        "model": "U6-Lite",
++        "version": "6.6.77",
++        "uptime": 3600,
++        "sys_stats": {"loadavg_1": 0.1, "mem_used": 1, "mem_buffer": 1, "mem_total": 2},
++        "vap_table": [{"essid": "Freifunk", "channel": 6, "rx_bytes": 1, "tx_bytes": 2}],
++    }
++
++
++@patch("unifi_respondd.unifi_client.config.load_config")
++@patch("unifi_respondd.unifi_client.config.Config.from_dict")
++@patch("unifi_respondd.unifi_client.scrape")
++@patch("unifi_respondd.unifi_client.Controller")
++@patch("unifi_respondd.unifi_client.Nominatim")
++@patch("unifi_respondd.unifi_client.get_client_count_for_ap")
++@patch("unifi_respondd.unifi_client.get_ap_channel_usage")
++@patch("unifi_respondd.unifi_client.get_location_by_address")
++def test_router_je_ap_vor_router_der_site(
++    mock_loc, mock_chan, mock_clients, mock_nominatim, mock_controller,
++    mock_scrape, mock_from_dict, mock_load, tmp_path,
++):
++    zuordnung = tmp_path / "zuordnung.json"
++    zuordnung.write_text(json.dumps({"aps": {
++        "0c:ea:14:00:00:0a": {"router": ECHTER_ROUTER},
++    }}))
++
++    cfg = Mock()
++    cfg.nodelist = "http://example.invalid/meshviewer.json"
++    cfg.ssid_regex = ".*freifunk.*"
++    cfg.version = "v5"
++    cfg.offloader_mac = {"fflvr": SITE_ROUTER}
++    cfg.fallback_domain = "unifi_respondd_fallback"
++    cfg.offloader_by_ap = str(zuordnung)
++    mock_from_dict.return_value = cfg
++    mock_load.return_value = {}
++
++    mock_scrape.return_value = {"nodes": [
++        {"mac": SITE_ROUTER, "gateway": "gw-site", "gateway6": "gw6-site", "domain": "11_lvr"},
++        {"mac": ECHTER_ROUTER, "gateway": "gw-echt", "gateway6": "gw6-echt", "domain": "33_lvrmo"},
++    ]}
++    c = Mock()
++    mock_controller.return_value = c
++    c.get_sites.return_value = [{"name": "default", "desc": "fflvr"}]
++    c.get_aps.return_value = [
++        _ap("mit-messung", "0C:EA:14:00:00:0A"),   # Grossschreibung wie im Controller
++        _ap("ohne-messung", "0c:ea:14:00:00:0b"),
++    ]
++    c.get_clients.return_value = []
++    mock_clients.return_value = (0, 0, 0)
++    mock_chan.return_value = (None, None, None, 6, 1, 2)
++    mock_loc.return_value = (51.2506, 6.9746)
++
++    aps = {a.name: a for a in get_infos().accesspoints}
++
++    gemessen = aps["mit-messung"]
++    assert gemessen.gateway_nexthop == ECHTER_ROUTER.replace(":", "")
++    assert gemessen.neighbour_macs[0] == ECHTER_ROUTER
++    assert gemessen.domain_code == "33_lvrmo"
++    assert gemessen.gateway == "gw-echt"
++
++    # Ohne Eintrag bleibt es beim Router der Site, wie ohne Zusatz
++    ungemessen = aps["ohne-messung"]
++    assert ungemessen.gateway_nexthop == SITE_ROUTER.replace(":", "")
++    assert ungemessen.neighbour_macs[0] == SITE_ROUTER
++    assert ungemessen.domain_code == "11_lvr"
+diff --git a/unifi_respondd/config.py b/unifi_respondd/config.py
+index 8a6025f..2abfdb1 100644
+--- a/unifi_respondd/config.py
++++ b/unifi_respondd/config.py
+@@ -48,6 +48,10 @@ class Config:
+ 
+     version: str = "v5"
+     ssl_verify: bool = True
++    # Lokaler Zusatz (Neanderfunk): Datei mit dem Freifunk-Router je
++    # Accesspoint, gemessen aus der batman-Uebersetzungstabelle. Ist sie
++    # gesetzt, gilt ihr Eintrag vor offloader_mac der Site.
++    offloader_by_ap: str = ""
+ 
+     @classmethod
+     def from_dict(cls, cfg: Dict[str, str]) -> "Config":
+@@ -76,6 +80,7 @@ class Config:
+             unicast_port=cfg["unicast_port"],
+             interface=cfg["interface"],
+             verbose=cfg["verbose"],
++            offloader_by_ap=cfg.get("offloader_by_ap", ""),
+         )
+ 
+ 
+diff --git a/unifi_respondd/unifi_client.py b/unifi_respondd/unifi_client.py
+index c2ba18b..a9b65ea 100644
+--- a/unifi_respondd/unifi_client.py
++++ b/unifi_respondd/unifi_client.py
+@@ -1,6 +1,7 @@
+ #!/usr/bin/env python3
+ 
+ import dataclasses
++import json
+ import re
+ import time
+ from typing import List
+@@ -141,6 +142,32 @@ def scrape(url):
+         logger.error("Error: %s" % (ex))
+ 
+ 
++def load_offloader_by_ap(path):
++    """Lokaler Zusatz (Neanderfunk): Router je Accesspoint aus einer Datei.
++
++    Die Datei erzeugt der Kartenserver aus der batman-Uebersetzungstabelle:
++    {"aps": {"<ap-mac>": {"router": "<primaere mac des knotens>", ...}}}.
++    Damit haengt jeder AP am Router, hinter dem er wirklich steht, und nicht
++    am einen Router seiner Site. Fehlt die Datei oder ist sie kaputt, bleibt
++    alles wie ohne Zusatz.
++    """
++    # Nur ein Pfad als Text zaehlt. Ein anders gesetzter Wert soll den Dienst
++    # nicht umwerfen, sondern wirken wie ein fehlender.
++    if not isinstance(path, str) or not path:
++        return {}
++    try:
++        with open(path, encoding="utf-8") as f:
++            aps = json.load(f).get("aps") or {}
++    except (OSError, ValueError) as ex:
++        logger.error("offloader_by_ap %s: %s" % (path, ex))
++        return {}
++    return {
++        ap.lower(): eintrag["router"].lower()
++        for ap, eintrag in aps.items()
++        if isinstance(eintrag, dict) and eintrag.get("router")
++    }
++
++
+ def get_infos():
+     """This function gathers all the information and returns a list of Accesspoint objects."""
+     cfg = config.Config.from_dict(config.load_config())
+@@ -158,6 +185,7 @@ def get_infos():
+         logger.error("Error: %s" % (ex))
+         return
+     geolookup = Nominatim(user_agent="ffmuc_respondd")
++    offloader_by_ap = load_offloader_by_ap(cfg.offloader_by_ap)
+     aps = Accesspoints(accesspoints=[])
+     for site in c.get_sites():
+         if cfg.version == "UDMP-unifiOS":
+@@ -226,15 +254,17 @@ def get_infos():
+                             )
+                         except Exception:
+                             pass
++                    # Lokaler Zusatz (Neanderfunk): gemessener Router je AP vor
++                    # dem Router der Site
++                    offloader_mac = offloader_by_ap.get(
++                        (ap.get("mac") or "").lower()
++                    ) or cfg.offloader_mac.get(site["desc"], "")
+                     try:
+-                        neighbour_macs.append(cfg.offloader_mac.get(site["desc"], None))
+-                        offloader_id = cfg.offloader_mac.get(site["desc"], "").replace(
+-                            ":", ""
+-                        )
++                        neighbour_macs.append(offloader_mac or None)
++                        offloader_id = offloader_mac.replace(":", "")
+                         offloader = list(
+                             filter(
+-                                lambda x: x["mac"]
+-                                == cfg.offloader_mac.get(site["desc"], ""),
++                                lambda x: x["mac"] == offloader_mac,
+                                 ffnodes["nodes"],
+                             )
+                         )[0]

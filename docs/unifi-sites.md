@@ -147,7 +147,29 @@ Verwaltungsnetz (out-of-band, etwa GASt73 und WIR-Haus) ordnen wir selbst
 LVR in freifunk-content) passt die Content-Session an.
 `unifi-fflvr-aufteilung.txt` ist damit überholt.
 
-#### Bauplan (Stand 24.09.2026, Umsetzung beauftragt)
+#### Bauplan (Stand 24.09.2026, gebaut, noch nicht in Betrieb)
+
+Gebaut und getestet:
+
+- Schritt 1: `werkzeug/unifi-offloader.py --json` (1436329), auf map6
+  geprüft: 512 APs mit Router, ein zweiter Lauf ändert nichts.
+- Schritt 2 und 3: `sammler/patches/unifi-respondd-zuordnung.patch` gegen
+  unifi_respondd 6976651, mit sechs eigenen Tests. Alle 33 Tests grün, auch
+  auf einem sauberen Checkout; der Haupttest schlägt fehl, wenn man die
+  Nachschlagezeile entfernt, prüft also wirklich den Zusatz. Ein falsch
+  gesetzter Wert (kein Text) wirkt wie ein fehlender, statt den Dienst
+  umzuwerfen; das hatten die vorhandenen Tests aufgedeckt.
+- Timer `sammler/systemd/karte-unifi-zuordnung.{service,timer}`, im Repo,
+  **nicht aktiviert**.
+
+Für die Inbetriebnahme fehlt noch: unifi_respondd auf map6 installieren
+(auf 6976651 festgenagelt, Patch anwenden), Konfiguration mit
+`offloader_by_ap: /var/lib/karte/unifi-zuordnung.json`, der Weg der Antworten
+zu `yanic@neander`, dann Timer und Dienst aktivieren. Danach der
+Content-Session Bescheid geben, sie nimmt "noch nicht gebaut" aus beiden
+Anleitungen.
+
+Ursprünglicher Plan:
 
 1. **Zuordnung erzeugen:** `werkzeug/unifi-offloader.py` bekommt eine
    Ausgabe `--json <datei>`: ein Objekt `{AP-MAC: Router-MAC}`, beide klein

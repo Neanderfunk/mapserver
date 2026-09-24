@@ -1,0 +1,9 @@
+[Unit]
+Description=Router je UniFi-Accesspoint aus der batman-Uebersetzungstabelle
+After=yanic@neander.service
+
+[Service]
+Type=oneshot
+# Braucht batctl, also root. Schreibt die Datei, die unifi_respondd mit dem
+# Patch unifi-respondd-zuordnung als offloader_by_ap liest.
+ExecStart=/usr/local/sbin/karte-unifi-offloader neander --json /var/lib/karte/unifi-zuordnung.json

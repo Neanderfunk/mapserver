@@ -147,6 +147,30 @@ Verwaltungsnetz (out-of-band, etwa GASt73 und WIR-Haus) ordnen wir selbst
 LVR in freifunk-content) passt die Content-Session an.
 `unifi-fflvr-aufteilung.txt` ist damit überholt.
 
+#### Bauplan (Stand 24.09.2026, Umsetzung beauftragt)
+
+1. **Zuordnung erzeugen:** `werkzeug/unifi-offloader.py` bekommt eine
+   Ausgabe `--json <datei>`: ein Objekt `{AP-MAC: Router-MAC}`, beide klein
+   mit Doppelpunkten. Router-MAC ist die **primäre** MAC des Knotens aus
+   `nodes.json` (`nodeinfo.network.mac`), denn genau so sucht unifi_respondd
+   den Offloader in der nodelist (`x["mac"] == offloader_mac`), und daraus
+   ohne Doppelpunkte wird `gateway_nexthop`, also die node_id. APs, die
+   gerade nicht in der Tabelle stehen, behalten ihren letzten bekannten
+   Router (Datei wird zusammengeführt, nicht überschrieben), mit Zeitstempel
+   der letzten Messung je AP.
+   Auf map6 als `/var/lib/karte/unifi-zuordnung.json`, erzeugt von einem
+   Timer alle 5 Minuten (braucht root wegen batctl).
+2. **Patch an unifi_respondd** (`sammler/patches/unifi-respondd-zuordnung.patch`,
+   gegen freifunkMUC/unifi_respondd 6976651 vom 18.09.2026): neuer optionaler
+   Konfigurationsschlüssel `offloader_by_ap` (Pfad zur Datei). Im AP-Durchlauf
+   von `unifi_client.py` gilt dann je AP
+   `zuordnung.get(ap_mac) or cfg.offloader_mac.get(site["desc"])` statt nur des
+   Site-Werts, an allen drei Stellen (neighbour_macs, offloader_id, Suche in
+   der nodelist). Fehlt die Datei oder der Eintrag, verhält sich alles wie
+   ohne Patch.
+3. Test im vorhandenen `tests/`-Verzeichnis von unifi_respondd: ein AP mit
+   Eintrag in der Zuordnung bekommt dessen Router, einer ohne den der Site.
+
 Der folgende Abschnitt beschreibt die Lage **ohne** den Patch und bleibt
 stehen, weil er erklärt, warum der Patch nötig ist.
 

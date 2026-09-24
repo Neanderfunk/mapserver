@@ -153,7 +153,7 @@ Gebaut und getestet:
 
 - Schritt 1: `werkzeug/unifi-offloader.py --json` (1436329), auf map6
   geprüft: 512 APs mit Router, ein zweiter Lauf ändert nichts.
-- Schritt 2 und 3: `sammler/patches/unifi-respondd-zuordnung.patch` gegen
+- Schritt 2 und 3: Fork [Neanderfunk/unifi_respondd](https://github.com/Neanderfunk/unifi_respondd), Zweig `neanderfunk`, gegen
   unifi_respondd 6976651, mit sechs eigenen Tests. Alle 33 Tests grün, auch
   auf einem sauberen Checkout; der Haupttest schlägt fehl, wenn man die
   Nachschlagezeile entfernt, prüft also wirklich den Zusatz. Ein falsch
@@ -216,7 +216,7 @@ Ursprünglicher Plan:
    der letzten Messung je AP.
    Auf map6 als `/var/lib/karte/unifi-zuordnung.json`, erzeugt von einem
    Timer alle 5 Minuten (braucht root wegen batctl).
-2. **Patch an unifi_respondd** (`sammler/patches/unifi-respondd-zuordnung.patch`,
+2. **Änderung an unifi_respondd** (heute im Fork Neanderfunk/unifi_respondd,
    gegen freifunkMUC/unifi_respondd 6976651 vom 18.09.2026): neuer optionaler
    Konfigurationsschlüssel `offloader_by_ap` (Pfad zur Datei). Im AP-Durchlauf
    von `unifi_client.py` gilt dann je AP

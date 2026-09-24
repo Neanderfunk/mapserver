@@ -118,7 +118,7 @@ ALTGERAETE_TEXT = (
 
 # Zeitreihen im Knotenfenster. meshviewer zeichnet sie selbst mit d3 als SVG
 # im Browser; kein iframe, kein PNG aus einem Grafana. Upstream holt die Daten
-# ueber die Grafana-API, unser Patch patches/meshviewer-chart.patch kann sie
+# ueber die Grafana-API, unser Fork Neanderfunk/meshviewer kann sie
 # auch direkt aus einer Prometheus-API lesen, also aus unserem
 # VictoriaMetrics. Damit brauchen wir kein Grafana als Uebersetzer.
 #
@@ -291,7 +291,7 @@ def konfig(titel, pfad, alle):
         # Farben des Seitenkoerpers: helle Schrift mit dunklem Saum. Unsere
         # Grundkarte bleibt dabei hell (CARTO wird nicht umgedreht), und das
         # ist dann unlesbar. Deshalb fest dunkle Schrift auf weissem Saum,
-        # in beiden Modi. Braucht patches/meshviewer-label.patch.
+        # in beiden Modi. Braucht den Fork Neanderfunk/meshviewer.
         'map': {
             'labelShadowColor': 'rgba(255, 255, 255, 0.85)',
             'labelColor': '#1c1c1c',
@@ -321,7 +321,7 @@ def konfig(titel, pfad, alle):
              # Amtliche Digitale Orthophotos des Landes, wie auf
              # map.eulenfunk.de eingebunden. Kein Kachelsatz, sondern WMS;
              # den WMTS-Host kennt unser Kachel-Proxy nicht (23.09.2026
-             # gemessen: 404). Braucht patches/meshviewer.patch, upstream legt
+             # gemessen: 404). Braucht den Fork Neanderfunk/meshviewer, upstream legt
              # nur einfache Kachelebenen an.
              #
              # Bewusst ohne karte-dunkel: ein umgedrehtes Luftbild ist

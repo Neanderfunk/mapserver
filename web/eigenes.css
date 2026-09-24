@@ -29,7 +29,7 @@
 	filter: invert(1) hue-rotate(180deg) saturate(0.25) brightness(0.9) contrast(0.9);
 }
 
-/* Leiste ueber den Diagrammen im Knotenfenster, aus patches/meshviewer.patch.
+/* Leiste ueber den Diagrammen im Knotenfenster, aus dem Fork Neanderfunk/meshviewer.
  * Bewusst schlicht: die Knoepfe sollen wie Reiter wirken, nicht wie Formular.
  */
 .node-chart-ranges {

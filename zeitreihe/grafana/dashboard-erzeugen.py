@@ -6,7 +6,8 @@
 
 Das Dashboard ist die Vertiefung hinter dem Link im Knotenfenster der Karte.
 Die Karte selbst zeichnet ihre Diagramme ohne Grafana, siehe zeitreihe/ und
-web/patches/meshviewer.patch. Hier steht, was dort nicht hingehoert: lange
+unserem meshviewer-Fork
+(github.com/Neanderfunk/meshviewer, Zweig neanderfunk). Hier steht, was dort nicht hingehoert: lange
 Zeitraeume, Tagesbilanzen als Balken und die Werte aus dem Paket
 neanderfunk-respondd.
 

@@ -328,7 +328,7 @@ andere unter `/nf/prom/` gibt 403.
 
 meshviewer zeichnet sie seit 13.x selbst mit d3 als SVG, ohne iframe und ohne
 gerendertes Bild. Upstream holt die Daten über die Grafana-API; unser Patch
-(`web/patches/meshviewer.patch`) ergänzt `datasourceType: prometheus-direct`,
+(Fork [Neanderfunk/meshviewer](https://github.com/Neanderfunk/meshviewer), Zweig `neanderfunk`) ergänzt `datasourceType: prometheus-direct`,
 das liest `query_range` direkt aus VictoriaMetrics. Dazu eine Leiste, mit der
 sich der Zeitraum aller Diagramme gemeinsam umschalten lässt.
 
@@ -347,7 +347,7 @@ Drei zur Auswahl, CARTO ist die Vorgabe: CARTO hell, OpenStreetMap deutsch
 wie auf `map.eulenfunk.de`.
 
 - Die Luftbilder kommen als **WMS**, nicht als Kachelsatz. meshviewer legt von
-  sich aus nur Kachelebenen an; `web/patches/meshviewer.patch` erkennt eine
+  sich aus nur Kachelebenen an; unser Fork erkennt eine
   WMS-Ebene daran, dass `layers` gesetzt ist.
 - Den WMTS-Host des Landes kennt unser Kachel-Proxy nicht (gemessen: 404),
   den WMS-Host schon. Alles läuft weiter über `tiles.ffdus.de`, aus dem
@@ -510,6 +510,30 @@ sorgt dafür, dass die Historie und die Offline-Knoten erhalten bleiben. Eine
 Minute nach dem Start stehen wieder Daten.
 
 ## Aktualisieren
+
+**Eigene Forks (seit 25.09.2026).** meshviewer und unifi_respondd kommen aus
+unseren Forks in der Neanderfunk-Organisation, jeweils Zweig `neanderfunk`:
+Upstream-Stand plus unsere Änderungen, **je Funktion ein Commit**, erklärt in
+`NEANDERFUNK.md` im Fork.
+
+| Fork | Upstream | Basis |
+| --- | --- | --- |
+| [Neanderfunk/meshviewer](https://github.com/Neanderfunk/meshviewer) | freifunk/meshviewer | `6c68e3d` (18.09.2026) |
+| [Neanderfunk/unifi_respondd](https://github.com/Neanderfunk/unifi_respondd) | freifunkMUC/unifi_respondd | `6976651` (18.09.2026) |
+
+Bis dahin waren es Patchdateien in diesem Repo. adorfers Regel: kleine
+Ergänzungen als Patch, sobald bestehende Logik umgebaut wird oder
+Frontend-Code dazukommt, ein eigenes Repo. Beides war erreicht. Die Forks
+behalten die Lizenz des Originals (AGPL-3.0 bzw. GPL-3.0); beim meshviewer
+erfüllt der öffentliche Fork zugleich die AGPL-Pflicht, den Quelltext der
+ausgelieferten Fassung zugänglich zu machen.
+
+Upstream nachziehen: im Fork `git fetch upstream`, `neanderfunk` auf den
+neuen Stand rebasen, Tests laufen lassen, pushen, dann hier
+`sudo ./web/einrichten.sh`. yanic ist noch Patchdatei
+(`sammler/patches/`), soll aber ebenfalls ein Fork werden, sobald die
+nächsten Umbauten anstehen (Links von beiden Seiten, Clients der APs vom
+Knoten abziehen).
 
 **meshviewer** neu bauen, wenn es Neues gibt:
 

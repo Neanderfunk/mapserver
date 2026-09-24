@@ -6,8 +6,12 @@
 set -euo pipefail
 
 HIER=$(cd "$(dirname "$0")" && pwd)
-MV_QUELLE=https://github.com/freifunk/meshviewer
-MV_ZWEIG=main
+# Unser Fork von freifunk/meshviewer, Zweig neanderfunk: Upstream-Stand plus
+# unsere Aenderungen, je Funktion ein Commit (NEANDERFUNK.md im Fork). Bis
+# 25.09.2026 war das eine Patchdatei in diesem Repo; mit Frontend-Code wurde
+# daraus ein Fork, damit sich Aenderungen einzeln nachziehen lassen.
+MV_QUELLE=https://github.com/Neanderfunk/meshviewer
+MV_ZWEIG=neanderfunk
 BILDER_QUELLE=https://github.com/freifunk/device-pictures
 BAU=/usr/local/src/meshviewer
 BILDER=/usr/local/src/device-pictures
@@ -26,20 +30,14 @@ echo "== meshviewer bauen =="
 if [ ! -d "$BAU/.git" ]; then
 	git clone -q --depth 50 -b "$MV_ZWEIG" "$MV_QUELLE" "$BAU"
 fi
-git -C "$BAU" fetch -q origin "$MV_ZWEIG"
-git -C "$BAU" checkout -q "origin/$MV_ZWEIG"
+# Ein Baum, der noch auf das Original zeigt, wird umgestellt
+git -C "$BAU" remote set-url origin "$MV_QUELLE"
+# Mit ausdruecklicher Zielreferenz: ein Baum, der als Einzelzweig geklont
+# wurde, legt sonst fuer einen anderen Zweig kein origin/<zweig> an, und der
+# Checkout scheitert (so am 25.09.2026 beim Umstieg von main auf neanderfunk).
+git -C "$BAU" fetch -q origin "+refs/heads/$MV_ZWEIG:refs/remotes/origin/$MV_ZWEIG"
+git -C "$BAU" checkout -q --force "origin/$MV_ZWEIG"
 echo "  Stand: $(git -C "$BAU" log -1 --format='%h %ad %s' --date=short)"
-# Lokale Eingriffe, nicht upstream, beide in patches/meshviewer.patch:
-#  - Beschriftung der Knoten: Saumfarbe, Schriftfarbe und Abstand je Thema.
-#    Ohne sie holt die Beschriftungsebene ihre Farben aus dem Seitenkoerper
-#    und ist im Dunkelmodus unlesbar (adorfer 22.09.2026).
-#  - Zeitreihen ohne Grafana: meshviewer zeichnet die Diagramme im
-#    Knotenfenster selbst, holt die Daten aber ueber die Grafana-API. Der
-#    Patch ergaenzt datasourceType "prometheus-direct", das liest query_range
-#    direkt aus VictoriaMetrics. Ein Grafana nur zum Uebersetzen waere ein
-#    ganzer Dienst mehr (adorfer 23.09.2026).
-git -C "$BAU" checkout -q -- lib
-git -C "$BAU" apply "$HIER/patches/meshviewer.patch"
 ( cd "$BAU" && npm install --no-audit --no-fund --loglevel=error && npm run build )
 install -d -m 0755 "$WEB/meshviewer"
 rsync -rlt --delete "$BAU/build/" "$WEB/meshviewer/"

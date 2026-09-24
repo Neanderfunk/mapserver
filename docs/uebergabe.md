@@ -19,7 +19,7 @@ Begonnen am 20.09.2026, an einem Abend von leerer VM bis oeffentlicher Karte.
 | Karten-VM | `map6.freifunk.space`, nur IPv6, Debian 13 |
 | Zugang | `ssh -p 62954 ad-claude@map6.freifunk.space` |
 | Schluessel | `~/.ssh/id_ed25519_finder` (derselbe wie fuer die Finder-VM) |
-| Passwort fuer sudo | `.keys/` im Projektverzeichnis, nicht im Git |
+| Passwort fuer sudo | `~/.config/neanderfunk/map6-sudo` (600) auf dem Arbeitsrechner, nicht im Git |
 | Proxy und TLS | `twin2.ffdus.de`, gepflegt von adorfer |
 | Finder-VM (anderes Projekt) | `finder6.ffnef.de`, gleicher Schluessel |
 

@@ -18,7 +18,7 @@ muster=("$@")
 [ ${#muster[@]} -eq 0 ] && muster=('*')
 
 cd "$HIER/local"
-for f in $(find . -type f -perm -u+x | sed 's#^\./##' | sort); do
+for f in $(find . \( -type f -o -type l \) -perm -u+x | sed 's#^\./##' | sort); do
     name=$(basename "$f")
     treffer=0
     for m in "${muster[@]}"; do

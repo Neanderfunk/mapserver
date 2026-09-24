@@ -35,6 +35,19 @@ RUHEND=${KARTE_EN_RUHEND:-/etc/karte-en/ruhend.conf}
 STANDBY=${KARTE_EN_STANDBY:-/etc/karte-en/standby.conf}
 WEB=${KARTE_EN_WEB:-/var/www/karte-en}
 
+# Eine Datei, zwei Rollen. Als local/mapserver laeuft sie bei jedem
+# Agentenabruf und prueft alles ausser den Domains. Als
+# local/60/mapserver-domains (Kopie oder Verweis auf dieselbe Datei) prueft sie
+# nur die Domains, und Checkmk rechnet sie im Hintergrund einmal je Minute.
+# Die 48 Domain-Checks kosten rund 190 batctl-Aufrufe, also etwa eine Sekunde,
+# und aendern sich langsam; im Vordergrund liess der ganze Check den
+# Agentenabruf auf fast 8 Sekunden wachsen (adorfer 24.09.2026).
+TEIL=$(basename "$0")
+nur_domains() { [ "$TEIL" = mapserver-domains ]; }
+# Die Rolle "Domains" braucht die Vorarbeit der vorderen Abschnitte (Laufzeit
+# des Sammlers, Zustand der Tunnel), aber nicht deren Ausgabe.
+nur_domains && exec 3>&1 1>/dev/null
+
 if [ ! -r "$KONF" ]; then
     echo "3 mapserver-Tunnel - $KONF nicht lesbar, Kartenserver nicht eingerichtet?"
     exit 0
@@ -56,27 +69,56 @@ alter_von() {           # Alter einer Datei in Sekunden, -1 wenn es sie nicht gi
     if [ -f "$1" ]; then echo $(( jetzt - $(stat -c %Y "$1") )); else echo -1; fi
 }
 
-knoten_in() {           # Knoten und davon online aus einer meshviewer.json
-    python3 - "$1" <<'PY' 2>/dev/null || echo "0 0"
+# Knotenzahlen aller Kartendateien in einem einzigen Python-Lauf. Vorher
+# startete je Datei ein eigenes Python, rund 50 Starts je Agentenabruf; allein
+# das kostete 1,7 Sekunden (gemessen 24.09.2026, Check gesamt 5,7 s).
+declare -A K_GES K_ON
+while read -r pfad ges on; do
+    K_GES[$pfad]=$ges K_ON[$pfad]=$on
+done < <(python3 - $(if nur_domains; then echo "$WEB"/sites/*/*/data/meshviewer.json;
+                    else echo "$WEB"/sites/*/alle/data/meshviewer.json; fi) <<'PY' 2>/dev/null
 import json, sys
-try:
-    n = json.load(open(sys.argv[1])).get('nodes') or []
-except (OSError, ValueError):
-    n = []
-print(len(n), sum(1 for x in n if x.get('is_online')))
+for pfad in sys.argv[1:]:
+    try:
+        n = json.load(open(pfad)).get('nodes') or []
+    except (OSError, ValueError):
+        n = []
+    print(pfad, len(n), sum(1 for x in n if x.get('is_online')))
 PY
+)
+knoten_in() {           # Knoten und davon online aus einer meshviewer.json
+    echo "${K_GES[$1]:-0} ${K_ON[$1]:-0}"
 }
+
+# Zustand aller Tunnel-Units in einem einzigen systemctl-Aufruf. Vorher drei
+# Aufrufe je Tunnel, zusammen gut 2 Sekunden. systemctl show liefert je Unit
+# einen Block, getrennt durch eine Leerzeile; die Reihenfolge der Felder im
+# Block ist nicht festgelegt, deshalb erst am Blockende zuordnen.
+declare -A T_AKTIV T_NEU T_SEIT
+_id='' _akt='' _neu='' _seit=''
+while IFS='=' read -r k v; do
+    case "$k" in
+        Id) _id=${v#karte-en-tunnel@}; _id=${_id%.service} ;;
+        ActiveState) _akt=$v ;;
+        NRestarts) _neu=$v ;;
+        ActiveEnterTimestampMonotonic) _seit=$v ;;
+        '') if [ -n "$_id" ]; then
+                T_AKTIV[$_id]=$_akt T_NEU[$_id]=$_neu T_SEIT[$_id]=$_seit
+            fi
+            _id='' _akt='' _neu='' _seit='' ;;
+    esac
+done < <(systemctl show -p Id -p ActiveState -p NRestarts -p ActiveEnterTimestampMonotonic \
+             'karte-en-tunnel@*.service' 2>/dev/null; echo)
 
 # --- Tunnel ------------------------------------------------------------------
 aktiv=0 neustarts=0 tot=''
 for c in $codes; do
-    if [ "$(systemctl is-active "karte-en-tunnel@$c.service" 2>/dev/null)" = active ]; then
+    if [ "${T_AKTIV[$c]}" = active ]; then
         aktiv=$((aktiv + 1))
     else
         tot="$tot $c"
     fi
-    n=$(systemctl show -p NRestarts --value "karte-en-tunnel@$c.service" 2>/dev/null)
-    neustarts=$((neustarts + ${n:-0}))
+    neustarts=$((neustarts + ${T_NEU[$c]:-0}))
 done
 if [ "$aktiv" -lt "$anzahl" ]; then zustand=2; text="nicht aktiv:$tot"
 elif [ "$neustarts" -gt 20 ];  then zustand=1; text="alle aktiv, aber $neustarts Neustarts"
@@ -173,6 +215,9 @@ fi
 echo "$zustand mapserver-Batman l2tp_if=$l2tp;$anzahl:;$anzahl:|version_gleich=$gleich $text"
 
 # --- je Domain ---------------------------------------------------------------
+# Laeuft nur in der Rolle mapserver-domains, siehe oben.
+if nur_domains; then
+exec 1>&3 3>&-
 # Originatoren mit Stern sind die ausgewaehlten Wege, also die Knoten selbst.
 # Gateways kommen aus gwl: faellt das auf 0, ist ihr Supernode in dieser Domain
 # verschwunden, auch wenn der Tunnel noch steht.
@@ -182,8 +227,7 @@ grep -v '^#' "$KONF" | grep . | while read -r community code _ _ _ host _; do
     # Ruhende Domains: der Tunnel steht, Knoten sind dort nicht zu erwarten.
     ruht=0
     grep -q "^$code[[:space:]]" "$RUHEND" 2>/dev/null && ruht=1
-    seit_t=$(systemctl show -p ActiveEnterTimestampMonotonic --value \
-             "karte-en-tunnel@$code.service" 2>/dev/null)
+    seit_t=${T_SEIT[$code]}
     tlaeuft=$(( hoch - ${seit_t:-0} / 1000000 ))
     [ "$tlaeuft" -lt 0 ] && tlaeuft=0
     orig=$(batctl meshif "bat-$code" originators 2>/dev/null | grep -c '^ \*')
@@ -213,6 +257,8 @@ grep -v '^#' "$KONF" | grep . | while read -r community code _ _ _ host _; do
     fi
     echo "$zustand mapserver-$community-$host originatoren=$orig;5:;1:|nachbarn=$nachbarn;1:;1:|gateways=$gws;1:;1:|clients=$clients|knoten_online=$on;1:;1:|alter_s=$alter;180;600 $text"
 done
+exit 0
+fi
 
 # --- Webserver-Konfiguration -------------------------------------------------
 # Ein laufender nginx bedient mit der Konfiguration, die er beim letzten
@@ -271,7 +317,8 @@ while read -r _com code _ordner _port id _rest; do
         f=/sys/class/net/${art%:*}-$code/address
         [ -r "$f" ] || continue
         soll=$(printf '02:45:4e:%02x:%s:%02x' "$serie" "${art#*:}" "$id")
-        [ "$(cat "$f")" = "$soll" ] || falsch="$falsch ${art%:*}-$code"
+        read -r ist < "$f"
+        [ "$ist" = "$soll" ] || falsch="$falsch ${art%:*}-$code"
     done
 done < "$KONF"
 if [ -n "$falsch" ]; then

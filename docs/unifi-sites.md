@@ -1,5 +1,12 @@
 # UniFi-Installationen und ihre Offloader
 
+Öffentliche Anleitung für die Betreuenden eines Controllers (Koordinaten
+eintragen, Sites je Domain aufteilen):
+[freifunk-docs: UniFi-Accesspoints auf die Freifunk-Karte](https://github.com/Neanderfunk/freifunk-docs/blob/main/unifi-accesspoints-freifunk-karte.md).
+Ändert sich beim Einrichten etwas, das die Betreuenden betrifft, etwa Port,
+Zugang oder SSID-Muster, muss sie nachgezogen werden; die Content-Session
+pflegt sie.
+
 Stand 21.09.2026. Fuer unifi_respondd braucht es je Unifi-Site die MAC des
 Freifunk-Knotens, hinter dem die Accesspoints haengen.
 

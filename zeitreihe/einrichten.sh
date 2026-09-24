@@ -17,6 +17,20 @@ apt-get install -y -qq victoria-metrics
 install -d -m 0755 /etc/victoria-metrics
 install -m 0644 "$HIER/relabel.yml" /etc/victoria-metrics/relabel.yml
 install -m 0644 "$HIER/victoria-metrics.default" /etc/default/victoria-metrics
+# Schluessel fuer die Verwaltungsfunktionen, einmal erzeugt und dann behalten
+if [ ! -f /etc/victoria-metrics/geheim.env ]; then
+	schluessel=$(head -c 32 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 40)
+	geheim=''
+	for f in deleteAuthKey flagsAuthKey metricsAuthKey pprofAuthKey reloadAuthKey \
+		snapshotAuthKey forceMergeAuthKey forceFlushAuthKey configAuthKey \
+		search.resetCacheAuthKey; do
+		geheim="$geheim -$f=$schluessel"
+	done
+	( umask 077; printf 'GEHEIM="%s"\n' "${geheim# }" > /etc/victoria-metrics/geheim.env )
+fi
+install -d -m 0755 /etc/systemd/system/victoria-metrics.service.d
+install -m 0644 "$HIER/victoria-metrics-schluessel.conf" /etc/systemd/system/victoria-metrics.service.d/schluessel.conf
+systemctl daemon-reload
 systemctl enable victoria-metrics
 systemctl restart victoria-metrics
 for i in $(seq 1 20); do

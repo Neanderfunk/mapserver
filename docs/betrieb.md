@@ -443,6 +443,44 @@ stehen Tagesbilanzen als Balken, freie Zeiträume und die Werte aus
 - Die `delete`-Abfrage, die yanic einmal am Tag an die Datenbank schickt,
   kennt VictoriaMetrics nicht; die Fehlermeldung im Log ist harmlos.
 
+## Sicherheit
+
+Geprüft am 24.09.2026, von außen über IPv6 und per `ss` auf der Maschine.
+
+**Was von außen erreichbar ist:** nginx auf Port 80, sshd auf 62954 (nur
+Schlüssel, kein root) und der Checkmk-Agent auf 6556. Der Agent gibt dort ohne
+Registrierung seine volle Ausgabe im Klartext heraus, Prozessliste und
+Unit-Liste eingeschlossen; das ist bewusst so (adorfer). VictoriaMetrics und
+Grafana lauschen nur auf `127.0.0.1`, also auf keiner Netzadresse, weder v4
+noch v6.
+
+**Das Loch, das es gab:** Grafanas Datenquellen-Proxy reichte anonyme
+Anfragen an die Datenbank durch, auch an deren Verwaltung. `delete_series`
+antwortete darüber mit 204; jeder im Internet hätte die Zeitreihen löschen
+können. Lokal lauschen allein schützt also nicht, sobald ein Dienst davor
+Anfragen weiterreicht. Geschlossen in zwei Schichten:
+
+- nginx sperrt `/grafana/api/datasources/proxy/` und die Liste der
+  Datenquellen (403). Die Dashboards brauchen beides nicht.
+- VictoriaMetrics verlangt für seine zehn Verwaltungsfunktionen einen
+  Schlüssel (Drop-in `victoria-metrics-schluessel.conf`, Schlüssel nur auf der
+  Maschine in `/etc/victoria-metrics/geheim.env`). Das greift auch auf dem Weg
+  über Grafanas Ressourcen-Schnittstelle, die offen bleiben muss: dort
+  antwortet die Datenbank jetzt mit 401.
+
+Der Schlüssel steht in der Kommandozeile des Prozesses und ist damit für
+lokale Benutzer lesbar. Gegen Angriffe von außen genügt das, gegen einen
+kompromittierten lokalen Dienst nicht.
+
+**Pfad-Traversal:** alle `alias`-Orte enden mit Schrägstrich, `/data../`,
+`/nf../` und Verwandte fallen auf die Startseite zurück; `..` im Pfad und
+kodierte Varianten beantwortet nginx mit 400. `/nf/prom/` lässt nur die
+lesenden Pfade durch, alles andere gibt 403, auch mit `..` oder `//` davor.
+
+**Versionsangabe:** map6 verrät seine nginx-Version nicht (`server_tokens off`
+steht schon in der `nginx.conf` des Pakets). Die Angabe `nginx/1.26.3`, die man
+von außen sieht, kommt vom Proxy auf twin2.
+
 ## Neustart der Maschine
 
 Alles kommt von selbst hoch: Module über `modules-load.d`, acht Tunnel-Units

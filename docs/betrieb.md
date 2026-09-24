@@ -108,7 +108,7 @@ ss -uanp | grep yanic | grep '%if[0-9]'
 
 Jede Zeile ist eine stumme Domain. Der Wächter startet den Sammler dann
 innerhalb von fünf Minuten neu; von Hand `systemctl restart yanic@<community>`.
-Hintergrund in `docs/kartenausfall-diagnose.md` der Router-Werkstatt.
+Hintergrund in [kartenausfall-diagnose.md](kartenausfall-diagnose.md).
 
 **Karte lädt, bleibt aber leer.** Browserkonsole ansehen. Meist ist es
 `config.json` oder `data/meshviewer.json`, beide müssen unter dem Vhost-Namen

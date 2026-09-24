@@ -43,6 +43,9 @@ Wir sind in ihren Domains ein Knoten, der fragt, und sonst nichts:
 - [docs/betrieb.md](docs/betrieb.md) - was läuft, wie man prüft, was schiefgeht
 - [docs/neue-community.md](docs/neue-community.md) - von ihren Images zur
   Domaintabelle, samt Übergabeformat
+- [docs/kartenausfall-diagnose.md](docs/kartenausfall-diagnose.md) - wenn die Karte einer
+  Community leer bleibt: Schicht für Schicht, mit den Fallen, die uns Zeit
+  gekostet haben
 - [docs/hintergrund.md](docs/hintergrund.md) - Entscheidungen und Besonderheiten
 - [docs/uebergabe.md](docs/uebergabe.md) - Zugänge, Abhängigkeiten, offene Punkte
 

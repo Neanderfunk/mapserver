@@ -7,7 +7,7 @@ verschiedenen Schichten. Das hier ist die Reihenfolge, in der man sie
 auseinandersortiert, damit das nächste Mal eine Stunde reicht statt einer
 Nacht.
 
-Die Werkzeuge dazu liegen in `werkzeug/mapserver/werkzeug/`.
+Die Werkzeuge dazu liegen in `werkzeug/`.
 
 ## Die Grundregel
 
@@ -126,7 +126,7 @@ Bei einer fremden Community gibt es keine Buildliste zum Nachschlagen. Dann
 erhebt man die Codes im Netz:
 
 ```bash
-werkzeug/mapserver/sammler/sitecodes-ermitteln.py > sitecodes.conf
+sammler/sitecodes-ermitteln.py > sitecodes.conf
 ```
 
 **Supernodes melden keinen site_code, nur einen domain_code.** Jeder
@@ -174,7 +174,7 @@ geraten. Ein Unicast dorthin erreicht respondd auch dann, wenn kein Rundruf
 durchkommt.
 
 ```bash
-werkzeug/mapserver/sammler/ziele-ernten.py <community> > ziele.txt
+sammler/ziele-ernten.py <community> > ziele.txt
 ```
 
 Gemessen in einer Domain ohne jeden Multicast: 175 Kandidaten, 73 Antworten,
@@ -187,7 +187,7 @@ respondd lauscht. Messwert: über Originatoren 0 Antworten, über die
 Translation Table 25 von 40.
 
 Damit yanic diese Adressen mitfragt, braucht es
-`werkzeug/mapserver/sammler/patches/yanic-seeds.patch`, 51 Zeilen: es liest
+`sammler/patches/yanic-seeds.patch`, 51 Zeilen: es liest
 eine Adressliste und fragt sie in jeder Runde mit. Die Antworten kommen an
 yanics eigenem Socket an, es lernt Adresse und Knoten wie sonst auch.
 

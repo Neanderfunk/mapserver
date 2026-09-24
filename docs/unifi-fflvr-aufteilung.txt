@@ -1,3 +1,8 @@
+# UEBERHOLT seit 24.09.2026: die Site fflvr wird nicht aufgeteilt.
+# Den Router je Accesspoint misst der Kartenserver aus der batman-
+# Uebersetzungstabelle, siehe docs/unifi-sites.md, Abschnitt "Entscheidung".
+# Die Liste bleibt als Momentaufnahme vom 21.09.2026 stehen.
+#
 # Unifi-Site "fflvr" aufteilen: welcher AP gehoert in welche Domain
 #
 # Gemessen am 21.09.2026 aus den batman-Tabellen des Kartenservers.

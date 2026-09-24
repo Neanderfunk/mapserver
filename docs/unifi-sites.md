@@ -48,7 +48,8 @@ allem dort, wo viele Geraete auf viele Domains verteilt sind.
   trotzdem am WIR-Keller, weil je Site nur eine MAC eingetragen wird.
 - **Haan**: 30 Geraete mit Unifi-Herstellerpraefixen stehen dort in-band im
   Mesh, ohne dass eine zugehoerige Installation bekannt waere. Ungeklaert.
-- **fflvr**: 615 Accesspoints in einer Site, Aufteilung in sieben noetig.
+- **fflvr**: 615 Accesspoints in einer Site. Die Aufteilung in sieben ist
+  seit 24.09.2026 **nicht mehr vorgesehen**, siehe "Entscheidung" weiter unten.
   Arbeitsliste in `unifi-fflvr-aufteilung.txt`, Anleitung fuer die dortige IT
   in `docs/howto-unifi-freifunk-lvr.md` der Router-Werkstatt.
 
@@ -122,6 +123,32 @@ Beim Blick in den Controller (lesend, eigenes Konto):
    unifi_respondd antwortet per Multicast auf einer Schnittstelle oder schickt
    per Unicast an einen festen Empfänger, und unser yanic hört bisher nur auf
    den bat-Schnittstellen.
+
+### Entscheidung 24.09.2026: nicht aufteilen, Router je AP messen
+
+Beim LVR hängen 511 UniFi-Geräte hinter 103 Freifunk-Routern (gemessen aus
+der Übersetzungstabelle; 35 % der Router haben 1-3 Geräte, 80 % höchstens
+6). Eine Site je Router wären rund 100 Sites, jede Umsteckung müsste im
+Controller nachgezogen werden. adorfer: "das händisch zu pflegen wird...
+ARBEIT".
+
+Deshalb **keine Aufteilung**. Bei in-band verwalteten APs steht die AP-MAC in
+der batman-Übersetzungstabelle, und die sagt, hinter welchem Router er hängt;
+`werkzeug/unifi-offloader.py` liest das heute schon aus. Geplant (noch nicht
+gebaut): ein Timer schreibt daraus eine Zuordnung AP-MAC → Router, und ein
+kleiner Patch lässt unifi_respondd den Router je AP dort nachschlagen statt
+aus der Site. Damit stimmen Domain, Gateway, nächster Sprung und Linie je AP,
+auch nach einem Umstecken. Findet sich ein AP nicht (offline oder
+out-of-band), gilt wie bisher `offloader_mac` der Site.
+
+Die Betreuenden tragen nur Koordinaten ein. Sites mit getrenntem
+Verwaltungsnetz (out-of-band, etwa GASt73 und WIR-Haus) ordnen wir selbst
+über `offloader_mac` zu. Die Anleitungen (öffentlich in freifunk-docs, für den
+LVR in freifunk-content) passt die Content-Session an.
+`unifi-fflvr-aufteilung.txt` ist damit überholt.
+
+Der folgende Abschnitt beschreibt die Lage **ohne** den Patch und bleibt
+stehen, weil er erklärt, warum der Patch nötig ist.
 
 ### Eine Site je Domain oder je Router?
 

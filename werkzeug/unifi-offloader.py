@@ -4,6 +4,7 @@
 
   unifi-offloader.py neander                     # nur messen und auflisten
   unifi-offloader.py neander --sites sites.csv   # fertigen Konfigurationsblock
+  unifi-offloader.py neander --json zuordnung.json   # Router je AP fuer unifi_respondd
 
 Fuer unifi_respondd (github.com/freifunkMUC/unifi_respondd) muss je Unifi-Site
 die MAC des Offloaders in der Konfiguration stehen. Von Hand heisst das: fuer
@@ -31,6 +32,7 @@ Hand kommen, etwa aus dem Kartenlink des Knotens.
 import argparse
 import collections
 import csv
+import datetime
 import json
 import os
 import subprocess
@@ -108,12 +110,52 @@ def clients(iface, alle):
     return gefunden
 
 
+def zuordnung_schreiben(pfad, zuordnung):
+    """Router je AP fuer unifi_respondd (Patch unifi-respondd-zuordnung).
+
+    Format: {"erzeugt": ..., "aps": {AP-MAC: {"router": MAC, "name": ...,
+    "domain": ..., "gesehen": ...}}}. Router ist die primaere MAC des Knotens
+    aus nodes.json, denn so sucht unifi_respondd den Offloader in der
+    nodelist, und ohne Doppelpunkte ist sie die node_id.
+
+    Zusammengefuehrt, nicht ueberschrieben: ein AP, der gerade offline ist,
+    steht nicht in der Uebersetzungstabelle, haengt aber vermutlich noch am
+    selben Router. Er behaelt seinen letzten Eintrag samt Zeitpunkt.
+    """
+    jetzt = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    try:
+        alt = json.load(open(pfad, encoding='utf-8')).get('aps') or {}
+    except (OSError, ValueError):
+        alt = {}
+    neu = dict(alt)
+    gemessen = 0
+    for ap, (domain, name, router) in zuordnung.items():
+        # Nur Router, die als Knoten bekannt sind. Ein blosser Originator ohne
+        # Knoten findet unifi_respondd in der nodelist ohnehin nicht.
+        if not name or not router:
+            continue
+        neu[ap] = {'router': router.lower(), 'name': name, 'domain': domain,
+                   'gesehen': jetzt}
+        gemessen += 1
+    tmp = pfad + '.neu'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump({'erzeugt': jetzt, 'aps': neu}, f, ensure_ascii=False,
+                  indent=1, sort_keys=True)
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, pfad)
+    print(f'{gemessen} APs gemessen, {len(neu)} in der Zuordnung, '
+          f'{len(neu) - gemessen} davon aus frueheren Laeufen', file=sys.stderr)
+    return 0
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument('community')
     p.add_argument('--sites', help='CSV mit MAC,Sitename aus dem Controller')
     p.add_argument('--alle', action='store_true',
                    help='alle Clients, nicht nur Ubiquiti-Praefixe')
+    p.add_argument('--json', metavar='DATEI',
+                   help='Zuordnung AP -> Router fuer unifi_respondd schreiben')
     a = p.parse_args()
 
     aufloesung = knoten_nach_mac(a.community)
@@ -131,6 +173,9 @@ def main():
             knoten = aufloesung.get(via or '', (None, None, None))
             zuordnung[mac] = (host, knoten[1], knoten[2] or via)
             je_domain[host] += 1
+
+    if a.json:
+        return zuordnung_schreiben(a.json, zuordnung)
 
     if not a.sites:
         print(f'# {len(zuordnung)} Geraete in {len(je_domain)} Domains')

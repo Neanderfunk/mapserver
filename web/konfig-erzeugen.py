@@ -183,6 +183,10 @@ DIAGRAMME = [
 # unten als Diagramm (adorfer 23.09.2026).
 ATTRIBUTE = [
     {'name': 'node.status', 'value': 'Status'},
+    # Kontakt, sofern die Betreiberin einen eingetragen hat. yanic liefert das
+    # Feld nur fuer die eigene Community (KONTAKT in sammler/yanic-conf.py);
+    # ohne Eintrag bleibt die Zeile weg, das macht meshviewer von selbst.
+    {'name': 'Kontakt', 'value': 'owner'},
     {'name': 'node.gateway', 'value': 'Gateway'},
     {'name': 'node.coordinates', 'value': 'GeoURI'},
     {'name': 'node.hardware', 'value': 'model'},

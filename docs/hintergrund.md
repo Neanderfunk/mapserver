@@ -125,10 +125,19 @@ Bisher bewusst nicht gemacht.
 
 ## no_owner
 
-Alle yanic-Ausgaben filtern die Besitzerangaben heraus. Bei eigenen Knoten
-waere das eine Abwaegung, bei fremden nicht: wer bei Freifunk EN einen Kontakt
-in seinen Knoten eingetragen hat, hat das nicht getan, damit wir ihn
-veroeffentlichen.
+Im eigenen Netz zeigen wir die Kontaktangabe, in fremden nicht.
+
+Das Pico Peering Agreement, auf dem Freifunk fusst, sieht die
+Veroeffentlichung ausdruecklich vor: wer sein Netz oeffnet, macht sich
+ansprechbar (picopeer.net, Abschnitt 2.2). Eingetragen wird sie freiwillig im
+Knoten, und die alte Karte der Community zeigt sie ebenfalls. Seit dem
+24.09.2026 steht sie deshalb auch bei uns im Knotenfenster, als Zeile
+"Kontakt"; von 1110 Knoten haben 911 eine. Geschaltet wird das ueber KONTAKT
+in sammler/yanic-conf.py, je Community.
+
+Fuer fremde Netze bleibt der Filter an. Wer bei Freifunk EN einen Kontakt
+eingetragen hat, hat das fuer deren Karte getan und nicht damit gerechnet,
+dass ausgerechnet wir seine Adresse veroeffentlichen.
 
 ## Neun Karten aus einem Build
 

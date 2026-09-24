@@ -15,9 +15,13 @@ Je Community laeuft eine eigene Instanz. Das hat zwei Gruende:
 
 Die Ortskarten behalten ihren Filter, dort gehoert der Supernode nicht hin.
 
-no_owner steht ueberall auf true. Die Knoten gehoeren nicht uns; was ihre
-Betreiberinnen an Kontaktdaten eingetragen haben, ist nicht fuer unsere
-Veroeffentlichung gedacht.
+Die Kontaktangabe (no_owner) zeigen wir im eigenen Netz. Das Pico Peering
+Agreement, auf dem Freifunk fusst, sieht genau das vor: wer sein Netz oeffnet,
+macht sich ansprechbar (picopeer.net, Abschnitt 2.2; adorfer 24.09.2026). Die
+alte Karte zeigt die Angabe ebenfalls, und eingetragen wird sie freiwillig.
+
+In fremden Netzen bleibt der Filter an: dort hat niemand damit gerechnet, dass
+ausgerechnet wir seine Adresse veroeffentlichen.
 """
 import os
 import sys
@@ -38,6 +42,10 @@ OFFLINE = '20m'
 # Gluon 2016. Ueber batman ist ff02::1 kein Nachteil, das ganze Mesh ist eine
 # Broadcast-Domain (gemessen 20.09.2026: ff05 eine Antwort, ff02::1 alle).
 ABFRAGE = {'neander': 'ff02::1'}
+
+# Communities, in denen wir die Kontaktangabe der Knoten mit veroeffentlichen.
+# Nur das eigene Netz, siehe oben.
+KONTAKT = {'neander'}
 
 # Was die Knoten als site_code melden, ist nicht der Code, unter dem die Domain
 # gebaut wird, und die Praefixe unterscheiden sich je Domain: 10_wlf meldet
@@ -92,13 +100,13 @@ def domains(pfad):
             yield dict(zip(FELDER, t))
 
 
-def ausgabe(pfad, sites=None, titel=''):
+def ausgabe(pfad, sites=None, titel='', kontakt=False):
     f = f'\n# {titel}\n' if titel else '\n'
     f += '[[nodes.output.meshviewer-ffrgb]]\n'
     f += 'enable = true\n'
     f += f'path = "{pfad}/meshviewer.json"\n'
     f += '[nodes.output.meshviewer-ffrgb.filter]\n'
-    f += 'no_owner = true\n'
+    f += f'no_owner = {str(not kontakt).lower()}\n'
     if sites:
         f += 'sites = ["%s"]\n' % '", "'.join(sites)
     return f
@@ -175,11 +183,14 @@ def main():
     # Gesamtansicht ohne Filter: diese Instanz hoert nur die Domains dieser
     # Community ab, mehr kann also gar nicht hineingeraten. Ohne Filter
     # bleiben die Supernodes drin, und nur mit ihnen entstehen die VPN-Kanten.
+    kontakt = community in KONTAKT
     t.append(ausgabe(f'{WEB}/{community}/alle/data', None,
-                     f'{community}: alle {len(d)} Domains, {community}.map.freifunk.space'))
+                     f'{community}: alle {len(d)} Domains, {community}.map.freifunk.space',
+                     kontakt))
     for x in d:
         t.append(ausgabe(f'{WEB}/{community}/{x["host"]}/data', site_codes(x),
-                         f'{x["name"]}: {x["host"]}.{community}.map.freifunk.space'))
+                         f'{x["name"]}: {x["host"]}.{community}.map.freifunk.space',
+                         kontakt))
 
     # nodes.json/graph.json und nodelist.json nur fuer die Gesamtsicht: das
     # sind die Formate, die andere Karten und Verzeichnisse einlesen.
@@ -192,13 +203,13 @@ def main():
     t.append(f'nodes_path = "{WEB}/{community}/alle/data/nodes.json"')
     t.append(f'graph_path = "{WEB}/{community}/alle/data/graph.json"')
     t.append('[nodes.output.meshviewer.filter]')
-    t.append('no_owner = true')
+    t.append(f'no_owner = {str(not kontakt).lower()}')
     t.append('')
     t.append('[[nodes.output.nodelist]]')
     t.append('enable = true')
     t.append(f'path = "{WEB}/{community}/alle/data/nodelist.json"')
     t.append('[nodes.output.nodelist.filter]')
-    t.append('no_owner = true')
+    t.append(f'no_owner = {str(not kontakt).lower()}')
     t.append('')
     t.append('[database]')
     t.append('delete_after = "90d"')

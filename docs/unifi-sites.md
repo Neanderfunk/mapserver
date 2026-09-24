@@ -162,10 +162,33 @@ Gebaut und getestet:
 - Timer `sammler/systemd/karte-unifi-zuordnung.{service,timer}`, im Repo,
   **nicht aktiviert**.
 
+- Ortscode (25.09.2026): der AP meldet den Code seines Routers zusätzlich als
+  `site_code`. unifi_respondd meldete bisher nur `domain_code`, und die
+  Ortskarten filtern nach `site_code`; ohne das stünden die APs nur auf der
+  Gesamtkarte, wie es die Supernodes tun. Der Wert ist der des Knotens, hinter
+  dem der AP hängt (in unserer nodelist unter `domain`, etwa
+  `lvrmo-33_lvrmo`), er besteht die Filter dieser Domain also von selbst.
+  34 Tests.
+
+**Weg der Antworten zu yanic, entschieden 25.09.2026: eine Instanz, eine
+Schnittstelle.** unifi_respondd lauscht mit `SO_BINDTODEVICE` auf genau einer
+Schnittstelle und beantwortet dort jede Abfrage mit allen APs. `yanic@neander`
+ist ein einziger Sammler über alle 48 `bat`-Schnittstellen und ordnet jeden
+Knoten nach seinem gemeldeten `site_code`, nicht nach der Schnittstelle, auf
+der die Antwort kam. Die Daten kommen per HTTPS vom Controller, nicht aus dem
+Client-Netz. Eine Instanz je Domain würde also nichts gewinnen, sondern jede
+würde alle Sites auslesen und alle APs doppelt melden.
+Gemessen auf map6: ein Horcher, gebunden wie unifi_respondd an `[::]:1001` auf
+`bat-11_lvr`, bekommt die Abfrage, die dort lokal an `ff02::1` geht (die
+Maschine hört ihre eigene Multicast-Abfrage). Die Antwort geht an die eigene
+Link-Local-Adresse und verlässt die Maschine nicht; im Mesh entsteht dadurch
+kein zusätzlicher Verkehr.
+
 Für die Inbetriebnahme fehlt noch: unifi_respondd auf map6 installieren
 (auf 6976651 festgenagelt, Patch anwenden), Konfiguration mit
-`offloader_by_ap: /var/lib/karte/unifi-zuordnung.json`, der Weg der Antworten
-zu `yanic@neander`, dann Timer und Dienst aktivieren. Danach der
+`offloader_by_ap: /var/lib/karte/unifi-zuordnung.json`,
+`multicast_enabled: true`, `interface: bat-11_lvr`, dann Timer und Dienst
+aktivieren. Danach der
 Content-Session Bescheid geben, sie nimmt "noch nicht gebaut" aus beiden
 Anleitungen.
 

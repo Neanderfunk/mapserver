@@ -1,9 +1,9 @@
 diff --git a/tests/test_offloader_by_ap.py b/tests/test_offloader_by_ap.py
 new file mode 100644
-index 0000000..f141b01
+index 0000000..dfc1704
 --- /dev/null
 +++ b/tests/test_offloader_by_ap.py
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,140 @@
 +#!/usr/bin/env python3
 +"""Tests fuer den lokalen Zusatz offloader_by_ap (Neanderfunk).
 +
@@ -120,6 +120,30 @@ index 0000000..f141b01
 +    assert ungemessen.gateway_nexthop == SITE_ROUTER.replace(":", "")
 +    assert ungemessen.neighbour_macs[0] == SITE_ROUTER
 +    assert ungemessen.domain_code == "11_lvr"
++
++
++def test_ap_meldet_ortscode_seines_routers():
++    """Der AP meldet den Code seines Routers auch als site_code, sonst fiele
++    er aus jeder Ortskarte heraus, die nach site_code filtert."""
++    from unifi_respondd.respondd_client import ResponddClient
++    from unifi_respondd.unifi_client import Accesspoint, Accesspoints
++
++    ap = Accesspoint(
++        name="lvr-ap", mac="0c:ea:14:00:00:0a", snmp_location="51.2506, 6.9746",
++        client_count=1, client_count24=1, client_count5=0, channel5=None,
++        rx_bytes5=None, tx_bytes5=None, channel24=6, rx_bytes24=1, tx_bytes24=2,
++        latitude=51.2506, longitude=6.9746, model="U6-Lite", firmware="6.6.77",
++        uptime=1, contact="", load_avg=0.1, mem_used=1, mem_total=2, mem_buffer=1,
++        tx_bytes=2, rx_bytes=1, gateway="gw", gateway6="gw6",
++        gateway_nexthop=ECHTER_ROUTER.replace(":", ""),
++        neighbour_macs=[ECHTER_ROUTER], domain_code="lvrmo-33_lvrmo",
++    )
++    client = ResponddClient.__new__(ResponddClient)
++    client._aps = Accesspoints(accesspoints=[ap])
++    knoten = client.getNodeInfos()[0]
++    assert knoten.system.site_code == "lvrmo-33_lvrmo"
++    assert knoten.system.domain_code == "lvrmo-33_lvrmo"
++    assert knoten.to_dict()["system"]["site_code"] == "lvrmo-33_lvrmo"
 diff --git a/unifi_respondd/config.py b/unifi_respondd/config.py
 index 8a6025f..2abfdb1 100644
 --- a/unifi_respondd/config.py
@@ -143,6 +167,35 @@ index 8a6025f..2abfdb1 100644
          )
  
  
+diff --git a/unifi_respondd/respondd_client.py b/unifi_respondd/respondd_client.py
+index 7065938..2ae6378 100644
+--- a/unifi_respondd/respondd_client.py
++++ b/unifi_respondd/respondd_client.py
+@@ -86,6 +86,13 @@ class NetworkInfo:
+ @dataclasses.dataclass
+ class SystemInfo:
+     domain_code: str
++    # Lokaler Zusatz (Neanderfunk): auch als site_code melden. Karten, die
++    # je Ort nach site_code filtern, liessen die APs sonst heraus, so wie sie
++    # es mit Supernodes tun, die nur domain_code melden. Der Wert ist der des
++    # Freifunk-Knotens, hinter dem der AP haengt: in der nodelist steht unter
++    # "domain" dessen gemeldeter Code (nef-05_mon, dus-15_mrh_EOL), und genau
++    # den erbt der AP.
++    site_code: str = ""
+ 
+ 
+ @dataclass_json
+@@ -287,7 +294,9 @@ class ResponddClient:
+                             "bat0": IntInfo(interfaces=InterfacesInfo(other=[ap.mac]))
+                         },
+                     ),
+-                    system=SystemInfo(domain_code=ap.domain_code),
++                    system=SystemInfo(
++                        domain_code=ap.domain_code, site_code=ap.domain_code
++                    ),
+                 )
+             )
+         return nodes
 diff --git a/unifi_respondd/unifi_client.py b/unifi_respondd/unifi_client.py
 index c2ba18b..a9b65ea 100644
 --- a/unifi_respondd/unifi_client.py

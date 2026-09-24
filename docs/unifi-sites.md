@@ -170,25 +170,36 @@ Gebaut und getestet:
   `lvrmo-33_lvrmo`), er besteht die Filter dieser Domain also von selbst.
   34 Tests.
 
-**Weg der Antworten zu yanic, entschieden 25.09.2026: eine Instanz, eine
-Schnittstelle.** unifi_respondd lauscht mit `SO_BINDTODEVICE` auf genau einer
-Schnittstelle und beantwortet dort jede Abfrage mit allen APs. `yanic@neander`
-ist ein einziger Sammler über alle 48 `bat`-Schnittstellen und ordnet jeden
-Knoten nach seinem gemeldeten `site_code`, nicht nach der Schnittstelle, auf
-der die Antwort kam. Die Daten kommen per HTTPS vom Controller, nicht aus dem
-Client-Netz. Eine Instanz je Domain würde also nichts gewinnen, sondern jede
-würde alle Sites auslesen und alle APs doppelt melden.
-Gemessen auf map6: ein Horcher, gebunden wie unifi_respondd an `[::]:1001` auf
-`bat-11_lvr`, bekommt die Abfrage, die dort lokal an `ff02::1` geht (die
-Maschine hört ihre eigene Multicast-Abfrage). Die Antwort geht an die eigene
-Link-Local-Adresse und verlässt die Maschine nicht; im Mesh entsteht dadurch
-kein zusätzlicher Verkehr.
+**Weg der Antworten zu yanic (25.09.2026): alle bat-Schnittstellen, je
+Domain gefiltert.** Ein Prozess holt die Daten per HTTPS vom Controller und
+lauscht auf allen `bat`-Schnittstellen auf respondd-Anfragen. An der
+Ankunftsschnittstelle jeder Anfrage (`IPV6_PKTINFO`) erkennt er die Domain und
+antwortet nur mit den APs, deren Router dort steht. So verhält er sich wie ein
+echter Knoten, und zwar für **jeden** Sammler im Mesh, nicht nur für unseren.
+
+Mein erster Entwurf war "eine Instanz auf einer Schnittstelle, alle APs". Für
+unseren eigenen yanic hätte das gereicht, weil der nach `site_code` ordnet.
+Übersehen hatte ich die anderen Sammler in denselben Meshes, etwa eulenmap1,
+der in allen 48 Domains hängt: der hätte in `lvr-hph` alle 615 APs aus allen
+sieben Domains bekommen. adorfer hat das Modell richtiggestellt.
+
+Umgesetzt im Patch (Konfigurationsschlüssel `interfaces`: Schnittstelle →
+Liste der site_codes dieser Domain, aus `sitecodes.conf` zu erzeugen), dazu
+`cache_seconds` (Vorgabe 60): im Original holt unifi_respondd bei **jeder**
+einzelnen Anfrage alle Daten neu vom Controller, bei 48 Schnittstellen also
+48-mal je Runde. 44 Tests, darunter ein echter Socket-Test, der die
+Ankunftsschnittstelle über Loopback erkennt.
+
+Gemessen vorab auf map6: ein Horcher auf `bat-11_lvr` bekommt die Abfrage,
+die yanic dort lokal an `ff02::1` schickt. Unser yanic wird also auf jeder
+Schnittstelle bedient, ohne dass Verkehr ins Mesh geht.
 
 Für die Inbetriebnahme fehlt noch: unifi_respondd auf map6 installieren
 (auf 6976651 festgenagelt, Patch anwenden), Konfiguration mit
 `offloader_by_ap: /var/lib/karte/unifi-zuordnung.json`,
-`multicast_enabled: true`, `interface: bat-11_lvr`, dann Timer und Dienst
-aktivieren. Danach der
+`multicast_enabled: true`, `interfaces` aus `sitecodes.conf` erzeugt (alle
+`bat-*` der Community neander), dann Timer und Dienst aktivieren. Den
+Erzeuger für `interfaces` gibt es noch nicht. Danach der
 Content-Session Bescheid geben, sie nimmt "noch nicht gebaut" aus beiden
 Anleitungen.
 

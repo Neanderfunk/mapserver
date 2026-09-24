@@ -1,3 +1,128 @@
+diff --git a/tests/test_je_domain.py b/tests/test_je_domain.py
+new file mode 100644
+index 0000000..e1cd2ec
+--- /dev/null
++++ b/tests/test_je_domain.py
+@@ -0,0 +1,119 @@
++#!/usr/bin/env python3
++"""Tests fuer den lokalen Zusatz "interfaces" (Neanderfunk).
++
++Auf mehreren Schnittstellen lauschen und je Schnittstelle nur die APs melden,
++deren Router in deren Domain steht. Controllerdaten zwischengespeichert.
++"""
++
++import json
++import socket
++import struct
++import zlib
++from unittest.mock import Mock, patch
++
++from unifi_respondd.respondd_client import ResponddClient
++from unifi_respondd.unifi_client import Accesspoint, Accesspoints
++
++
++def _ap(mac, code):
++    return Accesspoint(
++        name="ap-" + mac[-2:], mac=mac, snmp_location="",
++        client_count=0, client_count24=0, client_count5=0, channel5=None,
++        rx_bytes5=None, tx_bytes5=None, channel24=6, rx_bytes24=1, tx_bytes24=2,
++        latitude=None, longitude=None, model="U6-Lite", firmware="6.6.77",
++        uptime=1, contact="", load_avg=0.1, mem_used=1, mem_total=2, mem_buffer=1,
++        tx_bytes=2, rx_bytes=1, gateway="gw", gateway6="gw6",
++        gateway_nexthop="aabbccddeeff", neighbour_macs=["aa:bb:cc:dd:ee:ff"],
++        domain_code=code,
++    )
++
++
++def _client(aps, **cfg):
++    c = ResponddClient.__new__(ResponddClient)
++    c._config = Mock(**cfg)
++    c._aps = Accesspoints(accesspoints=aps)
++    c._aps_zeit = 0.0
++    c._sock = Mock()
++    return c
++
++
++APS = [
++    _ap("0c:ea:14:00:00:01", "lvrmo-33_lvrmo"),
++    _ap("0c:ea:14:00:00:02", "lvrmo-33_lvrmo"),
++    _ap("0c:ea:14:00:00:03", "lvrno-31_lvrno"),
++]
++
++
++def test_ids_nur_aus_der_eigenen_domain():
++    c = _client(APS)
++    assert c.ids_fuer(["lvrmo-33_lvrmo", "33_lvrmo"]) == {"0cea14000001", "0cea14000002"}
++    assert c.ids_fuer(["lvrno-31_lvrno"]) == {"0cea14000003"}
++    assert c.ids_fuer(["nef-05_mon"]) == set()
++    assert c.ids_fuer([]) == set()
++
++
++def test_sendstruct_schickt_nur_die_erlaubten():
++    c = _client(APS)
++    struktur = {"nodeinfo": c.getNodeInfos()}
++    c.sendStruct(("fe80::1", 40000, 0, 5), struktur, True, {"0cea14000003"})
++    assert c._sock.sendto.call_count == 1
++    daten, ziel = c._sock.sendto.call_args[0]
++    knoten = json.loads(zlib.decompress(daten, -15))
++    assert knoten["nodeinfo"]["node_id"] == "0cea14000003"
++    assert ziel == ("fe80::1", 40000, 0, 5)
++
++
++def test_sendstruct_ohne_filter_wie_bisher():
++    c = _client(APS)
++    c.sendStruct(("fe80::1", 40000, 0, 5), {"nodeinfo": c.getNodeInfos()}, True)
++    assert c._sock.sendto.call_count == 3
++
++
++def test_schnittstelle_aus_pktinfo():
++    lo = socket.if_indextoname(1)
++    daten = socket.inet_pton(socket.AF_INET6, "::1") + struct.pack("I", 1)
++    assert ResponddClient.schnittstelle_aus(
++        [(socket.IPPROTO_IPV6, socket.IPV6_PKTINFO, daten)]) == lo
++    assert ResponddClient.schnittstelle_aus([]) is None
++
++
++def test_echter_socket_erkennt_ankunftsschnittstelle():
++    """Ueber Loopback: recvmsg mit IPV6_RECVPKTINFO nennt die Schnittstelle."""
++    c = ResponddClient.__new__(ResponddClient)
++    c._sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
++    c._sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_RECVPKTINFO, 1)
++    c._sock.bind(("::1", 0))
++    c._sock.settimeout(3)
++    port = c._sock.getsockname()[1]
++    s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
++    s.sendto(b"GET nodeinfo statistics", ("::1", port))
++    teile, quelle, ifname = c.listenMulti()
++    assert teile == ["GET", "nodeinfo", "statistics"]
++    assert ifname == socket.if_indextoname(1)
++    assert quelle[0] == "::1"
++    c._sock.close()
++    s.close()
++
++
++def test_controller_hoechstens_einmal_je_zeitfenster():
++    c = _client(APS, cache_seconds=60)
++    c._aps = None
++    with patch("unifi_respondd.respondd_client.unifi_client.get_infos",
++               return_value=Accesspoints(accesspoints=APS)) as holen, \
++         patch("unifi_respondd.respondd_client.time.time") as uhr:
++        uhr.return_value = 1000.0
++        c.frische_aps()
++        uhr.return_value = 1030.0
++        c.frische_aps()
++        assert holen.call_count == 1
++        uhr.return_value = 1061.0
++        c.frische_aps()
++        assert holen.call_count == 2
++
++
++def test_controller_fehler_behaelt_alte_daten():
++    c = _client(APS, cache_seconds=60)
++    with patch("unifi_respondd.respondd_client.unifi_client.get_infos",
++               return_value=None), \
++         patch("unifi_respondd.respondd_client.time.time", return_value=9999.0):
++        assert c.frische_aps().accesspoints == APS
 diff --git a/tests/test_offloader_by_ap.py b/tests/test_offloader_by_ap.py
 new file mode 100644
 index 0000000..44e2985
@@ -212,10 +337,10 @@ index 0000000..44e2985
 +    assert aps["null"].latitude is None and aps["null"].longitude is None
 +    assert (aps["gut"].latitude, aps["gut"].longitude) == (51.2506, 6.9746)
 diff --git a/unifi_respondd/config.py b/unifi_respondd/config.py
-index 8a6025f..2abfdb1 100644
+index 8a6025f..f880af6 100644
 --- a/unifi_respondd/config.py
 +++ b/unifi_respondd/config.py
-@@ -48,6 +48,10 @@ class Config:
+@@ -48,6 +48,19 @@ class Config:
  
      version: str = "v5"
      ssl_verify: bool = True
@@ -223,19 +348,30 @@ index 8a6025f..2abfdb1 100644
 +    # Accesspoint, gemessen aus der batman-Uebersetzungstabelle. Ist sie
 +    # gesetzt, gilt ihr Eintrag vor offloader_mac der Site.
 +    offloader_by_ap: str = ""
++    # Lokaler Zusatz (Neanderfunk): auf mehreren Schnittstellen lauschen und
++    # je Schnittstelle nur die APs melden, deren Router in deren Domain steht.
++    # Schnittstelle -> Liste der site_codes dieser Domain. Leer heisst: wie
++    # bisher eine Schnittstelle aus "interface", alle APs.
++    interfaces: Dict[str, List[str]] = dataclasses.field(default_factory=dict)
++    # Controllerdaten hoechstens so oft neu holen. Ohne das fragt jede
++    # einzelne Anfrage den Controller komplett ab, bei 48 Schnittstellen also
++    # 48-mal je Sammelrunde.
++    cache_seconds: int = 60
  
      @classmethod
      def from_dict(cls, cfg: Dict[str, str]) -> "Config":
-@@ -76,6 +80,7 @@ class Config:
+@@ -76,6 +89,9 @@ class Config:
              unicast_port=cfg["unicast_port"],
              interface=cfg["interface"],
              verbose=cfg["verbose"],
 +            offloader_by_ap=cfg.get("offloader_by_ap", ""),
++            interfaces=cfg.get("interfaces") or {},
++            cache_seconds=int(cfg.get("cache_seconds", 60)),
          )
  
  
 diff --git a/unifi_respondd/respondd_client.py b/unifi_respondd/respondd_client.py
-index 7065938..8eba5ab 100644
+index 7065938..1ca7541 100644
 --- a/unifi_respondd/respondd_client.py
 +++ b/unifi_respondd/respondd_client.py
 @@ -8,7 +8,7 @@ import time
@@ -274,7 +410,15 @@ index 7065938..8eba5ab 100644
      hardware: HardwareInfo
      owner: OwnerInfo
      network: NetworkInfo
-@@ -278,7 +289,11 @@ class ResponddClient:
+@@ -239,6 +250,7 @@ class ResponddClient:
+     def __init__(self, config):
+         self._config = config
+         self._aps = None
++        self._aps_zeit = 0.0
+         self._timeStart = time.time()
+         self._timeStop = time.time()
+         self._sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+@@ -278,7 +290,11 @@ class ResponddClient:
                      ),
                      hostname=ap.name,
                      node_id=ap.mac.replace(":", ""),
@@ -287,7 +431,7 @@ index 7065938..8eba5ab 100644
                      hardware=HardwareInfo(model=ap.model),
                      owner=OwnerInfo(contact=ap.contact),
                      network=NetworkInfo(
-@@ -287,7 +302,9 @@ class ResponddClient:
+@@ -287,7 +303,9 @@ class ResponddClient:
                              "bat0": IntInfo(interfaces=InterfacesInfo(other=[ap.mac]))
                          },
                      ),
@@ -298,6 +442,119 @@ index 7065938..8eba5ab 100644
                  )
              )
          return nodes
+@@ -374,6 +392,82 @@ class ResponddClient:
+             )
+         return neighbours
+ 
++    # --- Lokaler Zusatz (Neanderfunk): mehrere Schnittstellen, je Domain gefiltert ---
++
++    def frische_aps(self):
++        """Controllerdaten holen, aber hoechstens alle cache_seconds."""
++        alter = time.time() - self._aps_zeit
++        if self._aps is None or alter >= getattr(self._config, "cache_seconds", 0):
++            aps = unifi_client.get_infos()
++            if aps is not None:
++                self._aps = aps
++                self._aps_zeit = time.time()
++        return self._aps
++
++    def ids_fuer(self, site_codes):
++        """node_ids der APs, deren Router einen dieser site_codes meldet."""
++        erlaubt = set(site_codes or [])
++        return {
++            ap.mac.replace(":", "")
++            for ap in (self._aps.accesspoints if self._aps else [])
++            if ap.domain_code in erlaubt
++        }
++
++    @staticmethod
++    def schnittstelle_aus(ancdata):
++        """Ankunftsschnittstelle aus IPV6_PKTINFO (in6_addr, ifindex)."""
++        for ebene, art, daten in ancdata:
++            if ebene == socket.IPPROTO_IPV6 and art == socket.IPV6_PKTINFO:
++                ifindex = struct.unpack("I", daten[16:20])[0]
++                try:
++                    return socket.if_indextoname(ifindex)
++                except OSError:
++                    return None
++        return None
++
++    def listenMulti(self):
++        """Wie listenMulticast, liefert zusaetzlich die Ankunftsschnittstelle."""
++        msg, ancdata, _flags, sourceAddress = self._sock.recvmsg(
++            2048, socket.CMSG_SPACE(20)
++        )
++        return str(msg, "UTF-8").split(" "), sourceAddress, self.schnittstelle_aus(ancdata)
++
++    def startMulti(self):
++        """Auf allen Schnittstellen aus "interfaces" lauschen.
++
++        Jede Anfrage wird mit genau den APs beantwortet, deren Router in der
++        Domain der Ankunftsschnittstelle steht. So sieht jeder Sammler in
++        jedem Mesh, was dorthin gehoert, wie bei einem echten Knoten; auch
++        fremde Sammler, die im Mesh fragen (adorfer 25.09.2026).
++        """
++        schnittstellen = self._config.interfaces
++        self._sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_RECVPKTINFO, 1)
++        self._sock.bind(("::", self._config.multicast_port))
++        for ifname in schnittstellen:
++            try:
++                self.joinMCAST(self._sock, self._config.multicast_address, ifname)
++            except OSError as ex:
++                logger.error("join %s: %s" % (ifname, ex))
++        while True:
++            msgSplit, sourceAddress, ifname = self.listenMulti()
++            if ifname not in schnittstellen:
++                continue
++            self._timeStart = time.time()
++            if self.frische_aps() is None:
++                continue
++            nur = self.ids_fuer(schnittstellen[ifname])
++            if not nur:
++                continue
++            responseStruct = {}
++            if msgSplit[0] == "GET":
++                for request in msgSplit[1:]:
++                    responseStruct[request] = self.buildStruct(request)
++                self.sendStruct(sourceAddress, responseStruct, True, nur)
++            else:
++                responseStruct = self.buildStruct(msgSplit[0])
++                self.sendStruct(sourceAddress, responseStruct, False, nur)
++            self._timeStop = time.time()
++
+     def listenMulticast(self):
+         msg, sourceAddress = self._sock.recvfrom(2048)
+         logger.info("Using multicast method")
+@@ -391,6 +485,8 @@ class ResponddClient:
+ 
+     def start(self):
+         """This method starts the respondd client."""
++        if getattr(self._config, "interfaces", None) and self._config.multicast_enabled:
++            return self.startMulti()
+         self._sock.setsockopt(
+             socket.SOL_SOCKET,
+             socket.SO_BINDTODEVICE,
+@@ -453,13 +549,18 @@ class ResponddClient:
+ 
+         return responseClass
+ 
+-    def sendStruct(self, destAddress, responseStruct, withCompression):
+-        """This method sends the response structure to the respondd server."""
++    def sendStruct(self, destAddress, responseStruct, withCompression, nur=None):
++        """This method sends the response structure to the respondd server.
++
++        Lokaler Zusatz: mit nur (Menge von node_ids) gehen nur diese Knoten raus.
++        """
+         logger.debug(
+             str(destAddress[0]) + " " + str(destAddress[1]) + " " + str(responseStruct)
+         )
+ 
+         merged = self.merge_node(responseStruct)
++        if nur is not None:
++            merged = {k: v for k, v in merged.items() if k in nur}
+         for infos in merged.values():
+             node = {}
+             for key, info in infos.items():
 diff --git a/unifi_respondd/unifi_client.py b/unifi_respondd/unifi_client.py
 index c2ba18b..6fef985 100644
 --- a/unifi_respondd/unifi_client.py

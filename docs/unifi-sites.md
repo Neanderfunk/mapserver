@@ -72,17 +72,64 @@ Site genau einen Offloader und damit genau eine Domain.
   im Git. Beim Einrichten gehören sie in die Konfiguration von unifi_respondd
   auf map6, Datei 600, Eigentümer der Dienstbenutzer.
 
+### Gegenprobe vom 24.09.2026
+
+Auf Nachfrage adorfers, der von einem laufenden Dienst ausging, am System
+belegt:
+
+- **Nirgends eine Installation.** map6: keine systemd-Unit (auch keine
+  inaktive), kein Prozess, kein Container, kein Cronjob, kein Python-Paket.
+  Dasselbe auf der Finder-VM. Weitere Rechner sind von hier nicht erreichbar,
+  aber:
+- **Auf keiner Karte steht ein UniFi-AP.** Unsere Karte führt 105
+  Ubiquiti-Geräte, die alte Karte (alle 49 Domainquellen) 121, und jedes davon
+  läuft mit Gluon. Ein AP aus unifi_respondd würde dort mit UniFi-Firmware
+  stehen. Es gibt also auch anderswo keinen Dienst, der eine der Karten
+  beliefert.
+
+Beim Blick in den Controller (lesend, eigenes Konto):
+
+| | |
+| --- | --- |
+| Controller-Version | 10.2.105 |
+| Sites, die unser Lesekonto sieht | nur `fflvr` |
+| APs in `fflvr` | 615, davon 547 online |
+| davon mit Koordinaten in SNMP Location | **0** |
+| ausgestrahlte SSIDs | `Freifunk`, `FreifunkStreaming` |
+
+### Was fehlt, damit er läuft
+
+1. **Zugang zu den beiden kleinen Sites.** Unser Lesekonto sieht sie nicht.
+2. **LVR ausklammern oder aufteilen.** unifi_respondd kennt keine Auswahl von
+   Sites, er verarbeitet jede, die das Konto sieht. Eine Site ohne
+   eingetragenen Offloader fällt nicht heraus: ihre APs erscheinen ohne
+   Domain und ohne Gateway. Die beiden kleinen Sites lassen sich deshalb vor
+   der LVR-Aufteilung anbinden, wenn entweder ein eigenes Lesekonto nur sie
+   sieht, oder ein kleiner lokaler Patch Sites ohne Offloader überspringt.
+3. **Koordinaten.** Ohne sie stehen die APs nur in der Liste, nicht auf der
+   Karte. Beim LVR fehlen sie noch vollständig; die kleinen Sites sind von
+   hier nicht einsehbar.
+4. **Einrichtung auf map6:** Installation, Konfiguration, und der Weg der
+   Antworten zu `yanic@neander`. Letzteres ist noch zu entwerfen:
+   unifi_respondd antwortet per Multicast auf einer Schnittstelle oder schickt
+   per Unicast an einen festen Empfänger, und unser yanic hört bisher nur auf
+   den bat-Schnittstellen.
+
 ### Offene Einstellungen für die Inbetriebnahme
 
 - **`ssid_regex`** ist noch nicht festgelegt. Es ist ein Pflichtfeld ohne
   Vorgabe im Code; `.*freifunk.*` steht nur in der Beispielkonfiguration.
   Geprüft wird ohne Beachtung von Groß- und Kleinschreibung. Ein AP, dessen
-  SSID nicht passt, erscheint nicht auf der Karte. Vor dem Einrichten die
-  tatsächlich ausgestrahlten SSIDs der drei Sites im Controller nachsehen.
+  SSID nicht passt, erscheint nicht auf der Karte. Beim LVR laufen `Freifunk`
+  und `FreifunkStreaming`, beide passen auf `.*freifunk.*`. Ob
+  `FreifunkStreaming` überhaupt ins Freifunk-Netz führt, ist noch zu klären;
+  sonst zählen seine Clients fälschlich mit.
 - **`controller_port`** 443 für `unifi.ffnef.de`, nicht die 8443 aus dem
   Beispiel; beide sind offen, 443 ist der Weg, den auch der Browser nimmt.
 - **`version`** passend zur Controller-Software setzen (`v5` im Beispiel,
-  `UDMP-unifiOS` bei UniFi OS). Das entscheidet über die API-Pfade.
+  `UDMP-unifiOS` bei UniFi OS). Unser Controller ist Version 10.2.105 und
+  beantwortet die klassischen Pfade (`/api/login`, `/api/s/<site>/...`), also
+  `v5`.
 - **`nodelist`** auf unsere Karte:
   `https://neander.map.freifunk.space/data/meshviewer.json`. Daraus erbt jeder
   AP Domain und Gateway seines Offloaders.

@@ -19,7 +19,10 @@ echo "== Pakete =="
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -y -qq batctl cmake pkg-config build-essential git \
-	libnl-3-dev libnl-genl-3-dev libasyncns-dev
+	libnl-3-dev libnl-genl-3-dev libasyncns-dev fastd
+# Das Paket bringt eigene Units mit; wir starten fastd nur ueber
+# karte-en-tunnel@, damit Hook und Watchdog dieselben sind wie bei Tunneldigger.
+systemctl disable --now fastd.service 2>/dev/null || true
 
 echo "== Tunneldigger-Client bauen ($TD_COMMIT) =="
 if [ ! -d "$BAU/.git" ]; then
@@ -47,6 +50,22 @@ echo "batman-adv: $(cat /sys/module/batman_adv/version 2>/dev/null || echo unbek
 echo "== Dateien =="
 install -d -m 0755 /etc/karte-en
 install -m 0644 "$HIER/domains.conf"    /etc/karte-en/domains.conf
+install -m 0644 "$HIER/fastd.conf"      /etc/karte-en/fastd.conf
+
+# Je Community mit fastd-Domains ein eigener Schluessel, einmal erzeugt und
+# danach unveraenderlich: er ist unsere Kennung dort (Sperrliste oder
+# Freischaltung haengen daran). Der oeffentliche Teil daneben, zum Weitergeben.
+install -d -m 0700 /etc/karte-en/fastd
+for c in $(awk '!/^#/ && NF { print $1 }' /etc/karte-en/fastd.conf); do
+	g=$(awk -v c="$c" '!/^#/ && $2 == c { print $1; exit }' /etc/karte-en/domains.conf)
+	[ -n "$g" ] || continue
+	f=/etc/karte-en/fastd/$g.secret
+	if [ ! -s "$f" ]; then
+		( umask 077; printf 'secret "%s";\n' "$(fastd --generate-key --machine-readable)" > "$f" )
+	fi
+	fastd --show-key --machine-readable --config "$f" > "/etc/karte-en/fastd/$g.pub"
+	echo "fastd $g: oeffentlicher Schluessel $(cat "/etc/karte-en/fastd/$g.pub")"
+done
 install -m 0755 "$HIER/tunnel-hook.sh"  /usr/local/sbin/karte-en-hook
 install -m 0755 "$HIER/tunnel-start.sh" /usr/local/sbin/karte-en-tunnel
 install -m 0644 "$HIER/systemd/karte-en-tunnel@.service" /etc/systemd/system/

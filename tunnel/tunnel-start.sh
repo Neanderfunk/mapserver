@@ -17,6 +17,41 @@ PORT=$(echo "$zeile" | awk '{ print $4 }')
 ID=$(echo "$zeile" | awk '{ print $5 }')
 BROKER=$(echo "$zeile" | awk '{ print $8 }' | tr ',' ' ')
 
+# fastd statt Tunneldigger, wenn die Domain in fastd.conf steht (Freifunk
+# Essen, 25.09.2026). Schnittstelle, Hook und batman-Instanz bleiben dieselben.
+FASTD=/etc/karte-en/fastd.conf
+fzeile=$(awk -v c="$CODE" '!/^#/ && $1 == c { print; exit }' "$FASTD" 2>/dev/null || true)
+if [ -n "$fzeile" ]; then
+	COMMUNITY=$(echo "$zeile" | awk '{ print $1 }')
+	MTU=$(echo "$zeile" | awk '{ print $7 }')
+	GEHEIM="/etc/karte-en/fastd/$COMMUNITY.secret"
+	[ -r "$GEHEIM" ] || { echo "kein Schluessel $GEHEIM (tunnel/einrichten.sh)" >&2; exit 1; }
+	# RuntimeDirectory der Unit; ProtectSystem=strict laesst sonst nichts zu.
+	KONF_F="${RUNTIME_DIRECTORY:-/run/karte-en-tunnel-$CODE}/fastd.conf"
+	{
+		echo "log level info;"
+		echo "interface \"td-$CODE\";"
+		echo "mode tap;"
+		for m in $(echo "$fzeile" | awk '{ print $2 }' | tr ',' ' '); do
+			echo "method \"$m\";"
+		done
+		echo "secure handshakes yes;"
+		echo "mtu $MTU;"
+		echo "bind any;"
+		echo "include \"$GEHEIM\";"
+		echo "on up sync \"/usr/local/sbin/karte-en-hook session.up td-$CODE\";"
+		echo "on down sync \"/usr/local/sbin/karte-en-hook session.down td-$CODE\";"
+		echo "peer group \"backbone\" {"
+		echo "	peer limit 1;"
+		for p in $(echo "$fzeile" | awk '{ for (i = 3; i <= NF; i++) print $i }'); do
+			name=${p%%=*}; rest=${p#*=}; host=${rest%%=*}; key=${rest#*=}
+			echo "	peer \"$name\" { key \"$key\"; remote \"$host\" port $PORT; }"
+		done
+		echo "}"
+	} > "$KONF_F"
+	exec /usr/sbin/fastd --config "$KONF_F"
+fi
+
 # Je Broker ein -b. Der Client nimmt mit -g den ersten erreichbaren.
 set --
 for b in $BROKER; do set -- "$@" -b "$b:$PORT"; done

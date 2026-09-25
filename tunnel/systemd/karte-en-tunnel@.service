@@ -24,6 +24,9 @@ ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
 ReadWritePaths=/proc/sys/net
+# fastd-Domains: tunnel-start.sh legt dort die erzeugte fastd-Konfiguration ab.
+RuntimeDirectory=karte-en-tunnel-%i
+RuntimeDirectoryMode=0700
 
 [Install]
 WantedBy=multi-user.target

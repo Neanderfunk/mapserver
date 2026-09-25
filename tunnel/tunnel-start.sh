@@ -35,7 +35,6 @@ if [ -n "$fzeile" ]; then
 		for m in $(echo "$fzeile" | awk '{ print $2 }' | tr ',' ' '); do
 			echo "method \"$m\";"
 		done
-		echo "secure handshakes yes;"
 		echo "mtu $MTU;"
 		echo "bind any;"
 		echo "include \"$GEHEIM\";"

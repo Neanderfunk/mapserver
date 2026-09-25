@@ -45,7 +45,7 @@ Für eine neue Domain oder Community deshalb die Einzelschritte unten nehmen.
 `web/einrichten.sh` berücksichtigt `standby.conf` und lädt nginx nur nach
 bestandenem `nginx -t` neu. Die neue Site-Datei liegt dann aber schon da:
 scheitert der Test, vor dem nächsten Neustart der Maschine beheben, sonst
-startet nginx nicht (so am 21.09.2026 knapp vermieden).
+startet nginx nicht (so am 22.09.2026 knapp vermieden, Hash-Größe).
 
 ## Was die Grundskripte tun
 

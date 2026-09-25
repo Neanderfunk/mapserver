@@ -356,6 +356,18 @@ wie auf `map.eulenfunk.de`.
 - Die Luftbilder tragen bewusst **kein** `karte-dunkel`: ein umgedrehtes
   Luftbild ist unbrauchbar.
 
+### Adresse in der Standortwahl
+
+Die Standortwahl der Karte zeigt zum gewählten Punkt die Adresse. meshviewer
+fragte dafür aus dem Browser jeder Besucherin direkt bei
+`nominatim.openstreetmap.org`; seit 25.09.2026 geht das über
+`/nf/ort/reverse` auf jeder Karte (`web/nginx-geo.conf`, Ort in
+`konfig-erzeugen.py`). Weiter gehen nur Breite und Länge auf 5
+Nachkommastellen und die Sprache, Cache 30 Tage in `/var/cache/nginx/karte-geo`,
+höchstens eine Anfrage je Sekunde an Nominatim. Probe:
+`curl -sI 'https://neander.map.freifunk.space/nf/ort/reverse?lat=51.2874&lon=6.3538'`
+(zweimal: `X-Cache-Status: HIT`).
+
 ### Erstsichtung aus der alten Karte
 
 Unsere Karte kennt einen Knoten erst, seit wir messen; im Knotenfenster stünde

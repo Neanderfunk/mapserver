@@ -5,6 +5,7 @@
   erstsichtung-uebernehmen.py --zeigen          # nur rechnen, nichts aendern
   erstsichtung-uebernehmen.py                   # eintragen (yanic anhalten!)
   erstsichtung-uebernehmen.py --quelle <config.json|nodes.json|Datei>
+  erstsichtung-uebernehmen.py --quelle <Datei> --zustand /var/lib/yanic/essen.json
 
 Unsere Karte kennt jeden Knoten erst, seit wir messen. Im Knotenfenster steht
 dann als Erstsichtung der Tag, an dem dieser Server aufgebaut wurde, und nicht
@@ -101,6 +102,10 @@ def main():
     quelle = QUELLE
     if '--quelle' in sys.argv:
         quelle = sys.argv[sys.argv.index('--quelle') + 1]
+    # Andere Community als neander, etwa /var/lib/yanic/essen.json
+    zustand_pfad = ZUSTAND
+    if '--zustand' in sys.argv:
+        zustand_pfad = sys.argv[sys.argv.index('--zustand') + 1]
 
     fremd, gelesen, fehler = {}, 0, []
     for q in quellen(quelle):
@@ -118,9 +123,9 @@ def main():
           + (f', {len(fehler)} nicht erreichbar' if fehler else ''))
 
     try:
-        zustand = json.load(open(ZUSTAND, encoding='utf-8'))
+        zustand = json.load(open(zustand_pfad, encoding='utf-8'))
     except (OSError, ValueError) as e:
-        print(f'{ZUSTAND}: {e}', file=sys.stderr)
+        print(f'{zustand_pfad}: {e}', file=sys.stderr)
         return 1
 
     unsere = zustand.get('nodes') or {}
@@ -153,13 +158,13 @@ def main():
     if zeigen or not geaendert:
         return 0
 
-    shutil.copy2(ZUSTAND, ZUSTAND + '.vor-erstsichtung')
-    neu_pfad = ZUSTAND + '.neu'
+    shutil.copy2(zustand_pfad, zustand_pfad + '.vor-erstsichtung')
+    neu_pfad = zustand_pfad + '.neu'
     with open(neu_pfad, 'w', encoding='utf-8') as f:
         json.dump(zustand, f, ensure_ascii=False)
-    shutil.copymode(ZUSTAND, neu_pfad)
-    os.replace(neu_pfad, ZUSTAND)
-    print(f'geschrieben, Sicherung unter {ZUSTAND}.vor-erstsichtung')
+    shutil.copymode(zustand_pfad, neu_pfad)
+    os.replace(neu_pfad, zustand_pfad)
+    print(f'geschrieben, Sicherung unter {zustand_pfad}.vor-erstsichtung')
     return 0
 
 

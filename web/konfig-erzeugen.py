@@ -250,6 +250,19 @@ VERTIEFUNG = [{
 }]
 
 
+# Oben im Reiter Statistik: die Gesamtsicht in Grafana, auf einer Ortskarte
+# gleich mit deren Domain ausgewaehlt. Braucht den Fork (statisticsLinks).
+GESAMTSICHT = ('https://neander.map.freifunk.space/grafana/d/nf-community/community'
+               '?var-domain=%s&from=now-30d&to=now')
+
+
+def statistik_links(pfad, alle):
+    ort = pfad.partition('/')[2]
+    codes = [d['code'] for d in alle if d['host'] == ort] or ['$__all']
+    return [{'title': 'Verlauf und Gesamtsicht (Grafana)',
+             'href': GESAMTSICHT % '&var-domain='.join(codes)}]
+
+
 def diagramme():
     return [dict(d, datasourceType='prometheus-direct', datasourceUid='vm',
                  **{'from': 'now-7d', 'to': 'now', 'maxDataPoints': 300})
@@ -282,7 +295,8 @@ def konfig(titel, pfad, alle):
             'eol': altgeraete(daten), 'eol_text': ALTGERAETE_TEXT,
             'prometheus': {'url': ZEITREIHE_URL}, 'nodeCharts': diagramme(),
             'chartRanges': ZEITRAEUME, 'nodeInfos': VERTIEFUNG,
-            'nodeAttr': ATTRIBUTE, 'nodeValues': WERTE}
+            'nodeAttr': ATTRIBUTE, 'nodeValues': WERTE,
+            'statisticsLinks': statistik_links(pfad, alle)}
            if community == 'neander' else {'deprecation_enabled': False})
     return {
         **alt,

@@ -55,21 +55,25 @@ allem dort, wo viele Geraete auf viele Domains verteilt sind.
 
 ## Betrieb von unifi_respondd
 
-**Stand 25.09.2026: unifi_respondd läuft noch nicht, gebaut ist er.** Auf
-map6 gibt es weder Installation noch Dienst. Der Code liegt im Fork
-github.com/Neanderfunk/unifi_respondd (Zweig `neanderfunk`). Die Site `fflvr`
-wird nicht aufgeteilt: Den Router je AP liefert die Zuordnung aus der
-batman-Übersetzungstabelle (`werkzeug/unifi-offloader.py --json`), der
-Offloader der Site ist nur noch der Rückfall.
+**In Betrieb seit 25.09.2026, 10:50.** unifi_respondd läuft auf map6 als
+`unifi-respondd.service` (Fork github.com/Neanderfunk/unifi_respondd, Zweig
+`neanderfunk`, eingerichtet mit `sammler/unifi-einrichten.sh`), zusammen mit
+yanic aus dem Fork github.com/Neanderfunk/yanic, der die Clients der APs beim
+Router abzieht und die Links AP-Router beidseitig als Kabel zeichnet. Die
+Site `fflvr` wird nicht aufgeteilt: den Router je AP liefert
+`karte-unifi-zuordnung.timer` alle fünf Minuten aus der
+batman-Übersetzungstabelle. APs ohne gemessenen Router meldet unifi_respondd
+nicht (kein Rückfall auf einen Router der Site), ein falscher Router wäre
+schlimmer als ein fehlender AP.
 
-**Ausrollen nur zusammen mit dem yanic-Fork** (Entscheidung 25.09.2026).
-Allein eingeschaltet zählte jeder Client hinter einem AP doppelt, beim AP und
-bei seinem Router, und die Summen auf Karte und in Grafana stiegen falsch an.
-Der yanic-Fork zieht die Clients der APs beim Router ab und zeichnet die
-Links von beiden Seiten. Reihenfolge beim Einschalten: yanic-Fork,
-unifi_respondd nach dem Bauplan unten, Gegenprobe der Summe gegen
-`tt_clients` aus der Übersetzungstabelle (zählt jeden Client einmal), dann
-"noch nicht gebaut" aus den beiden Anleitungen entfernen.
+Erste Messung nach dem Einschalten: 544 APs online auf der Karte, 1021
+Clients an APs; die Summe aller Clients blieb bei rund 3050 (vorher 3011 bis
+3047), ohne das Abziehen wären es rund 4000 gewesen. Überwacht von Checkmk
+als `mapserver-unifi`.
+
+Zugangsdaten: `/etc/unifi_respondd/zugang` (0600 root), daraus erzeugt der
+Dienst bei jedem Start `/etc/unifi_respondd/unifi_respondd.yaml` (0640
+root:unifi-respondd).
 
 ### Controller und Zugang
 

@@ -21,7 +21,7 @@ dieser Reihenfolge.
 | Schicht | Skript | Was danach läuft |
 | --- | --- | --- |
 | Tunnel und Mesh | `tunnel/einrichten.sh` | acht `karte-en-tunnel@<code>` |
-| Sammler | `sammler/einrichten.sh` | `yanic.service` |
+| Collector | `sammler/einrichten.sh` | `yanic.service` |
 | Web | `web/einrichten.sh` | nginx mit neun Vhosts |
 
 Alle drei sind idempotent und können wiederholt laufen.

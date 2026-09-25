@@ -129,7 +129,7 @@ wenn eine Neuerzeugung anders sortieren wuerde.
 ## Schritt 4: aufbauen
 
 Weiter in [einrichtung.md](einrichtung.md). Die drei Skripte in der Reihenfolge
-Tunnel, Sammler, Web.
+Tunnel, Collector, Web.
 
 ## Schritt 5: gegenpruefen
 

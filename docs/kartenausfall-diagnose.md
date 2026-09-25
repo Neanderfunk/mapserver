@@ -85,7 +85,7 @@ werkzeug/respondd-probe.py bat-<code>
 `br-client` und `ff02::2:1001` auf den Mesh-Schnittstellen. Im Neanderfunk
 antwortet auf `ff05::2:1001` gemessen **nur der Supernode**, auf `ff02::1`
 dagegen alle Knoten, weil unser Patch `fix-respondd-rsk` diese Gruppe
-zusätzlich öffnet. Fragt der Sammler die falsche Gruppe, kartiert man 48
+zusätzlich öffnet. Fragt der Collector die falsche Gruppe, kartiert man 48
 Supernodes und keinen Knoten.
 
 **Falle: der Messtakt.** yanic sammelt nicht zur vollen Minute, sondern
@@ -93,7 +93,7 @@ versetzt (`synchronize`). Zwei Mitschnitte zwischen den Läufen haben eine
 halbe Stunde gekostet. Vor dem Mitschneiden immer erst ins Log sehen, wann
 die Läufe tatsächlich liegen.
 
-**Falle: der taube Sammler.** Das Netz antwortet, von Hand per
+**Falle: der taube Collector.** Das Netz antwortet, von Hand per
 `respondd-probe.py` sogar vollzaehlig, aber yanic bekommt nichts. yanic bindet
 je Domain einen Socket an die Schnittstelle, genauer an ihren ifindex. Wird
 die bat-Instanz geloescht und neu angelegt, traegt sie denselben Namen, aber
@@ -103,10 +103,10 @@ Erkennbar in `ss -uanp`: die Schnittstelle steht dort als blanke Nummer
 Tunneln einen Teardown, der Client verband sich binnen Sekunden neu, und
 fuenfzehn Domains blieben zwoelf Stunden stumm, waehrend Tunnel, Mesh und die
 Pruefung der Originatoren gruen waren. Seitdem loescht der Hook die
-bat-Instanz nicht mehr, und der Waechter startet einen Sammler neu, der an
+bat-Instanz nicht mehr, und der Waechter startet einen Collector neu, der an
 einer verschwundenen Schnittstelle haengt.
 
-Merksatz dazu: **erst von Hand fragen, dann dem Sammler glauben.** Antwortet
+Merksatz dazu: **erst von Hand fragen, dann dem Collector glauben.** Antwortet
 die Probe und yanic nicht, liegt es an unserer Seite.
 
 ## Schicht 5: Filter
@@ -132,7 +132,7 @@ sammler/sitecodes-ermitteln.py > sitecodes.conf
 **Supernodes melden keinen site_code, nur einen domain_code.** Jeder
 site-Filter wirft sie deshalb weg, und ohne sie gibt es keine VPN-Kanten und
 keine Uplink-Färbung auf der Karte. Die saubere Lösung ist, gar nicht zu
-filtern: je Community ein eigener Sammler, dann entsteht die Trennung schon
+filtern: je Community ein eigener Collector, dann entsteht die Trennung schon
 daraus, welche Schnittstellen er abhört.
 
 **Nicht mit `domain_as_site` lösen.** Der Filter täte genau das Richtige, aber
@@ -233,6 +233,6 @@ das Gespräch ist billiger als beides:
 | nur Supernodes antworten | respondd | falsche Abfragegruppe |
 | Pakete fließen, Karte leer | Filter | site_code stimmt nicht |
 | keine VPN-Kanten, keine Gateways | Filter | Supernodes weggefiltert |
-| Sammler stirbt beim Start | Ausgabe | Schnittstelle fehlt, Panic |
-| Probe antwortet, yanic nicht, `%ifNNN` in `ss` | respondd | tauber Sammler nach Neuanlage der bat-Instanz |
+| Collector stirbt beim Start | Ausgabe | Schnittstelle fehlt, Panic |
+| Probe antwortet, yanic nicht, `%ifNNN` in `ss` | respondd | tauber Collector nach Neuanlage der bat-Instanz |
 | `nginx -t` scheitert, Karten laufen trotzdem | Ausgabe | alte Konfiguration im Speicher, der naechste Neustart nimmt alles |

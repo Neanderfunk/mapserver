@@ -19,7 +19,7 @@ Es gibt keinen Timer und keinen Cron. yanic sammelt im Takt von
 /etc/modules-load.d/karte-en.conf       l2tp_eth, l2tp_netlink, batman-adv
 /etc/nginx/sites-available/karte-en.conf erzeugt
 /usr/local/bin/tunneldigger             C-Client
-/usr/local/bin/yanic                    Sammler
+/usr/local/bin/yanic                    Collector
 /usr/local/sbin/karte-en-tunnel         Starter je Domain
 /usr/local/sbin/karte-en-hook           Hook, hängt Tunnel an batman
 /usr/local/sbin/karte-en-yanic-conf     erzeugt /etc/yanic.conf
@@ -58,7 +58,7 @@ ip -6 -br addr show | grep '^bat-'
 ip -6 route show proto ra        # muss leer bleiben
 ip -6 route show default         # nur die eigene Uplink-Schnittstelle
 
-# 4. Sammler
+# 4. Collector
 systemctl status yanic --no-pager
 journalctl -u yanic -n 30
 
@@ -100,13 +100,13 @@ Antwortet dort etwas und yanic nicht, liegt es an `/etc/yanic.conf`
 (Schnittstellenname falsch) oder an Rechten.
 
 **Originatoren da, Probe antwortet, yanic sammelt trotzdem nichts.** Der
-Sammler hängt an einer Schnittstelle, die es nicht mehr gibt:
+Collector hängt an einer Schnittstelle, die es nicht mehr gibt:
 
 ```bash
 ss -uanp | grep yanic | grep '%if[0-9]'
 ```
 
-Jede Zeile ist eine stumme Domain. Der Wächter startet den Sammler dann
+Jede Zeile ist eine stumme Domain. Der Wächter startet den Collector dann
 innerhalb von fünf Minuten neu; von Hand `systemctl restart yanic@<community>`.
 Hintergrund in [kartenausfall-diagnose.md](kartenausfall-diagnose.md).
 
@@ -144,7 +144,7 @@ dass die Umleitung steht; ein `200` wäre dort der Fehler.
 # 1. Zeile in standby.conf eintragen und ausspielen
 sudo install -m 0644 web/standby.conf /etc/karte-en/standby.conf
 
-# 2. Dienste anhalten (Tunnel und Sammler bleiben installiert)
+# 2. Dienste anhalten (Tunnel und Collector bleiben installiert)
 for c in $(awk '!/^#/ && NF && $1 == "en" { print $2 }' /etc/karte-en/domains.conf); do
     sudo systemctl disable --now "karte-en-tunnel@$c"
 done
@@ -169,7 +169,7 @@ Die Zeitreihe in `/var/lib/karte/verlauf.csv` bleibt erhalten und ist der
 Grund, warum sich das Abschalten lohnt statt des Löschens: sie dokumentiert,
 was das Netz getan hat, solange wir hingesehen haben.
 
-**Stand 23.09.2026:** Freifunk EN ist im Standby, acht Tunnel und der Sammler
+**Stand 23.09.2026:** Freifunk EN ist im Standby, acht Tunnel und der Collector
 `yanic@en` sind abgeschaltet, neun Namen leiten auf `map.ff-en.de` um. Es
 laufen 48 Tunnel für Neanderfunk.
 
@@ -319,7 +319,7 @@ andere unter `/nf/prom/` gibt 403.
   daneben.
 - `owner` wird beim Empfang verworfen (`/etc/victoria-metrics/relabel.yml`),
   yanic kennt für diesen Ausgang kein `no_owner`.
-- Aufbewahrung 180 Tage, Grenzen für Abfragen in
+- Aufbewahrung 180 Tage, Limits für Abfragen in
   `/etc/default/victoria-metrics`. VictoriaMetrics lauscht nur auf
   `127.0.0.1:8428`, die Paketvorgabe wäre `0.0.0.0` gewesen.
 - Einrichtung: `sudo ./zeitreihe/einrichten.sh`. Das Skript richtet auch
@@ -420,8 +420,8 @@ ohnehin zugestellt wird (48 Abfragen kosten zusammen 0,13 Sekunden):
 Dazu die Liste `api/<community>/dunkel.json` mit den Merkmalen je MAC.
 
 Zwei Zählweisen für Clients, und beide sind richtig: respondd summiert, was
-die antwortenden Knoten melden (Untergrenze), die Tabelle kennt jede Station
-der Domain, hält sie aber noch einige Minuten nach dem Abmelden (Obergrenze).
+die antwortenden Knoten melden (unteres Limit), die Tabelle kennt jede Station
+der Domain, hält sie aber noch einige Minuten nach dem Abmelden (oberes Limit).
 Gemessen am 23.09.2026: 2243 gegen 2945.
 
 **Dunkle Knoten** sind batman-Knoten ohne antwortendes respondd. Wer
@@ -459,7 +459,7 @@ Sichtung fällt ein Eintrag heraus. Stand 23.09.2026 gibt es genau zwei:
   respondd-Gruppe an**, antwortet aber weder auf respondd noch auf ping. Ein
   Knoten mit passender Firmware, dessen respondd steht: Fall 1.
 - `02:a5:a7:99:f0:fa` in **allen 48 Domains**: das ist **eulenmap1**, der
-  Sammler der alten Karte `map.eulenfunk.de` (adorfer 24.09.2026, per
+  Collector der alten Karte `map.eulenfunk.de` (adorfer 24.09.2026, per
   `ip a` auf der Maschine bestätigt). Er hängt wie wir in allen Domains,
   anders als wir aber mit **derselben MAC auf allen 49 bat-Schnittstellen**;
   unsere tragen je Domain eine eigene (`02:45:4e:*`).

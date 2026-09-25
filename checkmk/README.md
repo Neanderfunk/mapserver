@@ -24,7 +24,7 @@ stammt aus [Adorfer/check_mk](https://github.com/Adorfer/check_mk), dort
 
 | Datei | Rechner | Dienste |
 | --- | --- | --- |
-| `local/mapserver` | map6.freifunk.space | Tunnel, Sammler, Abschottung, Batman, je Domain einer |
+| `local/mapserver` | map6.freifunk.space | Tunnel, Collector, Abschottung, Batman, je Domain einer |
 | `local/300/mapserver-web` | map6.freifunk.space | Web, alle fuenf Minuten |
 
 Der Kartenserver selbst liegt eine Ebene hoeher in diesem Repository, die

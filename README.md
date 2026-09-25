@@ -39,7 +39,7 @@ wieder eine eigene Karte, ruht unsere und leitet dorthin weiter.
 | --- | --- | --- |
 | Tunnel | `wlanslovenija/tunneldigger`, C-Client | eine Instanz je Domain |
 | Mesh | batman-adv aus dem Kernel (compat 15) | `bat-<code>`, `gw_mode off` |
-| Sammler | yanic, Fork [Neanderfunk/yanic](https://github.com/Neanderfunk/yanic) | ein Prozess je Community |
+| Collector | yanic, Fork [Neanderfunk/yanic](https://github.com/Neanderfunk/yanic) | ein Prozess je Community |
 | Karte | meshviewer, Fork [Neanderfunk/meshviewer](https://github.com/Neanderfunk/meshviewer) | Upstream `freifunk/meshviewer` |
 | UniFi | unifi_respondd, Fork [Neanderfunk/unifi_respondd](https://github.com/Neanderfunk/unifi_respondd) | Upstream `freifunkMUC/unifi_respondd` |
 | Zeitreihen | VictoriaMetrics, Grafana | nur lokal erreichbar, nach außen über nginx |

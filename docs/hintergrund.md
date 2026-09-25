@@ -15,7 +15,7 @@ per Multicast in die Domain, Antwort per Unicast an den Fragesteller. Der
 Knoten muss nicht wissen, wer fragt, und nicht, ob es der erste oder der
 dritte ist. Mehrere Karten nebeneinander sind im Freifunk der Normalfall, kein
 Uebergriff. Deshalb liegen die Multicast-Gruppen auf `br-client` und den
-Mesh-Schnittstellen und nicht auf einer konfigurierten Sammleradresse.
+Mesh-Schnittstellen und nicht auf einer konfigurierten Collector-Adresse.
 
 Tunneldigger kennt keine Peer-Autorisierung, ein Beitritt ist also technisch
 einseitig moeglich. Das ist kein Freibrief fuer beliebiges Verhalten, siehe
@@ -25,7 +25,7 @@ den naechsten Abschnitt.
 
 Diese Liste ist der Kern des Projekts, nicht Beiwerk:
 
-- **`gw_mode off`.** Ein Sammler, der sich als Gateway anmeldet, zieht Verkehr
+- **`gw_mode off`.** Ein Collector, der sich als Gateway anmeldet, zieht Verkehr
   auf sich, den er nicht bedienen will. Das waere aus dem Mitlesen ein
   Eingriff.
 - **Keine Clients, keine Bridge, kein DHCP, kein Forwarding.**
@@ -86,7 +86,7 @@ unsere Identitaet in ihrem Netz.
 
 Unsere eigene Flotte faehrt einen Patch, der respondd zusaetzlich auf
 `ff02::1` lauschen laesst, eine Rueckkehr zum Verhalten von Gluon 2016. Ein
-Sammler, der darauf ausgelegt ist, sieht in fremden Netzen nichts: Stock-Gluon
+Collector, der darauf ausgelegt ist, sieht in fremden Netzen nichts: Stock-Gluon
 bedient nur `ff05::2:1001` auf `br-client` und `ff02::2:1001` auf den
 Mesh-Schnittstellen. yanic fragt von sich aus `ff05::2:1001`, deshalb
 funktioniert es hier ohne jede Aenderung an ihrer Firmware.

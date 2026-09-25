@@ -39,7 +39,7 @@ Commit, erklärt in `NEANDERFUNK.md` im jeweiligen Fork:
    (`meshviewer.json`, für Domain und Gateway des Routers). Er lauscht auf
    Port 1001 auf allen 43 batman-Instanzen der Community und beantwortet
    jede Anfrage nur mit den APs, deren Router in der Domain dieser
-   Schnittstelle steht. So bekommt jeder Sammler im Mesh, auch ein fremder,
+   Schnittstelle steht. So bekommt jeder Collector im Mesh, auch ein fremder,
    genau die APs seiner Domain. **APs ohne gemessenen Router meldet er
    nicht**: ein falscher Router wäre schlimmer als ein fehlender AP.
 3. **yanic@neander** fragt wie immer alle 5 Minuten auf jeder batman-Instanz
@@ -87,7 +87,7 @@ Content-Session) und für Entwickler bei `parse_location()` im Fork samt
 Tests. Wer über einen unlesbaren Eintrag stolpert, erweitert den Code, nicht
 die Anleitung, und gibt der Content-Session Bescheid.
 
-Bewusste Grenze (mit adorfer abgestimmt): nichts raten, was die Bedeutung
+Bewusstes Limit (mit adorfer abgestimmt): nichts raten, was die Bedeutung
 ändert. Keine Adresssuche (früher Nominatim, ein fremder Dienst), keine
 Kurzlinks, nichts Widersprüchliches (Minus und Himmelsrichtung zugleich,
 zweimal N), keine 0/0.
@@ -135,7 +135,7 @@ baut aus dem Fork `Neanderfunk/yanic`.
   11:02 beim Umstieg auf die Airtime-Zähler. Grafana und die Karte klammern
   die Werte deshalb auf 0 bis 100.
 
-## Grenzen
+## Limits
 
 - **6 GHz** fehlt: yanic kennt nur 2,4 (11g) und 5 GHz (11a), ein drittes
   Band überschriebe 5 GHz. Am 25.09.2026 meldet keiner der 545 APs ein
@@ -262,11 +262,11 @@ Domain gefiltert.** Ein Prozess holt die Daten per HTTPS vom Controller und
 lauscht auf allen `bat`-Schnittstellen auf respondd-Anfragen. An der
 Ankunftsschnittstelle jeder Anfrage (`IPV6_PKTINFO`) erkennt er die Domain und
 antwortet nur mit den APs, deren Router dort steht. So verhält er sich wie ein
-echter Knoten, und zwar für **jeden** Sammler im Mesh, nicht nur für unseren.
+echter Knoten, und zwar für **jeden** Collector im Mesh, nicht nur für unseren.
 
 Mein erster Entwurf war "eine Instanz auf einer Schnittstelle, alle APs". Für
 unseren eigenen yanic hätte das gereicht, weil der nach `site_code` ordnet.
-Übersehen hatte ich die anderen Sammler in denselben Meshes, etwa eulenmap1,
+Übersehen hatte ich die anderen Collector in denselben Meshes, etwa eulenmap1,
 der in allen 48 Domains hängt: der hätte in `lvr-hph` alle 615 APs aus allen
 sieben Domains bekommen. adorfer hat das Modell richtiggestellt.
 

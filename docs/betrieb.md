@@ -463,6 +463,13 @@ alle. Übernommen mit demselben Skript, Quelle eine Datei mit `node_id` und
 bekommen beim ersten Auftauchen das heutige Datum; bei Bedarf wiederholen
 (ändert nur, was älter ist).
 
+**map6 selbst (25.09.2026, einmalig):** Die Knoten `map-neanderfunk-<code>`
+aus mesh-announce bekamen als Erstsichtung den ersten Tunnelaufbau je Domain
+laut Journal (`karte-en: <code>: td-<code> an bat-<code>`): Neanderfunk
+20.09.2026 abends, Essen 25.09.2026 14:21. Für Essen mit
+`--zustand /var/lib/yanic/essen.json`. Sicherungen unter
+`/root/*.vor-map6-erstsichtung`.
+
 ### Clients und dunkle Knoten
 
 `sammler/clients-zaehlen.py`, alle fünf Minuten als `karte-clients@neander`.

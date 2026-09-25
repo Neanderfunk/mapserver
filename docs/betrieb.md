@@ -125,7 +125,7 @@ und die sysctl-Werte auf den bat-Instanzen prüfen, siehe `hintergrund.md`.
 
 ## fastd-Domains
 
-Seit 25.09.2026 kann die Tunnel layer außer Tunneldigger auch fastd, erste
+Seit 25.09.2026 kann der Tunnel-Layer außer Tunneldigger auch fastd, erste
 Community ist Freifunk Essen (Not-Karte für mitfunken.freifunk.space).
 
 - **Wo es steht:** `tunnel/fastd.conf` (je Domain Methoden und Peers mit

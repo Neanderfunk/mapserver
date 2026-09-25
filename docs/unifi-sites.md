@@ -162,7 +162,9 @@ WLAN-Clients und kein AP; der Router muss von Hand eingetragen werden
 
 Welche Sites es gibt, hinter welchen Routern sie hängen, das Konto am
 Controller und wo die Zugangsdaten liegen, steht nicht in diesem
-öffentlichen Repo, sondern im Betriebs-Repo der Supernode-Session
+öffentlichen Repo, sondern im internen Repo `neanderfunk/ansible` unter
+`docs/mapserver-interna/`, abgelegt von der Supernode-Session; inhaltlich
+zuständig bleibt der Mapserver
 (übergeben am 25.09.2026). Hier nur: der Dienst braucht ein Konto mit reinen
 Leserechten, er liest Sites, Geräte und Clients und schreibt nichts.
 
@@ -188,7 +190,7 @@ belegt:
   beliefert.
 
 Der Blick in den Controller (lesend, eigenes Konto) ergab: keiner der
-APs hatte Koordinaten; Einzelheiten im Betriebs-Repo.
+APs hatte Koordinaten; Einzelheiten in `docs/mapserver-interna/` (internes Repo).
 
 ### Was fehlt, damit er läuft
 

@@ -17,7 +17,7 @@ Begonnen am 20.09.2026, an einem Abend von leerer VM bis oeffentlicher Karte.
 | Was | Wo |
 | --- | --- |
 | Karten-VM | `map6.freifunk.space`, nur IPv6, Debian 13 |
-| Zugang, Schluessel, sudo | im Betriebs-Repo der Supernode-Session, nicht in diesem oeffentlichen Repo |
+| Zugang, Schluessel, sudo | internes Repo `neanderfunk/ansible`, `docs/mapserver-interna/` (Supernode-Session), nicht in diesem oeffentlichen Repo |
 | Proxy und TLS | `twin2.ffdus.de`, gepflegt von adorfer |
 | Finder-VM (anderes Projekt) | `finder6.ffnef.de`, gleicher Schluessel |
 

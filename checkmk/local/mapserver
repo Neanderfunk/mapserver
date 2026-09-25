@@ -342,6 +342,34 @@ if systemctl is-enabled -q grafana-server 2>/dev/null; then
     fi
 fi
 
+# --- UniFi-Accesspoints ------------------------------------------------------
+# unifi_respondd meldet die APs aus dem Controller als Knoten, den Router je AP
+# liefert karte-unifi-zuordnung alle fuenf Minuten. Faellt eins davon aus,
+# fehlen die APs auf der Karte (oder haengen an einem alten Router), die
+# Freifunk-Knoten selbst sind nicht betroffen: deshalb hoechstens WARN.
+if systemctl is-enabled -q unifi-respondd 2>/dev/null; then
+    zu=/var/lib/karte/unifi-zuordnung.json
+    alter=$(( $(date +%s) - $(stat -c %Y "$zu" 2>/dev/null || echo 0) ))
+    werte=$(python3 -c "
+import json
+z = len(json.load(open('$zu'))['aps'])
+n = json.load(open('$WEB/sites/neander/alle/data/meshviewer.json'))['nodes']
+ap = [x for x in n if (x.get('firmware') or {}).get('base') == 'UniFi']
+print(z, len(ap), sum(1 for x in ap if x.get('is_online')), sum(x.get('clients') or 0 for x in ap if x.get('is_online')))
+" 2>/dev/null || echo "0 0 0 0")
+    read -r zugeordnet aps aps_on ap_clients <<< "$werte"
+    perf="aps_online=$aps_on|aps=$aps|zugeordnet=$zugeordnet|ap_clients=$ap_clients"
+    if ! systemctl is-active -q unifi-respondd; then
+        echo "1 mapserver-unifi $perf unifi-respondd laeuft nicht, keine APs auf der Karte"
+    elif [ "$alter" -gt 1800 ]; then
+        echo "1 mapserver-unifi $perf Zuordnung AP->Router seit $((alter / 60)) min nicht erneuert"
+    elif [ "$aps_on" -eq 0 ]; then
+        echo "1 mapserver-unifi $perf kein AP online auf der Karte ($zugeordnet mit Router)"
+    else
+        echo "0 mapserver-unifi $perf $aps_on APs online, $ap_clients Clients an APs, $zugeordnet mit Router"
+    fi
+fi
+
 # --- Clients und dunkle Knoten ----------------------------------------------
 # Aus der Uebersetzungstabelle, geschrieben von karte-clients. Dunkel heisst:
 # im Mesh sichtbar, aber keinem Knoten der Karte zuzuordnen, also ein

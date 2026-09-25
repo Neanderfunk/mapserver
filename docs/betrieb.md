@@ -478,7 +478,12 @@ stehen Tagesbilanzen als Balken, freie Zeiträume und die Werte aus
 
 - Lesend ohne Anmeldung, Anmeldemaske aus, keine Konten. Alles kommt aus
   Dateien: `zeitreihe/grafana/` (systemd-Drop-in, Datenquelle, Dashboard).
-- Das Dashboard erzeugt `grafana/dashboard-erzeugen.py`, nicht die Oberfläche.
+- Die Dashboards erzeugt `grafana/dashboard-erzeugen.py`, nicht die Oberfläche:
+  Knoten (`nf-knoten`, Link im Knotenfenster), Domain (`nf-domain`),
+  Supernode (`nf-supernode`) und Community (`nf-community`, Gesamtsicht,
+  verlinkt oben im Reiter Statistik der Karte). In der Gesamtsicht zählt
+  der Verkehr nur auf Seite der Gluon-Knoten; die Gateways stehen nur in der
+  Gegenprobe, zusammengezählt wäre es verdoppelt.
   Änderungen in der Oberfläche sind nicht möglich und wären beim nächsten Lauf
   weg.
 - nginx reicht `/grafana/` **ohne** Schrägstrich am Ende weiter

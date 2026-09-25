@@ -365,7 +365,7 @@ fragte dafür aus dem Browser jeder Besucherin direkt bei
 `konfig-erzeugen.py`). Weiter gehen nur Breite und Länge auf 5
 Nachkommastellen und die Sprache, Cache 30 Tage in `/var/cache/nginx/karte-geo`,
 höchstens eine Anfrage je Sekunde an Nominatim. Probe:
-`curl -sI 'https://neander.map.freifunk.space/nf/ort/reverse?lat=51.2874&lon=6.3538'`
+`curl -sI 'https://neander.map.freifunk.space/nf/ort/reverse?lat=51.2506&lon=6.9746'`
 (zweimal: `X-Cache-Status: HIT`).
 
 ### Erstsichtung aus der alten Karte
@@ -497,7 +497,7 @@ stehen Tagesbilanzen als Balken, freie Zeiträume und die Werte aus
 
 Geprüft am 24.09.2026, von außen über IPv6 und per `ss` auf der Maschine.
 
-**Was von außen erreichbar ist:** nginx auf Port 80, sshd auf 62954 (nur
+**Was von außen erreichbar ist:** nginx auf Port 80, sshd auf einem eigenen Port (nur
 Schlüssel, kein root) und der Checkmk-Agent auf 6556. Der Agent gibt dort ohne
 Registrierung seine volle Ausgabe im Klartext heraus, Prozessliste und
 Unit-Liste eingeschlossen; das ist bewusst so (adorfer). VictoriaMetrics und

@@ -1,97 +1,176 @@
-# UniFi-Installationen und ihre Offloader
+# UniFi-Accesspoints auf der Karte
 
 Öffentliche Anleitung für die Betreuenden eines Controllers (Koordinaten
-eintragen, Sites je Domain aufteilen):
+eintragen):
 [freifunk-docs: UniFi-Accesspoints auf die Freifunk-Karte](https://github.com/Neanderfunk/freifunk-docs/blob/main/unifi-accesspoints-freifunk-karte.md).
 Ändert sich beim Einrichten etwas, das die Betreuenden betrifft, etwa Port,
 Zugang oder SSID-Muster, muss sie nachgezogen werden; die Content-Session
 pflegt sie.
 
-Stand 21.09.2026. Fuer unifi_respondd braucht es je Unifi-Site die MAC des
-Freifunk-Knotens, hinter dem die Accesspoints haengen.
 
-| Site | Freifunk-Domain | Offloader | MAC | Verwaltung |
-| --- | --- | --- | --- | --- |
-| `fflvr` | sieben LVR-Domains | 95 verschiedene | siehe Aufteilungsliste | in-band |
-| ffdus-unterkunft-west | `24_dusukw` | GrafAdolf73-Offloader-2e5c | `00:9b:c8:f0:2e:5c` | out-of-band |
-| Nef-Wlf (WIR-Haus) | `10_wlf` | WIR-Kelleroffl2-1367 | `80:af:ca:82:13:67` | out-of-band |
+## Stand
 
-Die Sitenamen in der linken Spalte sind ungeprueft, sie stammen aus der
-muendlichen Beschreibung; massgeblich ist, wie sie im Controller heissen.
+**In Betrieb seit 25.09.2026, 10:50.** UniFi-Accesspoints stehen als eigene
+Knoten auf der Karte, verbunden mit dem Freifunk-Router, hinter dem sie
+hängen. Erste Messung: 544 APs online, 1021 Clients an APs. Die Summe aller
+Clients blieb bei rund 3050 (vorher 3011 bis 3047); ohne das Abziehen beim
+Router wären es rund 4000 gewesen.
+
+Beteiligt sind zwei Forks in der Neanderfunk-Organisation, je Funktion ein
+Commit, erklärt in `NEANDERFUNK.md` im jeweiligen Fork:
+
+| Fork | Aufgabe |
+| --- | --- |
+| [Neanderfunk/unifi_respondd](https://github.com/Neanderfunk/unifi_respondd) | holt die APs aus dem Controller und meldet sie per respondd |
+| [Neanderfunk/yanic](https://github.com/Neanderfunk/yanic) | zieht die AP-Clients beim Router ab, zeichnet die Links richtig |
+
+## Wie es zusammenspielt
+
+1. **Zuordnung AP → Router.** `karte-unifi-zuordnung.timer` startet alle fünf
+   Minuten `karte-unifi-offloader neander --json
+   /var/lib/karte/unifi-zuordnung.json` (aus `werkzeug/unifi-offloader.py`).
+   Das liest die batman-Übersetzungstabellen: ein in-band verwalteter AP ist
+   für batman ein Client seines Routers. Die Datei wird zusammengeführt, ein
+   AP behält seinen letzten bekannten Router. Stand 25.09.2026: 587 APs mit
+   Router, darunter praktisch jeder, der online ist.
+2. **unifi_respondd** (`unifi-respondd.service`, `/opt/unifi_respondd`)
+   holt höchstens einmal je Minute Geräte, Clients und Funkwerte vom
+   Controller, liest dazu die Zuordnung und unsere nodelist
+   (`meshviewer.json`, für Domain und Gateway des Routers). Er lauscht auf
+   Port 1001 auf allen 43 batman-Instanzen der Community und beantwortet
+   jede Anfrage nur mit den APs, deren Router in der Domain dieser
+   Schnittstelle steht. So bekommt jeder Sammler im Mesh, auch ein fremder,
+   genau die APs seiner Domain. **APs ohne gemessenen Router meldet er
+   nicht**: ein falscher Router wäre schlimmer als ein fehlender AP.
+3. **yanic@neander** fragt wie immer alle 5 Minuten auf jeder batman-Instanz
+   (`ff02::1`) und bekommt die APs wie gewöhnliche Knoten. Erkannt werden sie
+   an `software.firmware.base = "UniFi"` (Schlüssel
+   `nodes.accesspoint_firmware`, Vorgabe `["UniFi"]`).
+
+## Was die Karte von einem AP zeigt
+
+- **Ort**: aus dem Feld SNMP Location im Controller, siehe "Koordinaten".
+  Ohne Koordinaten steht der AP in Liste, Graph und Statistik an seinem
+  Router, nur nicht auf der Landkarte. Einen Platzhalter wie 0/0 gibt es
+  nicht.
+- **Ortskarte**: der AP meldet den Ortscode (`site_code`) seines Routers und
+  erscheint damit auf derselben Ortskarte wie der Router.
+- **Linie zum Router**: als Kabel, mit voller Qualität auf beiden Seiten.
+  Den Link meldet nur der AP, der Router kennt ihn nicht als batman-Nachbarn;
+  yanic trägt die zweite Seite nach. Linien zwischen zwei APs (UniFi-Mesh
+  per Funk) bleiben Funk.
+- **Clients**: beim AP. Der Router zeigt nur noch seine eigenen, denn die
+  Clients hinter einem AP stehen in der Übersetzungstabelle als Clients des
+  Routers (gemessen: 836 von 837). yanic zieht sie beim Router ab, aber nie
+  unter dessen eigene WLAN-Clients. Gesamtsummen zählen jeden Client einmal.
+- **Airtime**: Kanalauslastung je Band aus dem Controller (`cu_total`,
+  `cu_self_rx`, `cu_self_tx`), so frisch wie der Controller, also einige
+  Minuten alt. unifi_respondd rechnet die Prozente in fortlaufende Zähler um,
+  wie Gluon sie liefert, yanic bildet daraus wieder dieselben Prozente.
+  Interferenz ist belegt minus eigene.
+- **Systemlast und Speicher**: die des AP selbst (`loadavg_1`, Speicher aus
+  dem Controller).
+- **Erstsichtung**: einmalig am 25.09.2026 aus dem Controller übernommen, siehe
+  `betrieb.md` ("Erstsichtung").
+- **Offline**: meldet der Controller den AP nicht mehr als verbunden, meldet
+  ihn unifi_respondd nicht mehr. yanic setzt ihn nach 20 Minuten auf offline,
+  mit "zuletzt gesehen", und räumt ihn nach 90 Tagen ab. APs, die seit dem
+  Einschalten nie online waren, stehen gar nicht auf der Karte.
+
+## Koordinaten
+
+Das Feld SNMP Location wird tolerant gelesen, Linie adorfer 25.09.2026:
+"Wir sollten die User nicht unnötig mit Pedanterie schikanieren, wo es hier
+nur ein paar Zeilen Code sind." Welche Schreibweisen gehen, steht für die
+Nutzer in der öffentlichen Anleitung (oben verlinkt, gepflegt von der
+Content-Session) und für Entwickler bei `parse_location()` im Fork samt
+Tests. Wer über einen unlesbaren Eintrag stolpert, erweitert den Code, nicht
+die Anleitung, und gibt der Content-Session Bescheid.
+
+Bewusste Grenze (mit adorfer abgestimmt): nichts raten, was die Bedeutung
+ändert. Keine Adresssuche (früher Nominatim, ein fremder Dienst), keine
+Kurzlinks, nichts Widersprüchliches (Minus und Himmelsrichtung zugleich,
+zweimal N), keine 0/0.
+
+Die Standortwahl der Karte bietet ein Feld "Breite, Länge", das sich direkt
+in den Controller kopieren lässt (Fork Neanderfunk/meshviewer).
+
+Gegenprobe eines Eintrags: mit dem Lesekonto die Geräte lesen,
+`parse_location()` darauf anwenden und den Abstand zum Router aus der
+nodelist prüfen; bei den ersten Einträgen lag er bei 7 bis 88 m.
+
+## Betrieb
+
+| Was | Wo |
+| --- | --- |
+| Dienst | `unifi-respondd.service`, Benutzer `unifi-respondd`, Port 1001 |
+| Code | `/opt/unifi_respondd` (Fork, Zweig `neanderfunk`), venv darin |
+| Konfiguration | bei jedem Start aus `karte-unifi-respondd-conf` (`sammler/unifi-respondd-conf.py`): `sitecodes.conf` + Zugang |
+| Zuordnung | `karte-unifi-zuordnung.timer`, Datei `/var/lib/karte/unifi-zuordnung.json` |
+| Einrichtung | `sudo ./sammler/unifi-einrichten.sh` (setzt `/etc/unifi_respondd/zugang` voraus) |
+| Überwachung | Checkmk `mapserver-unifi`: Dienst läuft, Zuordnung höchstens 30 min alt, APs online; höchstens WARN |
+
+**Aktualisieren:** Fork pflegen und pushen, dann auf map6
+`sudo ./sammler/unifi-einrichten.sh` oder von Hand `git -C /opt/unifi_respondd
+fetch` plus Checkout von `origin/neanderfunk` und
+`systemctl restart unifi-respondd`. yanic: `sudo ./sammler/einrichten.sh`
+baut aus dem Fork `Neanderfunk/yanic`.
+
+## Was normal ist und was nicht
+
+- **Nach einem Neustart von yanic** fehlen alle Links für 2 bis 5 Minuten,
+  bis zur ersten Sammelrunde: yanic speichert die Nachbarschaften nicht im
+  Zustand. War vor den Forks genauso.
+- **Nach einem Neustart von unifi_respondd** fehlt den APs für eine Runde
+  die Airtime (Zähler beginnen neu), wie bei einem Gluon-Knoten nach dem
+  Neustart.
+- **Alle APs gleichzeitig offline**: unifi_respondd oder der Controller
+  ausgefallen, oder das Lesekonto gesperrt. Checkmk meldet "kein AP online".
+  Journal: `journalctl -u unifi-respondd`; der Dienst schreibt nur Warnungen.
+- **Ein AP fehlt**: steht er in `/var/lib/karte/unifi-zuordnung.json`? Wenn
+  nicht, ist er out-of-band verwaltet oder sein Herstellerpräfix fehlt in
+  `werkzeug/unifi-offloader.py` (so fehlten bis 25.09.2026 80 APs mit vier
+  Präfixen).
+- **Airtime außerhalb 0 bis 100 %** in alten Daten: einmalig am 25.09.2026 um
+  11:02 beim Umstieg auf die Airtime-Zähler. Grafana und die Karte klammern
+  die Werte deshalb auf 0 bis 100.
+
+## Grenzen
+
+- **6 GHz** fehlt: yanic kennt nur 2,4 (11g) und 5 GHz (11a), ein drittes
+  Band überschriebe 5 GHz. Am 25.09.2026 meldet keiner der 545 APs ein
+  aktives 6-GHz-Modul.
+- **Rauschen** (noise) liefert der Controller nicht.
+- **Out-of-band verwaltete Installationen**: ihr Router lässt sich nicht
+  aus der Übersetzungstabelle messen, dort bräuchte es `offloader_mac` von
+  Hand; zwei solche Sites sind für unser Konto derzeit nicht sichtbar.
 
 ## In-band oder out-of-band
 
-Das entscheidet, ob wir die Zuordnung messen koennen.
+Das entscheidet, ob wir den Router eines AP messen können.
 
-**In-band** heisst: die Accesspoints beziehen ihre eigene Adresse aus dem
-Freifunk-Netz, ihre MAC steht in der Uebersetzungstabelle von batman, und
-`werkzeug/unifi-offloader.py` findet sie samt Offloader. So laeuft es beim
-LVR, dort stehen hunderte Geraete in den Tabellen.
+**In-band**: die Accesspoints beziehen ihre eigene Adresse aus dem
+Freifunk-Netz, ihre MAC steht in der Übersetzungstabelle von batman, und
+`werkzeug/unifi-offloader.py` findet sie samt Router.
 
-**Out-of-band** heisst: die Verwaltung liegt in einem eigenen VLAN, nur der
-Verkehr der Freifunk-SSID wird ins Client-Netz gebrueckt. Im Mesh stehen dann
-ausschliesslich die WLAN-Clients und kein einziger AP. So laeuft es in der
-Graf-Adolf-Strasse und im WIR-Haus; dort ist die Offloader-MAC von Hand zu
-ermitteln, am einfachsten ueber den Kartenlink des Knotens
-(`map.eulenfunk.de/#!v:m;n:<node_id>`, die node_id ist die MAC ohne
-Doppelpunkte).
+**Out-of-band**: die Verwaltung liegt in einem eigenen VLAN, nur der Verkehr
+der Freifunk-SSID wird ins Client-Netz gebrückt. Im Mesh stehen dann nur die
+WLAN-Clients und kein AP; der Router muss von Hand eingetragen werden
+(`offloader_mac` je Site), am einfachsten über den Kartenlink des Knotens.
 
-**Out-of-band ist der Normalfall**, zwei von drei bekannten Installationen
-arbeiten so. Die Messung aus den Tabellen ist die Ausnahme und lohnt vor
-allem dort, wo viele Geraete auf viele Domains verteilt sind.
+## Standorte, Konto und Zugänge
 
-## Offene Punkte
+Welche Sites es gibt, hinter welchen Routern sie hängen, das Konto am
+Controller und wo die Zugangsdaten liegen, steht nicht in diesem
+öffentlichen Repo, sondern im Betriebs-Repo der Supernode-Session
+(übergeben am 25.09.2026). Hier nur: der Dienst braucht ein Konto mit reinen
+Leserechten, er liest Sites, Geräte und Clients und schreibt nichts.
 
-- **Wuelfrath**: neben dem WIR-Knoten haengen drei Accesspoints hinter
-  `UK-Rathaus-5-OG1` (`18:d6:c7:51:66:36`) und `UK-Maushaeuschen-2`
-  (`18:d6:c7:51:66:5e`). Gehoeren die zur selben Site, zeichnet die Karte sie
-  trotzdem am WIR-Keller, weil je Site nur eine MAC eingetragen wird.
-- **Haan**: 30 Geraete mit Unifi-Herstellerpraefixen stehen dort in-band im
-  Mesh, ohne dass eine zugehoerige Installation bekannt waere. Ungeklaert.
-- **fflvr**: 615 Accesspoints in einer Site. Die Aufteilung in sieben ist
-  seit 24.09.2026 **nicht mehr vorgesehen**, siehe "Entscheidung" weiter unten.
-  Arbeitsliste in `unifi-fflvr-aufteilung.txt`, Anleitung fuer die dortige IT
-  in `docs/howto-unifi-freifunk-lvr.md` der Router-Werkstatt.
+## Vorgeschichte bis zur Inbetriebnahme
 
-## Betrieb von unifi_respondd
-
-**In Betrieb seit 25.09.2026, 10:50.** unifi_respondd läuft auf map6 als
-`unifi-respondd.service` (Fork github.com/Neanderfunk/unifi_respondd, Zweig
-`neanderfunk`, eingerichtet mit `sammler/unifi-einrichten.sh`), zusammen mit
-yanic aus dem Fork github.com/Neanderfunk/yanic, der die Clients der APs beim
-Router abzieht und die Links AP-Router beidseitig als Kabel zeichnet. Die
-Site `fflvr` wird nicht aufgeteilt: den Router je AP liefert
-`karte-unifi-zuordnung.timer` alle fünf Minuten aus der
-batman-Übersetzungstabelle. APs ohne gemessenen Router meldet unifi_respondd
-nicht (kein Rückfall auf einen Router der Site), ein falscher Router wäre
-schlimmer als ein fehlender AP.
-
-Erste Messung nach dem Einschalten: 544 APs online auf der Karte, 1021
-Clients an APs; die Summe aller Clients blieb bei rund 3050 (vorher 3011 bis
-3047), ohne das Abziehen wären es rund 4000 gewesen. Überwacht von Checkmk
-als `mapserver-unifi`.
-
-Zugangsdaten: `/etc/unifi_respondd/zugang` (0600 root), daraus erzeugt der
-Dienst bei jedem Start `/etc/unifi_respondd/unifi_respondd.yaml` (0640
-root:unifi-respondd).
-
-### Controller und Zugang
-
-- **Ein Controller für alle drei Sites:** `https://unifi.ffnef.de/`, betrieben
-  von uns. `fflvr`, `ffdus-unterkunft-west` und `Nef-Wlf` liegen dort
-  nebeneinander. Die Betreuenden beim LVR arbeiten in ihrer Site auf diesem
-  Controller, nicht auf einem eigenen.
-- **Erreichbarkeit:** öffentlich über IPv4 und IPv6, Port 443 und 8443 offen.
-  Von map6 aus am 24.09.2026 geprüft. Es braucht also weder VPN noch eine
-  Freigabe für eine bestimmte Adresse.
-- **Konto:** ein Konto mit reinen Leserechten. Damit wurden am 21.09.2026 alle
-  Sites, Geräte und Clients gelesen, daraus entstand
-  `unifi-fflvr-aufteilung.txt`. unifi_respondd selbst liest nur Sites, Geräte
-  und Clients und schreibt nichts, mehr Rechte braucht es also nicht.
-- **Wo die Zugangsdaten liegen:** auf dem Arbeitsrechner unter
-  `~/.config/neanderfunk/unifi-ffnef-login` (600), nicht auf map6 und nicht
-  im Git. Beim Einrichten gehören sie in die Konfiguration von unifi_respondd
-  auf map6, Datei 600, Eigentümer der Dienstbenutzer.
+Die folgenden Abschnitte beschreiben den Weg bis zum 25.09.2026 und bleiben
+stehen, weil sie Entscheidungen begründen. Wo sie vom heutigen Stand
+abweichen, gilt der Teil oben.
 
 ### Gegenprobe vom 24.09.2026
 
@@ -108,15 +187,8 @@ belegt:
   stehen. Es gibt also auch anderswo keinen Dienst, der eine der Karten
   beliefert.
 
-Beim Blick in den Controller (lesend, eigenes Konto):
-
-| | |
-| --- | --- |
-| Controller-Version | 10.2.105 |
-| Sites, die unser Lesekonto sieht | nur `fflvr` |
-| APs in `fflvr` | 615, davon 547 online |
-| davon mit Koordinaten in SNMP Location | **0** |
-| ausgestrahlte SSIDs | `Freifunk`, `FreifunkStreaming` |
+Der Blick in den Controller (lesend, eigenes Konto) ergab: keiner der
+APs hatte Koordinaten; Einzelheiten im Betriebs-Repo.
 
 ### Was fehlt, damit er läuft
 
@@ -155,10 +227,10 @@ auch nach einem Umstecken. Findet sich ein AP nicht (offline oder
 out-of-band), gilt wie bisher `offloader_mac` der Site.
 
 Die Betreuenden tragen nur Koordinaten ein. Sites mit getrenntem
-Verwaltungsnetz (out-of-band, etwa GASt73 und WIR-Haus) ordnen wir selbst
+Verwaltungsnetz (out-of-band) ordnen wir selbst
 über `offloader_mac` zu. Die Anleitungen (öffentlich in freifunk-docs, für den
 LVR in freifunk-content) passt die Content-Session an.
-`unifi-fflvr-aufteilung.txt` ist damit überholt.
+Die Aufteilungsliste von damals ist damit überholt.
 
 #### Bauplan (Stand 24.09.2026, gebaut, noch nicht in Betrieb)
 
@@ -266,7 +338,7 @@ geschrieben werden. Als Schema nehmen wir den Namen der Domain auf unserer
 Karte (Spalte `host` in `tunnel/domains.conf`, z.B. `lvr-hph-nordost`,
 `dus-unterkuenfte-west`, `wuelfrath`). Teilen sich mehrere Einrichtungen eine
 Domain auf unserem Controller, bekommt jede ihre eigene Site mit angehängter
-Einrichtung (`wuelfrath-wir-haus`), damit die Rechte getrennt bleiben.
+Einrichtung (`<ort>-<einrichtung>`), damit die Rechte getrennt bleiben.
 
 ### Offene Einstellungen für die Inbetriebnahme
 
@@ -276,8 +348,10 @@ Einrichtung (`wuelfrath-wir-haus`), damit die Rechte getrennt bleiben.
   SSID nicht passt, erscheint nicht auf der Karte. Beim LVR laufen `Freifunk`
   und `FreifunkStreaming`, beide passen auf `.*freifunk.*`. Ob
   `FreifunkStreaming` überhaupt ins Freifunk-Netz führt, ist noch zu klären;
-  sonst zählen seine Clients fälschlich mit.
-- **`controller_port`** 443 für `unifi.ffnef.de`, nicht die 8443 aus dem
+  sonst zählen seine Clients fälschlich mit. (Geklärt 25.09.2026: 32 von 37
+  seiner Clients standen in der Übersetzungstabelle, es führt ins Freifunk-Netz,
+  die Clients zählen zu Recht.)
+- **`controller_port`** 443 für unseren Controller, nicht die 8443 aus dem
   Beispiel; beide sind offen, 443 ist der Weg, den auch der Browser nimmt.
 - **`version`** passend zur Controller-Software setzen (`v5` im Beispiel,
   `UDMP-unifiOS` bei UniFi OS). Unser Controller ist Version 10.2.105 und
@@ -304,10 +378,13 @@ einzelner Gluon-Knoten mit 0/0 den Ausschnitt nicht aufzieht.
 Damit sind die Koordinaten beim LVR kein Hindernis mehr für den Start, nur
 noch für die Kartenansicht.
 
-### Koordinaten: Zahlen, kein Freitext
+### Koordinaten: Zahlen, kein Freitext (überholt)
 
 Steht im Feld SNMP Location ein Freitext statt eines Koordinatenpaars, schickt
 unifi_respondd ihn an Nominatim, den Geocoder von OpenStreetMap. Das ist ein
 fremder Dienst, und schlägt die Suche fehl, setzt er 0/0: der AP landet dann
 auf "Null Island" im Golf von Guinea. Die Anleitung für die Betreuenden
-verlangt deshalb Zahlen (`51.2506, 6.9746`).
+verlangte deshalb Zahlen (`51.2506, 6.9746`).
+
+Überholt am 25.09.2026: Der Fork fragt Nominatim nicht mehr und liest
+gängige Schreibweisen selbst, siehe "Koordinaten" oben.

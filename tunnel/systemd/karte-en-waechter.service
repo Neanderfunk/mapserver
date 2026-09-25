@@ -1,6 +1,6 @@
 [Unit]
 Description=Wacht ueber die Tunnel zu den Freifunk-Domains
-Documentation=file:///home/ad-claude/mapserver/tunnel/waechter.sh
+Documentation=https://github.com/Neanderfunk/mapserver/blob/main/tunnel/waechter.sh
 
 [Service]
 Type=oneshot

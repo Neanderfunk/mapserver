@@ -25,8 +25,8 @@ Grenze des Verfahrens: es findet nur Accesspoints, die **in-band** verwaltet
 werden, deren eigene MAC also im Freifunk-Netz auftaucht. Liegt die Verwaltung
 in einem eigenen VLAN und wird nur der SSID-Verkehr ins Client-Netz gebrueckt,
 stehen im Mesh ausschliesslich die WLAN-Clients und kein einziger AP. Gemessen
-am 21.09.2026: beim LVR in-band und hunderte Treffer, in der
-Graf-Adolf-Strasse getrennt und kein einziger. Dort muss die Offloader-MAC von
+am 21.09.2026: beim LVR in-band und hunderte Treffer, bei einer out-of-band
+verwalteten Installation kein einziger. Dort muss die Offloader-MAC von
 Hand kommen, etwa aus dem Kartenlink des Knotens.
 """
 import argparse
@@ -49,10 +49,10 @@ UBIQUITI = (
     'd0:21:f9', 'dc:9f:db', '04:18:d6', '9c:05:d6', '28:70:4e', 'ac:8b:a9',
     '78:45:58', 'f0:9f:c2', '60:22:32', 'e4:38:83',
     # U6-Serie; fehlte anfangs, deshalb sah die Domain 24_dusukw leer aus
-    # (adorfer 21.09.2026, Screenshot des Switches in Graf-Adolf-Str. 73)
+    # (adorfer 21.09.2026, Screenshot eines Switches)
     '0c:ea:14', '9c:29:76', '94:2a:6f', 'd0:ee:0c', '70:a7:41',
     # Aus dem Abgleich mit dem Controller (25.09.2026): 80 der 615 LVR-APs
-    # fehlten allein wegen dieser Praefixe, darunter Aequatorweg #2
+    # fehlten allein wegen dieser Praefixe
     'f4:e2:c6', '74:ac:b9', 'd8:b3:70', '8c:30:66',
 )
 

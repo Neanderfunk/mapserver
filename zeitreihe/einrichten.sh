@@ -58,6 +58,7 @@ install -m 0644 "$HIER/grafana/dashboards.yaml" /etc/grafana/provisioning/dashbo
 python3 "$HIER/grafana/dashboard-erzeugen.py" > /var/lib/grafana/dashboards/knoten.json
 python3 "$HIER/grafana/dashboard-erzeugen.py" supernode > /var/lib/grafana/dashboards/supernode.json
 python3 "$HIER/grafana/dashboard-erzeugen.py" domain > /var/lib/grafana/dashboards/domain.json
+python3 "$HIER/grafana/dashboard-erzeugen.py" community > /var/lib/grafana/dashboards/community.json
 chown -R grafana:grafana /var/lib/grafana/dashboards
 systemctl daemon-reload
 systemctl enable grafana-server

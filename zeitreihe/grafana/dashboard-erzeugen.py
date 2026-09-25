@@ -3,6 +3,7 @@
 """Erzeugt das Grafana-Dashboard eines Knotens.
 
   dashboard-erzeugen.py > /var/lib/grafana/dashboards/knoten.json
+  dashboard-erzeugen.py community|domain|supernode > .../<name>.json
 
 Das Dashboard ist die Vertiefung hinter dem Link im Knotenfenster der Karte.
 Die Karte selbst zeichnet ihre Diagramme ohne Grafana, siehe zeitreihe/ und
@@ -428,7 +429,7 @@ DOMAIN_VARIABLEN = [
 ]
 
 
-def zahl(nr, titel, ausdruck, x, w=6, einheit='', beschreibung='', warnung=None):
+def zahl(nr, titel, ausdruck, x, w=6, einheit='', beschreibung='', warnung=None, y=0):
     feld = {'unit': einheit, 'decimals': 0}
     if warnung is not None:
         feld['thresholds'] = {'mode': 'absolute', 'steps': [
@@ -436,7 +437,7 @@ def zahl(nr, titel, ausdruck, x, w=6, einheit='', beschreibung='', warnung=None)
     return {
         'id': nr, 'title': titel, 'type': 'stat', 'datasource': QUELLE,
         'description': beschreibung,
-        'gridPos': {'h': 5, 'w': w, 'x': x, 'y': 0},
+        'gridPos': {'h': 5, 'w': w, 'x': x, 'y': y},
         'targets': [dict(ziel(ausdruck, '', 'A'), instant=True, range=False)],
         'fieldConfig': {'defaults': feld, 'overrides': []},
         'options': {'colorMode': 'value', 'graphMode': 'area', 'textMode': 'auto',
@@ -535,6 +536,193 @@ DOMAIN = {
 }
 
 
+# --- Community ----------------------------------------------------------------
+# Die Gesamtsicht (adorfer 25.09.2026, Vorbild die "Global"-Seite der alten
+# Karte): grosse Zahlen fuer das, was jetzt gilt, Verlaeufe fuer das, woran
+# man einen Trend sieht, etwa das Ausrollen einer Firmware oder den Austausch
+# alter Hardware.
+#
+# Gezaehlt wird aus den Knotenmetriken und nicht aus yanics fertigen Zaehlern
+# (firmware_count, model_count): die mischen Gluon-Knoten, UniFi-APs und
+# Supernodes. Hier stehen die drei Arten getrennt.
+#
+# Verkehr nur ueber die Gluon-Knoten: was ein AP uebertraegt, laeuft auch ueber
+# das LAN seines Routers, und die Gateways sehen alles noch einmal.
+#
+# $domain waehlt Domains aus (mehrere, oder alle). Die Knoten tragen den
+# gemeldeten site_code (nef-05_mon, lvrso-35_lvrso_EOL), die Auswahl den
+# Domaincode (05_mon); der steckt in jedem site_code.
+FENSTER = '[10m]'   # yanic fragt alle 5 Minuten
+AUSWAHL = 'site=~".*(${domain:regex}).*"'
+GLUON = 'firmware_base=~"gluon.*", ' + AUSWAHL
+UNIFI = 'firmware_base="UniFi", ' + AUSWAHL
+GATEWAY = 'is_gateway="true"'
+
+
+def jetzt(metrik, filter_):
+    return 'last_over_time({__name__="%s", %s}%s)' % (metrik, filter_, FENSTER)
+
+
+def knoten(filter_):
+    """Knoten, die gerade antworten, je Knoten einmal (ein Firmwarewechsel
+    macht fuer ein paar Minuten zwei Reihen daraus)."""
+    return 'count(count by (nodeid) (%s))' % jetzt('node_load', filter_)
+
+
+def verteilung(label, filter_, leer='unbekannt'):
+    return ('label_replace(count by (%s) (%s), "%s", "%s", "%s", "")'
+            % (label, jetzt('node_load', filter_), label, leer, label))
+
+
+def verkehr(richtung):
+    return ('sum(rate({__name__="node_traffic.%s.bytes", %s}[$__rate_interval])) * 8'
+            % (richtung, GLUON))
+
+
+COMMUNITY_VARIABLEN = [
+    {'name': 'domain', 'label': 'Domain', 'type': 'query', 'datasource': QUELLE,
+     'query': {'qryType': 1, 'query': 'label_values(tt_clients, domain)',
+               'refId': 'domain'},
+     'definition': 'label_values(tt_clients, domain)',
+     'refresh': 1, 'sort': 1, 'includeAll': True, 'allValue': '.*', 'multi': True,
+     'current': {'selected': True, 'text': ['All'], 'value': ['$__all']},
+     'options': []},
+]
+
+TAG = 86400
+
+COMMUNITY_PANELS = [
+    # Erste Zeile: wer ist da
+    zahl(100, 'Freifunk-Knoten online', knoten(GLUON), 0, w=4,
+         beschreibung='Gluon-Knoten, die in den letzten 10 Minuten geantwortet haben.'),
+    zahl(101, 'Knoten offline', 'count(count by (nodeid) (last_over_time({__name__="node_load", '
+         + GLUON + '}[7d]))) - ' + knoten(GLUON), 4, w=4,
+         beschreibung='In den letzten 7 Tagen gesehen, jetzt nicht.'),
+    zahl(102, 'UniFi-APs online', knoten(UNIFI), 8, w=4,
+         beschreibung='Accesspoints aus dem UniFi-Controller, die an einem Freifunk-Router haengen.'),
+    zahl(103, 'Gateways', knoten(GATEWAY), 12, w=4,
+         beschreibung='Supernode-Instanzen, die antworten. Unabhaengig von der Domainauswahl.'),
+    zahl(104, 'Clients', 'sum(' + jetzt('node_clients.total', 'is_gateway="false", ' + AUSWAHL) + ')',
+         16, w=8,
+         beschreibung='Summe ueber Knoten und APs; Clients an einem AP zaehlen nur dort, '
+                      'nicht noch einmal beim Router.'),
+    # Zweite Zeile: was laeuft
+    zahl(105, 'Download jetzt', verkehr('rx'), 0, einheit='bps', y=5,
+         beschreibung='Was die Knoten an ihre Clients ausliefern, Summe ueber alle Gluon-Knoten.'),
+    zahl(106, 'Upload jetzt', verkehr('tx'), 6, einheit='bps', y=5,
+         beschreibung='Was die Clients ueber die Knoten ins Netz schicken.'),
+    zahl(107, 'Laufzeit im Mittel', 'avg(' + jetzt('node_time.up', GLUON) + ') / %d' % TAG,
+         12, einheit='d', y=5, beschreibung='Tage seit dem letzten Start, Mittel ueber die Gluon-Knoten.'),
+    zahl(108, 'Laufzeit hoechste', 'max(' + jetzt('node_time.up', GLUON) + ') / %d' % TAG,
+         18, einheit='d', y=5, beschreibung='Der Knoten, der am laengsten durchlaeuft.'),
+
+    panel(1, 'Knoten', [
+        ziel(knoten(GLUON), 'Freifunk-Knoten', 'A'),
+        ziel(knoten(UNIFI), 'UniFi-APs', 'B'),
+        ziel(knoten(GATEWAY), 'Gateways', 'C'),
+    ], 0, 10, min_=0),
+    panel(2, 'Clients', [
+        ziel('sum(' + jetzt('node_clients.total', 'is_gateway="false", ' + AUSWAHL) + ')', 'gesamt', 'A'),
+        ziel('sum(' + jetzt('node_clients.total', UNIFI) + ')', 'davon an UniFi-APs', 'B'),
+        ziel('sum(' + jetzt('node_clients.wifi24', 'is_gateway="false", ' + AUSWAHL) + ')', '2,4 GHz', 'C'),
+        ziel('sum(' + jetzt('node_clients.wifi5', 'is_gateway="false", ' + AUSWAHL) + ')', '5 GHz', 'D'),
+    ], 12, 10, min_=0),
+
+    panel(3, 'Verkehr', [
+        ziel(verkehr('rx'), 'Download', 'A'),
+        ziel(verkehr('tx'), 'Upload', 'B'),
+        ziel(verkehr('forward'), 'weitergeleitet', 'C'),
+        ziel(verkehr('mgmt_rx'), 'Verwaltung empfangen', 'D'),
+        ziel(verkehr('mgmt_tx'), 'Verwaltung gesendet', 'E'),
+    ], 0, 18, einheit='bps', min_=0,
+        beschreibung='Summe ueber die Gluon-Knoten, aus deren Sicht. Verwaltung ist der '
+                     'batman-eigene Verkehr.'),
+    # Was ein Knoten empfaengt, hat ein Gateway gesendet, und umgekehrt: beide
+    # Summen muessen fast gleich sein (am 25.09.2026: 764 zu 771 Mbit/s und
+    # 65,2 zu 64,8 Mbit/s). Deshalb zaehlt oben nur eine Seite; zusammengezaehlt
+    # waere es glatt verdoppelt (adorfer). Gehen die Linien auseinander, misst
+    # eine Seite falsch oder es laeuft viel Verkehr direkt zwischen Knoten.
+    panel(13, 'Gegenprobe: Knoten und Gateways', [
+        ziel(verkehr('rx'), 'Knoten empfangen', 'A'),
+        ziel('sum(rate({__name__="node_traffic.tx.bytes", %s}[$__rate_interval])) * 8' % GATEWAY,
+             'Gateways gesendet', 'B'),
+        ziel(verkehr('tx'), 'Knoten gesendet', 'C'),
+        ziel('sum(rate({__name__="node_traffic.rx.bytes", %s}[$__rate_interval])) * 8' % GATEWAY,
+             'Gateways empfangen', 'D'),
+    ], 0, 74, w=24, einheit='bps', min_=0,
+        beschreibung='Je zwei Linien sollten aufeinanderliegen. Gilt fuer alle Domains; '
+                     'die Gateways lassen sich nicht nach Domain auswaehlen.'),
+    panel(4, 'Datenmenge je Tag', [
+        ziel('sum(increase({__name__="node_traffic.rx.bytes", %s}[1d]))' % GLUON, 'Download', 'A', '1d'),
+        ziel('sum(increase({__name__="node_traffic.tx.bytes", %s}[1d]))' % GLUON, 'Upload', 'B', '1d'),
+    ], 12, 18, einheit='bytes', min_=0, balken=True, stapeln=True),
+
+    panel(5, 'Laufzeit', [
+        ziel('avg(' + jetzt('node_time.up', GLUON) + ') / %d' % TAG, 'Mittel', 'A'),
+        ziel('quantile(0.5, ' + jetzt('node_time.up', GLUON) + ') / %d' % TAG, 'Median', 'B'),
+        ziel('max(' + jetzt('node_time.up', GLUON) + ') / %d' % TAG, 'hoechste', 'C'),
+    ], 0, 26, einheit='d', min_=0,
+        beschreibung='Tage seit dem letzten Start. Der woechentliche Neustart (Do 3:15) '
+                     'begrenzt die meisten Knoten auf sieben Tage.'),
+    panel(6, 'Autoupdater', [
+        ziel(verteilung('autoupdater', GLUON), '{{autoupdater}}', 'A'),
+    ], 12, 26, min_=0, stapeln=True,
+        beschreibung='Zweig, dem die Knoten folgen.'),
+
+    panel(7, 'Firmware', [
+        ziel(verteilung('firmware_release', GLUON), '{{firmware_release}}', 'A'),
+    ], 0, 34, w=24, h=10, min_=0, stapeln=True,
+        beschreibung='Gluon-Knoten je Firmwarestand, gestapelt. Beim Ausrollen wandert die '
+                     'Flaeche von einem Stand zum naechsten.'),
+
+    panel(8, 'Targets', [
+        ziel(verteilung('firmware_target', GLUON), '{{firmware_target}}', 'A'),
+    ], 0, 44, min_=0, stapeln=True,
+        beschreibung='Plattform der Gluon-Knoten. "unbekannt": aeltere Firmware meldet sie nicht.'),
+    panel(9, 'Arbeitsspeicher', [
+        ziel('count(count by (nodeid) (%s < 40000))' % jetzt('node_memory.total', GLUON), 'bis 32 MB', 'A'),
+        ziel('count(count by (nodeid) (%s >= 40000 < 80000))' % jetzt('node_memory.total', GLUON), '64 MB', 'B'),
+        ziel('count(count by (nodeid) (%s >= 80000 < 160000))' % jetzt('node_memory.total', GLUON), '128 MB', 'C'),
+        ziel('count(count by (nodeid) (%s >= 160000))' % jetzt('node_memory.total', GLUON), '256 MB und mehr', 'D'),
+    ], 12, 44, min_=0, stapeln=True,
+        beschreibung='Gluon-Knoten nach Arbeitsspeicher. Beim Austausch alter Hardware '
+                     'schrumpfen die unteren Klassen.'),
+
+    panel(10, 'Geraete', [
+        ziel('topk_last(20, ' + verteilung('model', GLUON) + ', "model=andere")', '{{model}}', 'A'),
+    ], 0, 52, w=24, h=12, min_=0, stapeln=True,
+        beschreibung='Die 20 haeufigsten Modelle der Gluon-Knoten, der Rest als "andere".'),
+
+    panel(11, 'UniFi-APs: Firmware', [
+        ziel(verteilung('firmware_release', UNIFI), '{{firmware_release}}', 'A'),
+    ], 0, 64, min_=0, stapeln=True),
+    panel(12, 'UniFi-APs: Modelle', [
+        ziel(verteilung('model', UNIFI), '{{model}}', 'A'),
+    ], 12, 64, min_=0, stapeln=True),
+]
+
+
+COMMUNITY = {
+    'uid': 'nf-community',
+    'title': 'Community',
+    'description': 'Gesamtsicht: Knoten, APs, Gateways, Clients, Verkehr, Laufzeit, '
+                   'Firmware- und Hardwarestaende im Verlauf.',
+    'tags': ['neanderfunk'],
+    'timezone': 'browser',
+    'schemaVersion': 39,
+    'version': 1,
+    'refresh': '5m',
+    'time': {'from': 'now-30d', 'to': 'now'},
+    'templating': {'list': COMMUNITY_VARIABLEN},
+    'panels': COMMUNITY_PANELS,
+    'editable': False,
+    'graphTooltip': 1,
+    'links': [{'type': 'dashboards', 'tags': ['neanderfunk'], 'title': 'Weitere',
+               'asDropdown': True, 'icon': 'external link', 'includeVars': False,
+               'keepTime': True, 'targetBlank': False}],
+}
+
+
 DASHBOARD = {
     'uid': 'nf-knoten',
     'title': 'Knoten',
@@ -579,7 +767,8 @@ SUPERNODE = {
 
 def main():
     was = sys.argv[1] if len(sys.argv) > 1 else 'knoten'
-    json.dump({'supernode': SUPERNODE, 'domain': DOMAIN}.get(was, DASHBOARD),
+    json.dump({'supernode': SUPERNODE, 'domain': DOMAIN,
+               'community': COMMUNITY}.get(was, DASHBOARD),
               sys.stdout, ensure_ascii=False, indent=1)
     print()
     return 0

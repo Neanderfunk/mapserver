@@ -73,6 +73,13 @@ yanic nicht schreibt.
 
 ## Typische Störungen
 
+**IPv6-Nachbartabelle voll.** Kernel: "neighbor table overflow!", Dienste
+scheitern bei `sendto` mit Errno 22 (EINVAL). Mit der Debian-Vorgabe
+(`gc_thresh3` 1024) geschah das am 25.09.2026 in jeder Sammelrunde,
+unifi-respondd stürzte alle fünf Minuten ab. Seitdem `vm/sysctl-neighbours.conf`
+(16384). Prüfen: `journalctl -k | grep -c "neighbor table overflow"`,
+`sysctl net.ipv6.neigh.default.gc_thresh3`.
+
 **Eine Domain verschwindet aus der Karte.** Meist der Tunnel. `systemctl
 status karte-en-tunnel@<code>` und `journalctl -u karte-en-tunnel@<code>`.
 Der Client wiederholt von selbst, `Restart=always` mit 15 Sekunden Abstand.
@@ -152,6 +159,30 @@ Community ist Freifunk Essen (Not-Karte für mitfunken.freifunk.space).
 Achtung: `tunnel/einrichten.sh` schaltet am Ende die Tunnel **aller**
 Domains ein, auch ruhender Communities (EN). Neue Domains deshalb einzeln
 einspielen (Dateien installieren, `systemctl enable --now karte-en-tunnel@<code>`).
+
+## Der Kartenserver als Knoten (mesh-announce)
+
+Seit 26.09.2026 beantwortet map6 respondd in jedem Mesh, in dem er hängt,
+auch für sich selbst. Vorher war er für andere Karten ein "dunkler Knoten":
+batman-Originator ohne Namen und Kontakt (adorfer: "nicht dass ausgerechnet
+wir für andere ein dunkler Knoten sind").
+
+- **Dienst:** `mesh-announce.service`, ffnord/mesh-announce auf festem Commit
+  in `/opt/mesh-announce` (dasselbe wie auf den Supernodes), eingerichtet mit
+  `sammler/mesh-announce-einrichten.sh`. Läuft als root, weil batctl die
+  Nachbarn nur root zeigt, sonst eingesperrt.
+- **Was er meldet:** je aktiver batman-Instanz einen Knoten
+  `map-neanderfunk-<code>`, Kontakt `projekt@neanderfunk.de`, Modell
+  "Kartenserver (VM)", `vpn: false`, den Tunnel als Mesh-Interface und den
+  Supernode als batman-Nachbarn. Ruhende Communities (EN) nicht.
+- **Konfiguration:** bei jedem Start aus `domains.conf`
+  (`karte-mesh-announce-conf`). mesh-announce tritt den Multicast-Gruppen nur
+  beim Start bei; der Watchdog startet ihn neu, wenn Domains dazukommen oder
+  einer batman-Instanz die Gruppe `ff02::2:1001` fehlt.
+- **Port 1001** teilt er sich mit unifi-respondd, beide mit `SO_REUSEADDR`.
+  Multicast-Anfragen bekommen beide, eine Unicast-Nachfrage nur einer; yanic
+  fragt per Unicast nur nach, wer auf den Multicast der Runde nicht
+  geantwortet hat, das kostet also höchstens eine Runde.
 
 ## Eine Community in den Standby nehmen
 

@@ -6,7 +6,10 @@
 set -euo pipefail
 
 HIER=$(cd "$(dirname "$0")" && pwd)
-YANIC_TAG=v1.9.0
+# Unser Fork: Upstream v1.9.0 plus je Funktion ein Commit, siehe
+# NEANDERFUNK.md dort. Die frueheren Patchdateien sind darin aufgegangen.
+YANIC_QUELLE=https://github.com/Neanderfunk/yanic
+YANIC_ZWEIG=neanderfunk
 BAU=/usr/local/src/yanic
 WEB=/var/www/karte-en/sites
 
@@ -18,25 +21,19 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -y -qq golang-go git
 
-echo "== yanic bauen ($YANIC_TAG) =="
+echo "== yanic bauen ($YANIC_QUELLE, Zweig $YANIC_ZWEIG) =="
 if [ ! -d "$BAU/.git" ]; then
-	git clone -q https://codeberg.org/FreifunkBremen/yanic.git "$BAU"
+	git clone -q -b "$YANIC_ZWEIG" "$YANIC_QUELLE" "$BAU"
 fi
-git -C "$BAU" fetch -q --tags origin
-git -C "$BAU" checkout -q --force "$YANIC_TAG"
-# Neue Dateien aus den Patches sind unversioniert, checkout laesst sie
-# liegen, und git apply scheitert beim zweiten Lauf daran.
+# Ein Baum von frueher zeigt noch auf Codeberg; auf den Fork umstellen.
+git -C "$BAU" remote set-url origin "$YANIC_QUELLE"
+# Ausdruecklicher Refspec: ein Klon mit nur einem Zweig legt sonst
+# origin/<zweig> fuer andere Zweige nicht an.
+git -C "$BAU" fetch -q origin "+refs/heads/$YANIC_ZWEIG:refs/remotes/origin/$YANIC_ZWEIG"
+git -C "$BAU" checkout -q --force "origin/$YANIC_ZWEIG"
+# Reste der frueheren Patchdateien (unversionierte neue Dateien) entfernen.
 git -C "$BAU" clean -fdq
-# Zwei lokale Eingriffe in yanic, beide nicht upstream:
-# - yanic-seeds.patch: fragt zusaetzlich Adressen aus einer Datei mit. Noetig
-#   fuer Netze, die unseren Rundruf nicht an ihre Knoten zustellen; siehe
-#   docs/hintergrund.md.
-# - yanic-neanderfunk.patch: liest statistics.neanderfunk (Gluon-Paket
-#   neanderfunk-respondd) und schreibt es in die Zeitreihen (22.09.2026,
-#   Auftrag adorfer fuer die Paketfeed-Session). Mit Tests.
-git -C "$BAU" apply "$HIER/patches/yanic-seeds.patch"
-git -C "$BAU" apply "$HIER/patches/yanic-neanderfunk.patch"
-( cd "$BAU" && GOFLAGS=-mod=mod go test ./data/ ./database/influxdb/ )
+( cd "$BAU" && GOFLAGS=-mod=mod go test ./data/ ./database/influxdb/ ./runtime/ ./output/meshviewer-ffrgb/ )
 ( cd "$BAU" && GOFLAGS=-mod=mod go build -o /usr/local/bin/yanic . )
 /usr/local/bin/yanic --version 2>&1 | head -2 || true
 

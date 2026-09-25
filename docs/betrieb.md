@@ -269,7 +269,8 @@ andere unter `/nf/prom/` gibt 403.
 - Beispiel: `curl -s 'https://neander.map.freifunk.space/nf/prom/api/v1/query' --data-urlencode 'query={__name__="node_memory.available",nodeid="bc7ec351c4a4"}'`
   (Metriknamen mit Punkt gehen nur über `__name__`).
 - **Neanderfunk-Felder** aus `statistics.neanderfunk` (Paket
-  neanderfunk-respondd) liest yanic erst durch `patches/yanic-neanderfunk.patch`:
+  neanderfunk-respondd) liest yanic erst durch den Commit "statistics.neanderfunk" im Fork
+  Neanderfunk/yanic:
 
   | Metrik | Art | Labels zusätzlich |
   | --- | --- | --- |
@@ -511,7 +512,7 @@ Minute nach dem Start stehen wieder Daten.
 
 ## Aktualisieren
 
-**Eigene Forks (seit 25.09.2026).** meshviewer und unifi_respondd kommen aus
+**Eigene Forks (seit 25.09.2026).** yanic, meshviewer und unifi_respondd kommen aus
 unseren Forks in der Neanderfunk-Organisation, jeweils Zweig `neanderfunk`:
 Upstream-Stand plus unsere Änderungen, **je Funktion ein Commit**, erklärt in
 `NEANDERFUNK.md` im Fork.
@@ -520,6 +521,7 @@ Upstream-Stand plus unsere Änderungen, **je Funktion ein Commit**, erklärt in
 | --- | --- | --- |
 | [Neanderfunk/meshviewer](https://github.com/Neanderfunk/meshviewer) | freifunk/meshviewer | `6c68e3d` (18.09.2026) |
 | [Neanderfunk/unifi_respondd](https://github.com/Neanderfunk/unifi_respondd) | freifunkMUC/unifi_respondd | `6976651` (18.09.2026) |
+| [Neanderfunk/yanic](https://github.com/Neanderfunk/yanic) | FreifunkBremen/yanic (Codeberg) | `v1.9.0` |
 
 Bis dahin waren es Patchdateien in diesem Repo. adorfers Regel: kleine
 Ergänzungen als Patch, sobald bestehende Logik umgebaut wird oder
@@ -530,10 +532,10 @@ ausgelieferten Fassung zugänglich zu machen.
 
 Upstream nachziehen: im Fork `git fetch upstream`, `neanderfunk` auf den
 neuen Stand rebasen, Tests laufen lassen, pushen, dann hier
-`sudo ./web/einrichten.sh`. yanic ist noch Patchdatei
-(`sammler/patches/`), soll aber ebenfalls ein Fork werden, sobald die
-nächsten Umbauten anstehen (Links von beiden Seiten, Clients der APs vom
-Knoten abziehen).
+`sudo ./web/einrichten.sh` bzw. `sudo ./sammler/einrichten.sh`. yanic kam
+als letzter dazu, mit den Umbauten für die Accesspoints (Clients der APs
+beim Router abziehen, Links von beiden Seiten); vorher zwei Patchdateien in
+`sammler/patches/`, jetzt die ersten beiden Commits im Fork.
 
 **meshviewer** neu bauen, wenn es Neues gibt:
 

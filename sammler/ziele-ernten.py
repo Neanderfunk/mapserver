@@ -13,7 +13,7 @@ EUI-64 ist genau die Link-Local-Adresse, auf der respondd lauscht.
 
 Hier wird einmal je Lauf durchprobiert und nur aufgeschrieben, wer wirklich
 geantwortet hat. yanic fragt die Liste danach in jeder Runde mit, ueber den
-mit patches/yanic-seeds.patch ergaenzten Weg. Die Knoten antworten dann an
+im Fork Neanderfunk/yanic ergaenzten Weg (seeds). Die Knoten antworten dann an
 yanics eigenen Socket, und ab da sind sie fuer yanic gewoehnliche Knoten.
 """
 import argparse

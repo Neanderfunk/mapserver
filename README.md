@@ -30,6 +30,8 @@ wieder eine eigene Karte, ruht unsere und leitet dorthin weiter.
   samt UniFi-APs, Diagrammen und Grafana unter `/grafana/`.
 - Ortskarten `<ort>.neander.map.freifunk.space` sind gebaut und kommen mit dem
   Umzug, wenn diese Karte `map.eulenfunk.de` ablöst.
+- Not-Karten: Freifunk Essen (`essen.map.freifunk.space`, per fastd).
+  Einbeck und Hildesheim sind in Vorbereitung.
 - `map.freifunk.space` zeigt bis dahin auf `map.eulenfunk.de` und wird hier
   nicht angefasst.
 
@@ -37,7 +39,7 @@ wieder eine eigene Karte, ruht unsere und leitet dorthin weiter.
 
 | Schicht | Wahl | Bemerkung |
 | --- | --- | --- |
-| Tunnel | `wlanslovenija/tunneldigger`, C-Client | eine Instanz je Domain |
+| Tunnel | `wlanslovenija/tunneldigger`, C-Client, oder fastd | eine Instanz je Domain |
 | Mesh | batman-adv aus dem Kernel (compat 15) | `bat-<code>`, `gw_mode off` |
 | Collector | yanic, Fork [Neanderfunk/yanic](https://github.com/Neanderfunk/yanic) | ein Prozess je Community |
 | Karte | meshviewer, Fork [Neanderfunk/meshviewer](https://github.com/Neanderfunk/meshviewer) | Upstream `freifunk/meshviewer` |

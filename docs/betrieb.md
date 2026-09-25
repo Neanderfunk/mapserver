@@ -123,6 +123,36 @@ curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: witten.en.map.freifunk.space'
 ernst: dann routet eigener Verkehr durch ihr Mesh. `ip -6 route show proto ra`
 und die sysctl-Werte auf den bat-Instanzen prüfen, siehe `hintergrund.md`.
 
+## fastd-Domains
+
+Seit 25.09.2026 kann die Tunnel layer außer Tunneldigger auch fastd, erste
+Community ist Freifunk Essen (Not-Karte für mitfunken.freifunk.space).
+
+- **Wo es steht:** `tunnel/fastd.conf` (je Domain Methoden und Peers mit
+  Schlüssel), Port und MTU wie gehabt in `tunnel/domains.conf`. Steht eine
+  Domain in beiden, startet `karte-en-tunnel@<code>` fastd statt
+  Tunneldigger. Interface `td-<code>`, Hook, batman-Instanz und Watchdog sind
+  dieselben.
+- **Unser Schlüssel:** je Community einer, `/etc/karte-en/fastd/<community>.secret`
+  (0600, von `tunnel/einrichten.sh` einmalig erzeugt), der öffentliche Teil
+  in `<community>.pub`. Er ist unsere Kennung dort: eine Sperrliste (Essen)
+  oder eine Freischaltung (Hildesheim) hängt daran. Nie neu erzeugen, ohne
+  das mit der Community abzustimmen.
+- **Konfiguration:** entsteht bei jedem Start im RuntimeDirectory der Unit,
+  der geheime Schlüssel nur per `include`. Prüfen:
+  `fastd --verify-config --config /run/karte-en-tunnel-<code>/fastd.conf`.
+- **Verbunden?** `journalctl -u karte-en-tunnel@<code>` zeigt
+  "connection with <peer> established". Das Interface `td-<code>` gibt es bei
+  fastd auch ohne Verbindung; der Watchdog merkt einen stummen fastd also
+  nicht, die Domain-Checks in Checkmk schon (keine Originatoren).
+- **Abfragegruppe:** je Community in `sammler/yanic-conf.py` (`ABFRAGE`).
+  Essen antwortet nur auf `ff02::2:1001` (36 Knoten), auf `ff05::2:1001`
+  nur der Supernode.
+
+Achtung: `tunnel/einrichten.sh` schaltet am Ende die Tunnel **aller**
+Domains ein, auch ruhender Communities (EN). Neue Domains deshalb einzeln
+einspielen (Dateien installieren, `systemctl enable --now karte-en-tunnel@<code>`).
+
 ## Eine Community in den Standby nehmen
 
 Wenn eine Community wieder selbst eine Karte betreibt, brauchen wir ihr Netz

@@ -48,7 +48,7 @@ if [ -n "$fzeile" ]; then
 		done
 		echo "}"
 	} > "$KONF_F"
-	exec /usr/sbin/fastd --config "$KONF_F"
+	exec fastd --config "$KONF_F"
 fi
 
 # Je Broker ein -b. Der Client nimmt mit -g den ersten erreichbaren.

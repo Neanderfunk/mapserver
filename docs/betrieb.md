@@ -132,7 +132,7 @@ zu arbeiten, und ihre Namen leiten dauerhaft auf ihre eigene Karte um.
 Geschaltet wird das in **`web/standby.conf`**, eine Zeile je Community:
 
 ```
-en   https://map.ff-en.de/   Freifunk EN hat seit 21.09.2026 wieder eine eigene Karte
+en   https://map.ff-en.de/   Freifunk EN betreibt eine eigene Karte
 ```
 
 Daraus folgt alles Weitere: `karte-en-konfig` erzeugt für alle Namen dieser

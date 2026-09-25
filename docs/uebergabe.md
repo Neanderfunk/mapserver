@@ -4,13 +4,16 @@ Was jemand wissen muss, der dieses Projekt uebernimmt oder fortfuehrt.
 
 ## Was es ist
 
-Ein Kartenserver, der das Netz einer fremden Community misst und darstellt,
-weil sie selbst keine Karte mehr hat. Erster und bisher einziger Fall ist
-Freifunk EN mit acht Domains und rund 530 Knoten. Zugleich ist es der
-Probelauf fuer einen aktuellen Kartenstapel, bevor die eigene Karte erneuert
-wird.
+Der Nachfolger der Neanderfunk-Karte `map.eulenfunk.de` (HopGlass) auf einem
+aktuellen Stapel, mit UniFi-APs, zusaetzlichen respondd-Werten und
+Zeitreihen; dazu Not-Karten fuer Communities, die gerade keine
+funktionierende Karte haben (fuer mitfunken.freifunk.space). Siehe README.
 
-Begonnen am 20.09.2026, an einem Abend von leerer VM bis oeffentlicher Karte.
+Begonnen am 20.09.2026 als Not-Karte fuer Freifunk EN, an einem Abend von
+leerer VM bis oeffentlicher Karte. Freifunk EN hat eine eigene Karte
+(`map.ff-en.de`), vermutlich schon zu diesem Zeitpunkt wieder; unsere ruht
+und leitet dorthin um (`web/standby.conf`). Im Mittelpunkt steht
+inzwischen die Karte der 48 Neanderfunk-Domains.
 
 ## Maschinen und Zugaenge
 
@@ -29,8 +32,9 @@ sinnvoll, sobald die Ueberwachung kommt.
 
 | Name | zeigt auf |
 | --- | --- |
-| `en.map.freifunk.space` | Gesamtkarte, alle acht Domains |
-| `<ort>.en.map.freifunk.space` | acht Ortskarten |
+| `neander.map.freifunk.space` | Gesamtkarte der 48 Neanderfunk-Domains |
+| `<ort>.neander.map.freifunk.space` | Ortskarten, oeffentlich erst mit dem Umzug von `map.eulenfunk.de` |
+| `en.map.freifunk.space`, `<ort>.en.map.freifunk.space` | ruhend, `301` auf `map.ff-en.de` |
 | `map6.freifunk.space` | die VM selbst, Vorgabeseite mit der Liste |
 | `map.freifunk.space` | **nicht dieses Projekt**, zeigt auf `map.eulenfunk.de` |
 
@@ -100,18 +104,16 @@ verliert die Aenderung beim naechsten Lauf. Quelle ist immer
 - **broker2.ff-en.de.** Falls er zurueckkommt, verdoppelt sich die
   Ausfallsicherheit ohne Zutun.
 
-## Wenn Freifunk EN sich meldet
+## Freifunk EN (ruhend)
 
-Der Stand: sie sagen selbst, dass sie keine Karte haben und niemand Zeit hat,
-das zu aendern. Gefragt haben wir nicht, weil es nach eigener Aussage nichts
-zu entscheiden gaebe. Wir messen mit denselben Mitteln, die jedem Knoten in
-ihrer Domain offenstehen, veroeffentlichen keine Kontaktdaten und geben uns
-nicht als Gateway aus.
+Freifunk EN betreibt eine eigene Karte, `map.ff-en.de`. Unsere EN-Karte
+ruht: Tunnel und `yanic@en` sind abgeschaltet, aber nicht deinstalliert, und
+alle EN-Namen leiten per `301` dorthin um (`web/standby.conf`, siehe
+`docs/betrieb.md`). Die Zeile dort zu entfernen holt alles zurueck.
 
-Wenn sie die Karte nicht wollen, ist das ihre Entscheidung, und acht
-`systemctl disable --now` beenden es innerhalb einer Minute. Wenn sie sie
-wollen, ist der naechste sinnvolle Schritt ein `ext-respondd` auf ihren
-Supernodes: dann zeigt die Karte auch die Tunnel.
+Gemessen hatten wir mit denselben Mitteln, die jedem Knoten in ihrer Domain
+offenstehen, ohne Kontaktdaten zu veroeffentlichen und ohne uns als Gateway
+auszugeben.
 
 ## Lizenz
 

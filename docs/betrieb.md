@@ -391,6 +391,17 @@ Lauf vom 24.09.2026: 1110 von 1110 Knoten bekamen ein älteres Datum, die
 älteste Sichtung stammt vom 19.07.2020. Sicherung unter
 `/var/lib/yanic/neander.json.vor-erstsichtung`.
 
+**UniFi-APs (25.09.2026, einmalig):** Die Erstsichtung kommt aus dem
+Controller, genauer aus der `_id` des Geräts: eine MongoDB-ObjectId, deren
+erste 4 Bytes den Zeitpunkt tragen, zu dem der Controller das Gerät angelegt
+hat. Wo es `adopted_at` gibt (230 von 615 APs, erst ab 2023), stimmt beides
+sekundengenau überein; für die älteren fehlt `adopted_at`, die `_id` hat
+alle. Übernommen mit demselben Skript, Quelle eine Datei mit `node_id` und
+`firstseen`: 544 APs, älteste Sichtung 22.06.2017. Sicherung unter
+`/root/neander.json.vor-ap-erstsichtung`. APs, die damals offline waren,
+bekommen beim ersten Auftauchen das heutige Datum; bei Bedarf wiederholen
+(ändert nur, was älter ist).
+
 ### Clients und dunkle Knoten
 
 `sammler/clients-zaehlen.py`, alle fünf Minuten als `karte-clients@neander`.

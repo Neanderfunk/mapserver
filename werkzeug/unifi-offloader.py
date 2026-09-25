@@ -51,6 +51,9 @@ UBIQUITI = (
     # U6-Serie; fehlte anfangs, deshalb sah die Domain 24_dusukw leer aus
     # (adorfer 21.09.2026, Screenshot des Switches in Graf-Adolf-Str. 73)
     '0c:ea:14', '9c:29:76', '94:2a:6f', 'd0:ee:0c', '70:a7:41',
+    # Aus dem Abgleich mit dem Controller (25.09.2026): 80 der 615 LVR-APs
+    # fehlten allein wegen dieser Praefixe, darunter Aequatorweg #2
+    'f4:e2:c6', '74:ac:b9', 'd8:b3:70', '8c:30:66',
 )
 
 

@@ -1,0 +1,25 @@
+[Unit]
+Description=mesh-announce, beantwortet respondd fuer den Kartenserver selbst
+Documentation=https://github.com/ffnord/mesh-announce
+After=network-online.target karte-en-tunnel@.service
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+# Nur batman-Instanzen, die gerade existieren (mesh-announce-conf.py)
+ExecStartPre=/bin/sh -c '/usr/local/sbin/karte-mesh-announce-conf > /etc/mesh-announce/respondd.conf.neu && mv /etc/mesh-announce/respondd.conf.neu /etc/mesh-announce/respondd.conf'
+WorkingDirectory=/opt/mesh-announce
+ExecStart=/usr/bin/python3 /opt/mesh-announce/respondd.py -f /etc/mesh-announce/respondd.conf -d /opt/mesh-announce/providers
+Restart=always
+RestartSec=30
+# Root, weil batctl die Nachbarn nur root zeigt. Sonst eingesperrt.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ReadWritePaths=/etc/mesh-announce
+
+[Install]
+WantedBy=multi-user.target

@@ -49,3 +49,23 @@ for dienst in $(systemctl list-units --no-legend --state=active 'yanic@*.service
 		systemctl restart "$dienst" || true
 	fi
 done
+
+# Dritte Aufgabe: mesh-announce (antwortet respondd fuer den Kartenserver
+# selbst) tritt den Multicast-Gruppen nur beim Start bei und kennt nur die
+# Domains aus seiner beim Start erzeugten Konfiguration. Ist eine Domain dazu
+# gekommen oder fehlt einer batman-Instanz die Gruppe ff02::2:1001 (etwa nach
+# ihrer Neuanlage), Neustart.
+if systemctl is-active -q mesh-announce.service 2>/dev/null; then
+	grund=''
+	if ! /usr/local/sbin/karte-mesh-announce-conf 2>/dev/null | cmp -s - /etc/mesh-announce/respondd.conf; then
+		grund='Domains geaendert'
+	else
+		for bat in $(awk -F': ' '/^BatmanInterface/ { print $2 }' /etc/mesh-announce/respondd.conf); do
+			grep -q " $bat \+ff020000000000000000000000021001 " /proc/net/igmp6 || grund="$bat ohne Multicast-Gruppe"
+		done
+	fi
+	if [ -n "$grund" ]; then
+		logger -t karte-en "Waechter: mesh-announce, $grund, Neustart"
+		systemctl restart mesh-announce.service || true
+	fi
+fi

@@ -540,7 +540,9 @@ def main():
         # sich aus den Domainnamen nicht ableiten: "Freifunk Hagen" und
         # "Freifunk Witten" ergaeben "Freifunk", nicht "Freifunk EN".
         kopf = NAMEN.get(g, g)
-        ziele.append((f'{g}/alle', f'{kopf}, alle {len(seine)} Domains',
+        # Eine einzige Domain (Freifunk Essen) nicht "alle 1 Domains" nennen
+        titel = f'{kopf}, alle {len(seine)} Domains' if len(seine) > 1 else kopf
+        ziele.append((f'{g}/alle', titel,
                       f'{g}.{SUFFIX}', seine))
         for d in seine:
             ziele.append((f'{g}/{d["host"]}', d['name'],

@@ -168,15 +168,19 @@ PANELS = KOPF + [
     ], 0, 13, einheit='bytes', min_=0, balken=True, stapeln=True,
         beschreibung='Tagesbilanz. Bei Zeitraeumen unter zwei Tagen bleibt das Bild leer.'),
 
+    # Airtime ausserhalb von 0 bis 100 Prozent ist immer ein Messfehler: der
+    # mt76-Unterlauf mancher Gluon-Knoten und einmalig am 25.09.2026 um 11:02
+    # die UniFi-APs (alte Bytezaehler gegen neue Airtime-Zaehler). Ohne die
+    # Klammer sprengt ein einziger solcher Wert die Achse fuer 400 Tage.
     panel(4, 'Airtime', [
-        ziel('max by (band) (label_replace({__name__=~"node_airtime11(g|a).chan_util", nodeid="$node"},'
-             ' "band", "$1", "__name__", "node_airtime11(g|a).chan_util"))',
+        ziel('clamp(max by (band) (label_replace({__name__=~"node_airtime11(g|a).chan_util", nodeid="$node"},'
+             ' "band", "$1", "__name__", "node_airtime11(g|a).chan_util")), 0, 100)',
              '{{band}} belegt', 'A'),
-        ziel('max by (band) (label_replace({__name__=~"node_airtime11(g|a).rx_util", nodeid="$node"},'
-             ' "band", "$1", "__name__", "node_airtime11(g|a).rx_util"))',
+        ziel('clamp(max by (band) (label_replace({__name__=~"node_airtime11(g|a).rx_util", nodeid="$node"},'
+             ' "band", "$1", "__name__", "node_airtime11(g|a).rx_util")), 0, 100)',
              '{{band}} Empfang', 'B'),
-        ziel('max by (band) (label_replace({__name__=~"node_airtime11(g|a).tx_util", nodeid="$node"},'
-             ' "band", "$1", "__name__", "node_airtime11(g|a).tx_util"))',
+        ziel('clamp(max by (band) (label_replace({__name__=~"node_airtime11(g|a).tx_util", nodeid="$node"},'
+             ' "band", "$1", "__name__", "node_airtime11(g|a).tx_util")), 0, 100)',
              '{{band}} Senden', 'C'),
     ], 12, 13, einheit='percent', min_=0,
         beschreibung='g ist 2,4 GHz, a ist 5 GHz. Dauerhaft ueber 60 Prozent belegt heisst: der Kanal ist voll.'),

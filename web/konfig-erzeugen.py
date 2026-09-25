@@ -158,9 +158,11 @@ DIAGRAMME = [
      # eigenartig (adorfer 23.09.2026).
      },
     {'name': 'Airtime',
-     'query': 'max by (band) (label_replace('
+     # 0 bis 100: Werte daneben sind Messfehler (mt76-Unterlauf, einmalig
+     # die UniFi-APs am 25.09.2026 um 11:02), siehe dashboard-erzeugen.py
+     'query': 'clamp(max by (band) (label_replace('
               '{__name__=~"node_airtime11(g|a).chan_util", nodeid="$node"},'
-              ' "band", "$1", "__name__", "node_airtime11(g|a).chan_util"))',
+              ' "band", "$1", "__name__", "node_airtime11(g|a).chan_util")), 0, 100)',
      'legendFormat': '{{band}}', 'unitSuffix': '%', 'format': '.0f', 'integer': True},
     {'name': 'Ausfälle laut Knoten',
      # Zaehler des SSID-Changers seit dem letzten Start: wie oft der Knoten

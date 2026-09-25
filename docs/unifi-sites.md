@@ -55,12 +55,21 @@ allem dort, wo viele Geraete auf viele Domains verteilt sind.
 
 ## Betrieb von unifi_respondd
 
-**Stand 24.09.2026: unifi_respondd läuft noch nicht.** Auf map6 gibt es weder
-Installation noch Dienst. Vorbereitet sind die Zuordnung (dieses Dokument,
-`werkzeug/unifi-offloader.py`), die Aufteilungsliste für den LVR und die
-Anleitung für dessen IT. Solange die Site `fflvr` nicht aufgeteilt ist, lässt
-sich der Block `offloader_mac` nicht sinnvoll füllen: unifi_respondd kennt je
-Site genau einen Offloader und damit genau eine Domain.
+**Stand 25.09.2026: unifi_respondd läuft noch nicht, gebaut ist er.** Auf
+map6 gibt es weder Installation noch Dienst. Der Code liegt im Fork
+github.com/Neanderfunk/unifi_respondd (Zweig `neanderfunk`). Die Site `fflvr`
+wird nicht aufgeteilt: Den Router je AP liefert die Zuordnung aus der
+batman-Übersetzungstabelle (`werkzeug/unifi-offloader.py --json`), der
+Offloader der Site ist nur noch der Rückfall.
+
+**Ausrollen nur zusammen mit dem yanic-Fork** (Entscheidung 25.09.2026).
+Allein eingeschaltet zählte jeder Client hinter einem AP doppelt, beim AP und
+bei seinem Router, und die Summen auf Karte und in Grafana stiegen falsch an.
+Der yanic-Fork zieht die Clients der APs beim Router ab und zeichnet die
+Links von beiden Seiten. Reihenfolge beim Einschalten: yanic-Fork,
+unifi_respondd nach dem Bauplan unten, Gegenprobe der Summe gegen
+`tt_clients` aus der Übersetzungstabelle (zählt jeden Client einmal), dann
+"noch nicht gebaut" aus den beiden Anleitungen entfernen.
 
 ### Controller und Zugang
 

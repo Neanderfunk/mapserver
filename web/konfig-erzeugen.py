@@ -346,7 +346,23 @@ def konfig(titel, pfad, alle):
         'devicePicturesSource': ("<a href='https://github.com/freifunk/device-pictures'>"
                                  "freifunk/device-pictures</a>"),
         'devicePicturesLicense': 'CC-BY-NC-SA 4.0',
+        # Ueber unseren Proxy statt direkt zu Nominatim, siehe nginx-geo.conf
+        'reverseGeocodingApi': '/nf/ort/reverse',
     }
+
+
+def resolver(pfad='/etc/resolv.conf'):
+    """Die Nameserver des Systems fuer nginx, IPv6 in eckigen Klammern."""
+    ns = []
+    try:
+        with open(pfad) as f:
+            for zeile in f:
+                teile = zeile.split()
+                if len(teile) >= 2 and teile[0] == 'nameserver':
+                    ns.append('[%s]' % teile[1] if ':' in teile[1] else teile[1])
+    except OSError:
+        pass
+    return ' '.join(ns) or '127.0.0.53'
 
 
 VHOST = """
@@ -378,6 +394,37 @@ server {
 	}
 	location /assets/ {
 		expires 30d;
+	}
+	# Adresse zum Punkt in der Standortwahl, ueber uns statt direkt aus dem
+	# Browser zu Nominatim; Zonen und Kuerzung in conf.d/karte-geo.conf.
+	location = /nf/ort/reverse {
+		if ($karte_geo_lat = "") { return 400; }
+		if ($karte_geo_lon = "") { return 400; }
+		limit_req zone=karteort burst=5 nodelay;
+		limit_req zone=karteortalle burst=10;
+		limit_req_status 429;
+		# Erst zur Laufzeit aufloesen: scheitert DNS beim Start von nginx,
+		# darf das nicht alle Karten mitreissen.
+		resolver %(resolver)s valid=300s;
+		set $nominatim https://nominatim.openstreetmap.org/reverse;
+		proxy_pass $nominatim?format=json&zoom=18&addressdetails=0&lat=$karte_geo_lat&lon=$karte_geo_lon&accept-language=$karte_geo_sprache;
+		proxy_ssl_server_name on;
+		proxy_ssl_name nominatim.openstreetmap.org;
+		proxy_pass_request_headers off;
+		proxy_set_header Host nominatim.openstreetmap.org;
+		proxy_set_header User-Agent "Freifunk-Karte %(fqdn)s (projekt@neanderfunk.de)";
+		proxy_set_header Referer "https://%(fqdn)s/";
+		proxy_set_header Accept-Language $karte_geo_sprache;
+		proxy_hide_header Set-Cookie;
+		proxy_ignore_headers Set-Cookie Cache-Control Expires;
+		proxy_cache kartegeo;
+		proxy_cache_key "$karte_geo_lat,$karte_geo_lon,$karte_geo_sprache";
+		proxy_cache_valid 200 30d;
+		proxy_cache_valid any 5m;
+		proxy_cache_lock on;
+		proxy_cache_use_stale error timeout updating;
+		add_header X-Cache-Status $upstream_cache_status always;
+		add_header Cache-Control "public, max-age=86400" always;
 	}
 %(api)s	location / {
 		try_files $uri $uri/ /index.html;
@@ -506,7 +553,8 @@ def main():
             json.dump(konfig(titel, pfad, seine), f, ensure_ascii=False, indent=1)
         api = API % {'web': WEB, 'community': g} if ort == 'alle' else ''
         site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'host': pfad,
-                             'web': WEB, 'vorgabe': '', 'api': api})
+                             'web': WEB, 'vorgabe': '', 'api': api,
+                             'resolver': resolver()})
         print(f'  {fqdn:38} {titel}')
 
     site.append(VORGABE % {'eigen': EIGEN, 'index': INDEX})

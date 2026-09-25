@@ -66,7 +66,12 @@ def feld(einheit='', min_=None, balken=False, stapeln=False):
 
 
 def panel(nr, titel, ziele, x, y, w=12, h=8, einheit='', min_=None,
-          balken=False, stapeln=False, beschreibung=''):
+          balken=False, stapeln=False, beschreibung='', sortieren=False):
+    legende = {'displayMode': 'table', 'placement': 'bottom', 'showLegend': True,
+               'calcs': ['mean', 'lastNotNull', 'max']}
+    if sortieren:
+        # Verteilungen: haeufigster Stand oben, nach dem aktuellen Wert
+        legende.update(sortBy='Last *', sortDesc=True)
     return {
         'id': nr, 'title': titel, 'type': 'timeseries',
         'description': beschreibung,
@@ -74,9 +79,7 @@ def panel(nr, titel, ziele, x, y, w=12, h=8, einheit='', min_=None,
         'gridPos': {'h': h, 'w': w, 'x': x, 'y': y},
         'targets': ziele,
         'fieldConfig': feld(einheit, min_, balken, stapeln),
-        'options': {'legend': {'displayMode': 'table', 'placement': 'bottom',
-                               'showLegend': True,
-                               'calcs': ['mean', 'lastNotNull', 'max']},
+        'options': {'legend': legende,
                     'tooltip': {'mode': 'multi', 'sort': 'desc'}},
     }
 
@@ -677,39 +680,39 @@ COMMUNITY_PANELS = [
                      'begrenzt die meisten Knoten auf sieben Tage.'),
     panel(6, 'Autoupdater', [
         ziel(verteilung('autoupdater', GLUON), '{{autoupdater}}', 'A'),
-    ], 12, 26, min_=0, stapeln=True,
+    ], 12, 26, min_=0, stapeln=True, sortieren=True,
         beschreibung='Zweig, dem die Knoten folgen.'),
 
     panel(7, 'Firmware', [
         ziel(verteilung('firmware_release', GLUON), '{{firmware_release}}', 'A'),
-    ], 0, 34, w=24, h=10, min_=0, stapeln=True,
+    ], 0, 34, w=24, h=10, min_=0, stapeln=True, sortieren=True,
         beschreibung='Gluon-Knoten je Firmwarestand, gestapelt. Beim Ausrollen wandert die '
                      'Flaeche von einem Stand zum naechsten.'),
 
     panel(8, 'Targets', [
         ziel(verteilung('firmware_target', GLUON), '{{firmware_target}}', 'A'),
-    ], 0, 44, min_=0, stapeln=True,
+    ], 0, 44, min_=0, stapeln=True, sortieren=True,
         beschreibung='Plattform der Gluon-Knoten. "unbekannt": aeltere Firmware meldet sie nicht.'),
     panel(9, 'Arbeitsspeicher', [
         ziel('count(count by (nodeid) (%s < 40000))' % jetzt('node_memory.total', GLUON), 'bis 32 MB', 'A'),
         ziel('count(count by (nodeid) (%s >= 40000 < 80000))' % jetzt('node_memory.total', GLUON), '64 MB', 'B'),
         ziel('count(count by (nodeid) (%s >= 80000 < 160000))' % jetzt('node_memory.total', GLUON), '128 MB', 'C'),
         ziel('count(count by (nodeid) (%s >= 160000))' % jetzt('node_memory.total', GLUON), '256 MB und mehr', 'D'),
-    ], 12, 44, min_=0, stapeln=True,
+    ], 12, 44, min_=0, stapeln=True, sortieren=True,
         beschreibung='Gluon-Knoten nach Arbeitsspeicher. Beim Austausch alter Hardware '
                      'schrumpfen die unteren Klassen.'),
 
     panel(10, 'Geraete', [
         ziel('topk_last(20, ' + verteilung('model', GLUON) + ', "model=andere")', '{{model}}', 'A'),
-    ], 0, 52, w=24, h=12, min_=0, stapeln=True,
+    ], 0, 52, w=24, h=12, min_=0, stapeln=True, sortieren=True,
         beschreibung='Die 20 haeufigsten Modelle der Gluon-Knoten, der Rest als "andere".'),
 
     panel(11, 'UniFi-APs: Firmware', [
         ziel(verteilung('firmware_release', UNIFI), '{{firmware_release}}', 'A'),
-    ], 0, 64, min_=0, stapeln=True),
+    ], 0, 64, min_=0, stapeln=True, sortieren=True),
     panel(12, 'UniFi-APs: Modelle', [
         ziel(verteilung('model', UNIFI), '{{model}}', 'A'),
-    ], 12, 64, min_=0, stapeln=True),
+    ], 12, 64, min_=0, stapeln=True, sortieren=True),
 ]
 
 

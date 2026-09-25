@@ -5,7 +5,7 @@ Was jemand wissen muss, der dieses Projekt uebernimmt oder fortfuehrt.
 ## Was es ist
 
 Der Nachfolger der Neanderfunk-Karte `map.eulenfunk.de` (HopGlass) auf einem
-aktuellen Stapel, mit UniFi-APs, zusaetzlichen respondd-Werten und
+aktuellen Stack, mit UniFi-APs, zusaetzlichen respondd-Werten und
 Zeitreihen; dazu Not-Karten fuer Communities, die gerade keine
 funktionierende Karte haben (fuer mitfunken.freifunk.space). Siehe README.
 

@@ -4,8 +4,8 @@ Kartenserver für Freifunk, betrieben von Freifunk Neanderland.
 
 **Worum es geht:** Die Karten-Infrastruktur wird erneuert. Die bisherige Karte
 der Neanderfunk-Domains (`map.eulenfunk.de`) läuft auf einem in die Jahre
-gekommenen HopGlass-Stapel. Dieses Repo baut den Nachfolger mit aktuellen
-Werkzeugen und bringt Dinge mit, die der alte Stapel nicht kann:
+gekommenen HopGlass-Stack. Dieses Repo baut den Nachfolger mit aktuellen
+Werkzeugen und bringt Dinge mit, die der alte Stack nicht kann:
 
 - UniFi-Accesspoints als eigene Knoten auf der Karte, an ihrem Freifunk-Router
   und ohne doppelt gezählte Clients ([docs/unifi-sites.md](docs/unifi-sites.md)),
@@ -33,7 +33,7 @@ wieder eine eigene Karte, ruht unsere und leitet dorthin weiter.
 - `map.freifunk.space` zeigt bis dahin auf `map.eulenfunk.de` und wird hier
   nicht angefasst.
 
-## Stapel
+## Stack
 
 | Schicht | Wahl | Bemerkung |
 | --- | --- | --- |

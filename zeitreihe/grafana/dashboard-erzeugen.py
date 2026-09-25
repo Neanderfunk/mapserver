@@ -574,6 +574,13 @@ def verteilung(label, filter_, leer='unbekannt'):
             % (label, jetzt('node_load', filter_), label, leer, label))
 
 
+def supernodes():
+    """Supernodes selbst, nicht ihre Instanzen: je Domain laeuft auf einem
+    Supernode eine Instanz, Hostname <supernode>_ffnefdNN."""
+    return ('count(count by (supernode) (label_replace(%s, "supernode", "$1", '
+            '"hostname", "([^_]+)_.*")))' % jetzt('node_load', GATEWAY))
+
+
 def verkehr(richtung):
     return ('sum(rate({__name__="node_traffic.%s.bytes", %s}[$__rate_interval])) * 8'
             % (richtung, GLUON))
@@ -593,17 +600,20 @@ TAG = 86400
 
 COMMUNITY_PANELS = [
     # Erste Zeile: wer ist da
-    zahl(100, 'Freifunk-Knoten online', knoten(GLUON), 0, w=4,
+    zahl(100, 'Gluon-Knoten online', knoten(GLUON), 0, w=4,
          beschreibung='Gluon-Knoten, die in den letzten 10 Minuten geantwortet haben.'),
     zahl(101, 'Knoten offline', 'count(count by (nodeid) (last_over_time({__name__="node_load", '
          + GLUON + '}[7d]))) - ' + knoten(GLUON), 4, w=4,
          beschreibung='In den letzten 7 Tagen gesehen, jetzt nicht.'),
     zahl(102, 'UniFi-APs online', knoten(UNIFI), 8, w=4,
          beschreibung='Accesspoints aus dem UniFi-Controller, die an einem Freifunk-Router haengen.'),
-    zahl(103, 'Gateways', knoten(GATEWAY), 12, w=4,
-         beschreibung='Supernode-Instanzen, die antworten. Unabhaengig von der Domainauswahl.'),
+    zahl(103, 'Supernodes', supernodes(), 12, w=4,
+         beschreibung='Supernodes, die antworten. Unabhaengig von der Domainauswahl.'),
+    zahl(109, 'Gateway-Instanzen', knoten(GATEWAY), 16, w=4,
+         beschreibung='Je Domain eine Instanz auf einem Supernode. Unabhaengig von der '
+                      'Domainauswahl.'),
     zahl(104, 'Clients', 'sum(' + jetzt('node_clients.total', 'is_gateway="false", ' + AUSWAHL) + ')',
-         16, w=8,
+         20, w=4,
          beschreibung='Summe ueber Knoten und APs; Clients an einem AP zaehlen nur dort, '
                       'nicht noch einmal beim Router.'),
     # Zweite Zeile: was laeuft
@@ -617,9 +627,10 @@ COMMUNITY_PANELS = [
          18, einheit='d', y=5, beschreibung='Der Knoten, der am laengsten durchlaeuft.'),
 
     panel(1, 'Knoten', [
-        ziel(knoten(GLUON), 'Freifunk-Knoten', 'A'),
+        ziel(knoten(GLUON), 'Gluon-Knoten', 'A'),
         ziel(knoten(UNIFI), 'UniFi-APs', 'B'),
-        ziel(knoten(GATEWAY), 'Gateways', 'C'),
+        ziel(knoten(GATEWAY), 'Gateway-Instanzen', 'C'),
+        ziel(supernodes(), 'Supernodes', 'D'),
     ], 0, 10, min_=0),
     panel(2, 'Clients', [
         ziel('sum(' + jetzt('node_clients.total', 'is_gateway="false", ' + AUSWAHL) + ')', 'gesamt', 'A'),

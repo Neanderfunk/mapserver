@@ -210,6 +210,9 @@ for c in $(awk '!/^#/ && NF && $1 == "en" { print $2 }' /etc/karte-en/domains.co
     sudo systemctl disable --now "karte-en-tunnel@$c"
 done
 sudo systemctl disable --now yanic@en
+# EN hat einen eigenen Unicast-Zielsucher (karte-ziele, nur fuer en); beim
+# Standby am 23.09.2026 uebersehen, scheiterte nach dem Neustart am 25.09.
+sudo systemctl disable --now karte-ziele.timer
 
 # 3. Vhosts neu erzeugen
 sudo /usr/local/sbin/karte-en-konfig
@@ -230,9 +233,9 @@ Die Zeitreihe in `/var/lib/karte/verlauf.csv` bleibt erhalten und ist der
 Grund, warum sich das Abschalten lohnt statt des Löschens: sie dokumentiert,
 was das Netz getan hat, solange wir hingesehen haben.
 
-**Stand 23.09.2026:** Freifunk EN ist im Standby, acht Tunnel und der Collector
-`yanic@en` sind abgeschaltet, neun Namen leiten auf `map.ff-en.de` um. Es
-laufen 48 Tunnel für Neanderfunk.
+**Stand 26.09.2026:** Freifunk EN ist im Standby, acht Tunnel, der Collector
+`yanic@en` und `karte-ziele.timer` sind abgeschaltet, neun Namen leiten auf
+`map.ff-en.de` um. Es laufen 48 Tunnel für Neanderfunk und einer für Essen.
 
 ## Überwachung
 

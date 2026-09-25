@@ -18,6 +18,7 @@ yanics eigenen Socket, und ab da sind sie fuer yanic gewoehnliche Knoten.
 """
 import argparse
 import json
+import os
 import socket
 import subprocess
 import sys
@@ -112,6 +113,11 @@ def main():
         if a.nur and code != a.nur:
             continue
         iface = f'bat-{code}'
+        # Eine ruhende Domain hat keine batman-Instanz mehr (EN nach dem
+        # Neustart am 25.09.2026); ueberspringen statt abbrechen.
+        if not os.path.exists(f'/sys/class/net/{iface}'):
+            print(f'  {iface:14} fehlt, uebersprungen', file=sys.stderr)
+            continue
         k = kandidaten(iface)
         g = fragen(iface, k)
         gesamt += len(g)

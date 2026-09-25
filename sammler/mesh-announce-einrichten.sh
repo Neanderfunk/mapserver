@@ -18,7 +18,9 @@ BAU=/opt/mesh-announce
 [ "$(id -u)" = 0 ] || { echo "Bitte als root starten." >&2; exit 1; }
 
 export DEBIAN_FRONTEND=noninteractive
-apt-get install -y -qq python3-psutil lsb-release batctl git
+# ethtool: ohne ihn wirft der traffic-Provider bei jeder Anfrage einen
+# Traceback ins Journal (25.09.2026: 33.000 Zeilen in zehn Minuten)
+apt-get install -y -qq python3-psutil lsb-release batctl git ethtool
 
 if [ ! -d "$BAU/.git" ]; then
 	git clone -q "$QUELLE" "$BAU"

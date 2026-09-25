@@ -94,11 +94,13 @@ verliert die Aenderung beim naechsten Lauf. Quelle ist immer
 - **Melder.** Die Checkmk-Local-Checks stehen (siehe betrieb.md), der Host
   muss in der Checkmk-Instanz noch angelegt werden. Eine Mailbenachrichtigung
   wie bei mitfunken gibt es hier noch nicht; `nullmailer` liegt bereit.
-- **Zweite Community.** Vorbereitet, aber nicht belegt. Vorher sollten
-  `/etc/karte-en` und `/var/www/karte-en` je Community benannt werden.
-- **Andere VPN-Arten.** Die Tunnelschicht kann nur Tunneldigger. fastd
-  braucht zusaetzlich eine Schluesselfreischaltung und geht damit nicht
-  einseitig.
+- **Mehrere Communities** laufen seit 22.09.2026 nebeneinander (neander,
+  essen; en ruhend). Die Pfade heissen weiter `/etc/karte-en` und
+  `/var/www/karte-en`, gemeint ist aber alles; umbenennen waere nur Kosmetik.
+- **VPN-Arten:** Tunneldigger und fastd (seit 25.09.2026, `tunnel/fastd.conf`).
+  WireGuard fehlt noch. fastd geht einseitig nur, wenn die Gegenseite jeden
+  Schluessel annimmt (Essen); sonst per Anmeldung (Hildesheim, 26.09.2026
+  beantragt).
 - **Gateways als Pseudoknoten.** Wuerde die blauen Uplink-Knoten bringen,
   erfindet aber Objekte. Bewusst offen gelassen.
 - **broker2.ff-en.de.** Falls er zurueckkommt, verdoppelt sich die

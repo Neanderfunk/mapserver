@@ -88,10 +88,10 @@ Bedeutung der weniger offensichtlichen Felder:
 | `domain_seed` | nur zur Wiedererkennung, wir brauchen ihn nicht |
 
 Das Format haelt auch fest, was wir **nicht** koennen: steht bei `vpn` etwas
-anderes als `tunneldigger`, warnt der naechste Schritt. fastd und WireGuard
-brauchen eine eigene Tunnelschicht, die es hier noch nicht gibt. Bei fastd
-kommt hinzu, dass viele Communities eine Freischaltung des Schluessels
-verlangen, das Mitmessen also nicht einseitig geht.
+anderes als `tunneldigger`, warnt der naechste Schritt. fastd kann die
+Tunnelschicht seit 25.09.2026 (`tunnel/fastd.conf`, siehe betrieb.md); viele
+Communities verlangen dabei eine Freischaltung des Schluessels, das
+Mitmessen geht dann nicht einseitig. WireGuard fehlt noch.
 
 ## Schritt 2: erreichbar?
 

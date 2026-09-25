@@ -45,6 +45,7 @@ wieder eine eigene Karte, ruht unsere und leitet dorthin weiter.
 | Karte | meshviewer, Fork [Neanderfunk/meshviewer](https://github.com/Neanderfunk/meshviewer) | Upstream `freifunk/meshviewer` |
 | UniFi | unifi_respondd, Fork [Neanderfunk/unifi_respondd](https://github.com/Neanderfunk/unifi_respondd) | Upstream `freifunkMUC/unifi_respondd` |
 | Zeitreihen | VictoriaMetrics, Grafana | nur lokal erreichbar, nach außen über nginx |
+| Eigene Antwort | `ffnord/mesh-announce`, wie auf den Supernodes | map6 selbst als Knoten `map-neanderfunk-<code>` in jedem Mesh |
 
 Die Forks tragen je Funktion einen Commit auf einem Upstream-Stand, erklärt in
 `NEANDERFUNK.md` im jeweiligen Fork. Referenz für den Aufbau war

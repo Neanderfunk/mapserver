@@ -22,7 +22,8 @@ WEB = '/var/www/karte-en'
 # listet sie mit auf (adorfer 20.09.2026: Platz fuer weitere Communities).
 SUFFIX = 'map.freifunk.space'
 # Klarname je Community, fuer den Titel der Gesamtkarte.
-NAMEN = {'en': 'Freifunk EN', 'neander': 'Neanderfunk', 'essen': 'Freifunk Essen'}
+NAMEN = {'en': 'Freifunk EN', 'neander': 'Neanderfunk', 'essen': 'Freifunk Essen',
+         'hildesheim': 'Freifunk Hildesheim'}
 EIGEN = 'map6.freifunk.space'
 INDEX = '/var/www/karte-index'
 KACHEL = 'https://tiles.ffdus.de'

@@ -44,7 +44,9 @@ OFFLINE = '20m'
 ABFRAGE = {'neander': 'ff02::1',
            # Freifunk Essen (Gluon v2019.1, 25.09.2026 gemessen): ff05::2:1001
            # beantwortet nur der Supernode, ff02::2:1001 alle 36 Knoten.
-           'essen': 'ff02::2:1001'}
+           'essen': 'ff02::2:1001',
+           # Hildesheim: angenommen wie Essen, nach der Freischaltung messen
+           'hildesheim': 'ff02::2:1001'}
 
 # Communities, in denen wir die Kontaktangabe der Knoten mit veroeffentlichen.
 # Nur das eigene Netz, siehe oben.

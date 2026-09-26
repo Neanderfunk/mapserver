@@ -182,17 +182,53 @@ button{padding:.35em .8em;margin:.2em .4em .2em 0;cursor:pointer}
 '''
 
 
-def seite(titel, inhalt):
+def seite(titel, inhalt, neu_laden=None):
+    """neu_laden: Adresse, die der Browser nach zehn Sekunden laedt (ohne
+    JavaScript, die CSP laesst keins zu)."""
+    kopf = (f'<meta http-equiv="refresh" content="10;url={html.escape(neu_laden)}">'
+            if neu_laden else '')
     return ('<!doctype html><html lang="de"><head><meta charset="utf-8">'
-            '<meta name="viewport" content="width=device-width,initial-scale=1">'
+            '<meta name="viewport" content="width=device-width,initial-scale=1">' + kopf +
             f'<title>{html.escape(titel)}</title><style>{STIL}</style></head>'
             f'<body>{inhalt}</body></html>')
 
 
-def knotenseite(node_id, benutzer, meldung='', gut=False):
+AKTIONEN = {'entfernen': 'entfernt', 'ort-setzen': 'Ort gesetzt', 'ort-ausblenden':
+            'von der Landkarte genommen', 'ort-aufheben': 'Override aufgehoben'}
+
+
+def verlauf(node_id, anzahl=10, pfad=None):
+    """Die letzten Aktionen fuer diesen Knoten aus dem Protokoll, neueste zuerst."""
+    eintraege = []
+    try:
+        with open(pfad or PROTOKOLL, encoding='utf-8') as f:
+            for zeile in f:
+                try:
+                    e = json.loads(zeile)
+                except ValueError:
+                    continue
+                if e.get('node_id') == node_id:
+                    eintraege.append(e)
+    except OSError:
+        pass
+    return eintraege[-anzahl:][::-1]
+
+
+def auftrag_offen(node_id):
+    return os.path.exists(os.path.join(REMOVE_DIR, node_id))
+
+
+def knotenseite(node_id, benutzer, meldung='', gut=False, warte=False):
+    """warte: nach einem Loeschauftrag; die Seite laedt sich neu, bis der
+    Knoten von der Karte verschwunden ist (adorfer 26.09.2026: Rueckmeldung
+    auf den Klick)."""
     e = html.escape
     n = knoten(node_id)
     if n is None:
+        if warte:
+            return seite('Service', f'<h1>Service</h1><div class="hinweis ok">Der Knoten '
+                         f'<code>{e(node_id)}</code> ist entfernt.</div>'
+                         f'<p><a href="{KARTE}/">zur Karte</a></p>')
         return seite('Service', f'<h1>Service</h1><p>Knoten <code>{e(node_id)}</code> '
                      'steht nicht (mehr) auf der Karte.</p>'
                      f'<p><a href="{KARTE}/">zur Karte</a></p>')
@@ -213,12 +249,33 @@ def knotenseite(node_id, benutzer, meldung='', gut=False):
     tab = ''.join(f'<tr><td>{e(k)}</td><td>{e(str(v))}</td></tr>' for k, v in zeilen)
     hinweis = (f'<div class="hinweis{" ok" if gut else ""}">{e(meldung)}</div>' if meldung else '')
     ziel = f'{BASIS}?node={quote(node_id)}'
-    entfernen = ('<p class="leise">Der Knoten ist online und kann nicht entfernt werden.</p>'
-                 if online else
-                 f'<form method="post" action="{BASIS}entfernen"><input type="hidden" name="node" '
-                 f'value="{e(node_id)}"><button>Jetzt aus der Karte entfernen</button></form>'
-                 '<p class="leise">yanic entfernt ihn spätestens nach einer Minute. Meldet er '
-                 'sich wieder, erscheint er ganz normal neu.</p>')
+    neu_laden = None
+    if auftrag_offen(node_id) or (warte and not online):
+        # Auftrag liegt noch, oder yanic hat ihn erledigt und die Karte ist
+        # noch nicht neu geschrieben: weiter warten
+        entfernen = ('<div class="hinweis">Löschung erfolgt … yanic entfernt den Knoten '
+                     'spätestens nach einer Minute. Diese Seite aktualisiert sich selbst.</div>')
+        neu_laden = f'{BASIS}?node={quote(node_id)}&warte=1'
+        hinweis = ''
+    elif warte and online:
+        entfernen = ('<div class="hinweis">Der Knoten hat sich inzwischen wieder gemeldet und '
+                     'wurde deshalb nicht entfernt.</div>')
+    elif online:
+        entfernen = '<p class="leise">Der Knoten ist online und kann nicht entfernt werden.</p>'
+    else:
+        entfernen = (f'<form method="post" action="{BASIS}entfernen"><input type="hidden" name="node" '
+                     f'value="{e(node_id)}"><button>Jetzt aus der Karte entfernen</button></form>'
+                     '<p class="leise">yanic entfernt ihn spätestens nach einer Minute. Meldet er '
+                     'sich wieder, erscheint er ganz normal neu.</p>')
+    zeilen_v = []
+    for v in verlauf(node_id):
+        was = AKTIONEN.get(v.get('aktion'), v.get('aktion', ''))
+        if v.get('aktion') == 'ort-setzen':
+            was += f' ({v.get("latitude")}, {v.get("longitude")})'
+        zeilen_v.append(f'<tr><td>{e(str(v.get("zeit", "")))}</td><td>{e(str(v.get("benutzer", "")))}</td>'
+                        f'<td>{e(was)}</td></tr>')
+    verlauf_html = (f'<h2>Verlauf</h2><table class="leise">{"".join(zeilen_v)}</table>'
+                    if zeilen_v else '')
     inhalt = f'''
 <h1>Service: {e(n.get("hostname", ""))}</h1>
 <p class="leise">angemeldet als {e(benutzer)} · <a href="{KARTE}/#/de/map/{quote(node_id)}">zur Karte</a></p>
@@ -242,8 +299,9 @@ Google Maps kopierte Links.</p>
 <p class="leise">Liste, Graph und Statistik zeigen den Knoten weiter. Wirkt spätestens nach
 einer Minute; der Override gilt, bis er aufgehoben wird, auch wenn der Knoten selbst
 andere Koordinaten meldet.</p>
+{verlauf_html}
 <p class="leise"><a href="{ziel}">neu laden</a></p>'''
-    return seite(f'Service: {n.get("hostname", "")}', inhalt)
+    return seite(f'Service: {n.get("hostname", "")}', inhalt, neu_laden)
 
 
 # --- HTTP ----------------------------------------------------------------
@@ -283,7 +341,8 @@ class Handler(BaseHTTPRequestHandler):
                                             f'Knotenfenster der <a href="{KARTE}/">Karte</a>.</p>'))
         meldung = (q.get('meldung') or [''])[0][:200]
         gut = (q.get('gut') or [''])[0] == '1'
-        return self._antwort(200, knotenseite(node_id, benutzer, meldung, gut))
+        warte = (q.get('warte') or [''])[0] == '1'
+        return self._antwort(200, knotenseite(node_id, benutzer, meldung, gut, warte))
 
     def do_POST(self):
         benutzer = self._benutzer()
@@ -305,6 +364,8 @@ class Handler(BaseHTTPRequestHandler):
         else:
             return self._antwort(404, 'nicht gefunden', 'text/plain; charset=utf-8')
         ziel = f'{BASIS}?node={quote(node_id)}&meldung={quote(meldung)}&gut={"1" if gut else "0"}'
+        if pfad == BASIS + 'entfernen' and gut:
+            ziel = f'{BASIS}?node={quote(node_id)}&warte=1'
         return self._antwort(303, '', ort=ziel)
 
     def _entfernen(self, benutzer, node_id):

@@ -109,7 +109,7 @@ def test_seite_zeigt_knoten(server):
 def test_entfernen_nur_offline(server):
     url, tmp = server
     code, _, kopf = anfrage(url + '/nf/service/entfernen', 'node=aaaaaaaaaaaa', ANGEMELDET)
-    assert code == 303 and 'gut=1' in kopf['Location']
+    assert code == 303 and 'warte=1' in kopf['Location']
     assert os.listdir(tmp / 'remove') == ['aaaaaaaaaaaa']
     code, _, kopf = anfrage(url + '/nf/service/entfernen', 'node=bbbbbbbbbbbb', ANGEMELDET)
     assert 'gut=0' in kopf['Location']
@@ -129,3 +129,40 @@ def test_ort_override(server):
     assert json.load(open(tmp / 'aliases.json'))['bbbbbbbbbbbb']['nodeinfo']['location'] is None
     anfrage(url + '/nf/service/ort', 'node=bbbbbbbbbbbb&was=aufheben', ANGEMELDET)
     assert json.load(open(tmp / 'aliases.json')) == {}
+
+
+def test_rueckmeldung_nach_dem_loeschen(server):
+    url, tmp = server
+    anfrage(url + '/nf/service/entfernen', 'node=aaaaaaaaaaaa', ANGEMELDET)
+    kopf = {'X-Service-User': 'adorfer'}
+    # Auftrag liegt: Hinweis, Knopf weg, Seite laedt sich neu
+    code, text, _ = anfrage(url + '/nf/service/?node=aaaaaaaaaaaa&warte=1', kopf=kopf)
+    assert 'Löschung erfolgt' in text and 'http-equiv="refresh"' in text
+    assert 'Jetzt aus der Karte entfernen' not in text
+    # auch ohne warte, solange der Auftrag liegt
+    assert 'Löschung erfolgt' in anfrage(url + '/nf/service/?node=aaaaaaaaaaaa', kopf=kopf)[1]
+    # yanic hat erledigt, Karte noch alt: weiter warten
+    os.remove(tmp / 'remove' / 'aaaaaaaaaaaa')
+    assert 'Löschung erfolgt' in anfrage(url + '/nf/service/?node=aaaaaaaaaaaa&warte=1', kopf=kopf)[1]
+    # Karte neu geschrieben, Knoten weg
+    d = json.load(open(tmp / 'meshviewer.json'))
+    d['nodes'] = [n for n in d['nodes'] if n['node_id'] != 'aaaaaaaaaaaa']
+    json.dump(d, open(tmp / 'meshviewer.json', 'w'))
+    code, text, _ = anfrage(url + '/nf/service/?node=aaaaaaaaaaaa&warte=1', kopf=kopf)
+    assert 'ist entfernt' in text and 'refresh' not in text
+
+
+def test_rueckmeldung_wenn_er_wiederkommt(server):
+    url, _ = server
+    code, text, _ = anfrage(url + '/nf/service/?node=bbbbbbbbbbbb&warte=1', kopf={'X-Service-User': 'a'})
+    assert 'wieder gemeldet' in text and 'refresh' not in text
+
+
+def test_verlauf_auf_der_seite(server):
+    url, _ = server
+    anfrage(url + '/nf/service/ort', 'node=bbbbbbbbbbbb&was=setzen&koordinaten=51.25+6.97', ANGEMELDET)
+    anfrage(url + '/nf/service/ort', 'node=bbbbbbbbbbbb&was=aufheben', ANGEMELDET)
+    text = anfrage(url + '/nf/service/?node=bbbbbbbbbbbb', kopf={'X-Service-User': 'adorfer'})[1]
+    assert 'Verlauf' in text
+    assert text.index('Override aufgehoben') < text.index('Ort gesetzt (51.25, 6.97)')
+    assert 'adorfer' in text

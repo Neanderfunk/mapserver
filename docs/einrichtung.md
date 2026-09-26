@@ -27,6 +27,7 @@ Zusätze, jeweils mit eigenem Skript.
 | UniFi (optional) | `sammler/unifi-einrichten.sh` | `unifi-respondd`, Zuordnung AP → Router |
 | Eigene Antwort | `sammler/mesh-announce-einrichten.sh` | `mesh-announce`: map6 als Knoten in jedem Mesh |
 | Überwachung | `checkmk/installieren.sh` | Local Checks für den Checkmk-Agenten |
+| Service-Menü (neander) | `service/einrichten.sh` | `karte-service`: Aktionen hinter Authentik, siehe unten |
 | Maschine | `vm/` | `/etc/network/interfaces`, IPv6-Nachbartabelle; von Hand, siehe `vm/README.md` |
 
 ```bash
@@ -139,3 +140,33 @@ es je Name einen Eintrag und ein Let's-Encrypt-Zertifikat; eingetragen sind
 `map.freifunk.space`. Die Ortskarten `<ort>.neander.map.freifunk.space` kommen
 mit dem Umzug von `map.eulenfunk.de`. Ein Name ohne Karte zeigt die
 Vorgabeseite der VM mit der Kartenliste.
+
+## Service-Menü und Authentik
+
+Das Service-Menü (`service/`, Beschreibung in `docs/betrieb.md`) braucht
+außerhalb der VM eine Application in Authentik (idm.ffnef.de), angelegt von
+adorfer am 26.09.2026:
+
+- Proxy-Provider "Neanderfunk Map", Modus **Forward auth (single
+  application)**, External host `https://neander.map.freifunk.space`
+- Application `neanderfunk-mapserver` mit diesem Provider, am **Embedded
+  Outpost**; wer darf, regelt eine Bindung (Gruppe) an der Application
+- Probe von der VM: der Outpost antwortet für den Host mit 401 (bekannt,
+  nicht angemeldet), für einen unbekannten Host mit 404:
+  ```bash
+  curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: idm.ffnef.de' \
+    -H 'X-Forwarded-Host: neander.map.freifunk.space' \
+    https://idm.ffnef.de/outpost.goauthentik.io/auth/nginx
+  ```
+
+Auf der VM, in dieser Reihenfolge:
+
+1. `sudo ./service/einrichten.sh`: Benutzer `karte-service`, Verzeichnis
+   `/var/lib/karte/service` (karte-service:yanic, 2775), Dienst.
+2. yanic neu bauen und neu starten (Fork mit `aliases_path` und
+   `remove_dir`, siehe `sammler/einrichten.sh`); die Unit `yanic@` braucht
+   `SupplementaryGroups=yanic` und Schreibrecht auf das Verzeichnis, sonst
+   bleiben Löschaufträge liegen ("Auftrag nicht loeschbar" im Journal).
+3. `sudo ./web/einrichten.sh`: meshviewer mit Zahnrad, nginx mit Anmeldung
+   nur im Vhost `neander.map.freifunk.space`.
+

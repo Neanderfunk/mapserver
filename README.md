@@ -15,8 +15,9 @@ Werkzeugen und bringt Dinge mit, die der alte Stack nicht kann:
   Grafana für lange Zeiträume und eine Gesamtsicht der Community,
 - Schnittstellen für andere, etwa die Adressen je Knoten
   (`/nf/targets.json`).
-- ein Service-Menü hinter Anmeldung (Authentik) für die eigene Karte:
-  Offline-Knoten sofort entfernen, Koordinaten eines Knotens überschreiben.
+- ein Service-Menü hinter Anmeldung (Authentik) für die eigene Karte, über
+  ein kleines Zahnrad im Knotenfenster: Offline-Knoten sofort entfernen,
+  Koordinaten und Namen eines Knotens überschreiben, mit Verlauf.
 
 **Der Aufhänger:** eine Not-Karte für Communities, die gerade keine
 funktionierende Karte haben, gedacht für

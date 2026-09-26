@@ -192,6 +192,35 @@ wir für andere ein dunkler Knoten sind").
   fragt per Unicast nur nach, wer auf den Multicast der Runde nicht
   geantwortet hat, das kostet also höchstens eine Runde.
 
+## Service-Menü (hinter Anmeldung)
+
+Seit 26.09.2026, nur für die neander-Karte: ein kleines Zahnrad neben dem
+Knotennamen im Knotenfenster führt auf
+`https://neander.map.freifunk.space/nf/service/?node=<node_id>`, auch von den
+Ortskarten aus. Ohne Anmeldung geht es zu Authentik (idm.ffnef.de,
+Application `neanderfunk-mapserver`, Proxy-Provider "Neanderfunk Map",
+Forward auth single application, Embedded Outpost); wer darf, regelt die
+Bindung an der Application.
+
+- **Offline-Knoten sofort entfernen:** legt einen Löschauftrag an; yanic
+  entfernt den Knoten beim nächsten Speichern (spätestens nach einer Minute)
+  aus seinem Zustand, nur wenn er offline ist. Kein dauerhafter Eintrag:
+  meldet er sich wieder, erscheint er neu. Ein Koordinaten-Override für ihn
+  bleibt dabei bestehen.
+- **Koordinaten-Override:** an eine Stelle rücken, von der Landkarte nehmen
+  (`location: null`), aufheben. Als Alias im Format von hopglass-server in
+  `/var/lib/karte/service/aliases-neander.json`; von Hand ergänzbar, etwa um
+  Namen zu überschreiben. yanic lädt die Datei jede Minute nach.
+- **Protokoll:** `/var/lib/karte/service/protokoll.jsonl`, je Aktion Zeit,
+  Authentik-Benutzer, Knoten.
+- **Technik:** `service/service.py` (127.0.0.1:8097, `karte-service.service`,
+  Benutzer `karte-service`, Gruppe `yanic`), eingerichtet mit
+  `service/einrichten.sh`; nginx-Teil in `web/konfig-erzeugen.py` (`SERVICE`);
+  yanic-Schlüssel `aliases_path` und `remove_dir` für neander in
+  `sammler/yanic-conf.py`; Zahnrad im meshviewer-Fork (`serviceLink`).
+  Den Benutzer setzt nur nginx (`X-Service-User`), POST nur mit Origin der
+  Karte.
+
 ## Eine Community in den Standby nehmen
 
 Wenn eine Community wieder selbst eine Karte betreibt, brauchen wir ihr Netz

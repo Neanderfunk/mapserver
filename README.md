@@ -31,7 +31,8 @@ wieder eine eigene Karte, ruht unsere und leitet dorthin weiter.
 - Ortskarten `<ort>.neander.map.freifunk.space` sind gebaut und kommen mit dem
   Umzug, wenn diese Karte `map.eulenfunk.de` ablöst.
 - Not-Karten: Freifunk Essen (`essen.map.freifunk.space`, per fastd).
-  Einbeck und Hildesheim sind in Vorbereitung.
+  Hildesheim wartet auf die Freischaltung unseres Schlüssels, Einbeck auf
+  einen antwortenden Broker.
 - `map.freifunk.space` zeigt bis dahin auf `map.eulenfunk.de` und wird hier
   nicht angefasst.
 

@@ -156,6 +156,14 @@ Community ist Freifunk Essen (Not-Karte für mitfunken.freifunk.space).
   Essen antwortet nur auf `ff02::2:1001` (36 Knoten), auf `ff05::2:1001`
   nur der Supernode.
 
+**Auf Freischaltung warten (Hildesheim, seit 26.09.2026):** Die Domain läuft
+ganz normal; fastd versucht den Handshake wie jeder Gluon-Knoten laufend von
+selbst, abgelehnt werden kostet nichts. Bis zur Freischaltung steht sie in
+`tunnel/ruhend.conf` mit einer Begründung, die mit `WARTET` beginnt. Checkmk
+meldet dann OK, solange nichts verbunden ist, und WARN, sobald der Tunnel
+einen Nachbarn hat. Dann: Zeile aus `ruhend.conf` nehmen, Abfragegruppe
+messen (vorläufig `ff02::2:1001`), Erstsichtung der map6-Knoten nachziehen.
+
 Achtung: `tunnel/einrichten.sh` schaltet am Ende die Tunnel **aller**
 Domains ein, auch ruhender Communities (EN). Neue Domains deshalb einzeln
 einspielen (Dateien installieren, `systemctl enable --now karte-en-tunnel@<code>`).
@@ -235,7 +243,7 @@ was das Netz getan hat, solange wir hingesehen haben.
 
 **Stand 26.09.2026:** Freifunk EN ist im Standby, acht Tunnel, der Collector
 `yanic@en` und `karte-ziele.timer` sind abgeschaltet, neun Namen leiten auf
-`map.ff-en.de` um. Es laufen 48 Tunnel für Neanderfunk und einer für Essen.
+`map.ff-en.de` um. Es laufen 48 Tunnel für Neanderfunk, einer für Essen und einer für Hildesheim (wartet auf Freischaltung).
 
 ## Überwachung
 

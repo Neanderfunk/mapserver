@@ -376,6 +376,11 @@ class Handler(BaseHTTPRequestHandler):
             return 'Der Knoten ist online und wird nicht entfernt.', False
         entfernen_beauftragen(node_id)
         protokoll(benutzer, 'entfernen', node_id, hostname=n.get('hostname'))
+        # Ein Koordinaten-Override faellt mit weg (adorfer 26.09.2026); kommt
+        # der Knoten wieder, gilt, was er meldet. Andere Alias-Felder bleiben.
+        if 'location' in ((aliases_lesen().get(node_id) or {}).get('nodeinfo') or {}):
+            ort_setzen(node_id, 'aufheben')
+            protokoll(benutzer, 'ort-aufheben', node_id, grund='mit entfernt')
         return 'Auftrag angenommen: der Knoten verschwindet spätestens in einer Minute.', True
 
     def _ort(self, benutzer, node_id, felder):

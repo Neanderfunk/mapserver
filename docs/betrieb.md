@@ -206,7 +206,8 @@ Bindung an der Application.
   entfernt den Knoten beim nächsten Speichern (spätestens nach einer Minute)
   aus seinem Zustand, nur wenn er offline ist. Kein dauerhafter Eintrag:
   meldet er sich wieder, erscheint er neu. Ein Koordinaten-Override für ihn
-  bleibt dabei bestehen.
+  fällt dabei mit weg (andere Alias-Felder bleiben). Nach dem Klick zeigt die
+  Seite "Löschung erfolgt …" und lädt sich neu, bis der Knoten weg ist.
 - **Koordinaten-Override:** an eine Stelle rücken, von der Landkarte nehmen
   (`location: null`), aufheben. Als Alias im Format von hopglass-server in
   `/var/lib/karte/service/aliases-neander.json`; von Hand ergänzbar, etwa um

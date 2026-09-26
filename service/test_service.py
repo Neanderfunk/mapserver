@@ -166,3 +166,13 @@ def test_verlauf_auf_der_seite(server):
     assert 'Verlauf' in text
     assert text.index('Override aufgehoben') < text.index('Ort gesetzt (51.25, 6.97)')
     assert 'adorfer' in text
+
+
+def test_loeschen_nimmt_den_override_mit(server):
+    url, tmp = server
+    json.dump({'aaaaaaaaaaaa': {'nodeinfo': {'hostname': 'x', 'location': None}}},
+              open(tmp / 'aliases.json', 'w'))
+    anfrage(url + '/nf/service/entfernen', 'node=aaaaaaaaaaaa', ANGEMELDET)
+    assert json.load(open(tmp / 'aliases.json')) == {'aaaaaaaaaaaa': {'nodeinfo': {'hostname': 'x'}}}
+    aktionen = [json.loads(z)['aktion'] for z in open(tmp / 'protokoll.jsonl')]
+    assert aktionen == ['entfernen', 'ort-aufheben']

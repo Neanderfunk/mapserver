@@ -1,0 +1,24 @@
+[Unit]
+Description=Service-Menue der Karte (hinter Anmeldung, nur 127.0.0.1)
+After=network-online.target
+
+[Service]
+Type=simple
+User=karte-service
+Group=yanic
+# Gruppe yanic und umask 002: yanic muss Loeschauftraege entfernen koennen
+UMask=0002
+ExecStart=/usr/bin/python3 /usr/local/lib/karte-service/service.py --port 8097
+Restart=always
+RestartSec=5
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ReadWritePaths=/var/lib/karte/service
+RestrictAddressFamilies=AF_INET AF_INET6
+MemoryMax=128M
+
+[Install]
+WantedBy=multi-user.target

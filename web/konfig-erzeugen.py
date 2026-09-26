@@ -297,7 +297,12 @@ def konfig(titel, pfad, alle):
             'prometheus': {'url': ZEITREIHE_URL}, 'nodeCharts': diagramme(),
             'chartRanges': ZEITRAEUME, 'nodeInfos': VERTIEFUNG,
             'nodeAttr': ATTRIBUTE, 'nodeValues': WERTE,
-            'statisticsLinks': statistik_links(pfad, alle)}
+            'statisticsLinks': statistik_links(pfad, alle),
+            # Zahnrad im Knotenfenster zum Service-Menue (Fork, serviceLink);
+            # auch von den Ortskarten aus auf die Gesamtkarte, nur dort gibt es
+            # das Menue
+            'serviceLink': {'title': 'Service (Anmeldung)',
+                            'href': 'https://neander.map.freifunk.space/nf/service/?node={NODE_ID}'}}
            if community == 'neander' else {'deprecation_enabled': False})
     return {
         **alt,
@@ -441,7 +446,7 @@ server {
 		add_header X-Cache-Status $upstream_cache_status always;
 		add_header Cache-Control "public, max-age=86400" always;
 	}
-%(api)s	location / {
+%(api)s%(service)s	location / {
 		try_files $uri $uri/ /index.html;
 		add_header Cache-Control "no-cache";
 	}
@@ -461,6 +466,54 @@ API = """	location /nf/ {
 	# Zeitreihen, falls fuer diese Community eingerichtet (zeitreihe/). Das
 	# Muster mit Stern macht das include optional.
 	include /etc/nginx/karte-en/prom-%(community)s*.conf;
+"""
+
+
+# Service-Menue hinter Anmeldung, nur auf der neander-Gesamtkarte (adorfer
+# 26.09.2026). Wie bei mitfunken: Authentik, Proxy-Provider "Forward auth
+# (single application)", Application neanderfunk-mapserver, Embedded Outpost
+# auf idm.ffnef.de; nginx fragt per auth_request nach. Der Outpost erkennt die
+# Application an X-Forwarded-Host und antwortet nur mit Host idm.ffnef.de.
+# Die Adresse wird erst zur Laufzeit aufgeloest, damit DNS beim Start von
+# nginx nicht alle Karten mitreisst. Den Benutzer setzt nginx selbst; eine
+# vom Browser mitgeschickte Kopfzeile X-Service-User wird so ueberschrieben.
+SERVICE = """	location /outpost.goauthentik.io {
+		resolver %(resolver)s valid=300s;
+		set $idm https://idm.ffnef.de;
+		proxy_pass              $idm$uri$is_args$args;
+		proxy_ssl_server_name   on;
+		proxy_ssl_name          idm.ffnef.de;
+		proxy_set_header        Host idm.ffnef.de;
+		proxy_set_header        X-Forwarded-Host $http_host;
+		proxy_set_header        X-Forwarded-Proto https;
+		proxy_set_header        X-Original-URL https://$http_host$request_uri;
+		add_header              Set-Cookie $auth_cookie;
+		auth_request_set        $auth_cookie $upstream_http_set_cookie;
+		proxy_pass_request_body off;
+		proxy_set_header        Content-Length "";
+	}
+	location @goauthentik_proxy_signin {
+		internal;
+		add_header Set-Cookie $auth_cookie;
+		return 302 /outpost.goauthentik.io/start?rd=https://$http_host$request_uri;
+	}
+	# Service-Menue (service/service.py), unter /nf/, weil der Service Worker
+	# der Karte dort nicht eingreift
+	location /nf/service/ {
+		absolute_redirect off;
+		auth_request     /outpost.goauthentik.io/auth/nginx;
+		error_page       401 = @goauthentik_proxy_signin;
+		auth_request_set $auth_cookie $upstream_http_set_cookie;
+		add_header       Set-Cookie $auth_cookie;
+		auth_request_set $service_user $upstream_http_x_authentik_username;
+		proxy_pass http://127.0.0.1:8097;
+		proxy_set_header Host $host;
+		proxy_set_header X-Service-User $service_user;
+		add_header Cache-Control "no-store" always;
+		add_header X-Frame-Options "DENY" always;
+		add_header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'" always;
+		client_max_body_size 8k;
+	}
 """
 
 
@@ -569,8 +622,9 @@ def main():
         with open(f'{verz}/config.json', 'w', encoding='utf-8') as f:
             json.dump(konfig(titel, pfad, seine), f, ensure_ascii=False, indent=1)
         api = API % {'web': WEB, 'community': g} if ort == 'alle' else ''
+        service = SERVICE % {'resolver': resolver()} if (g, ort) == ('neander', 'alle') else ''
         site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'host': pfad,
-                             'web': WEB, 'vorgabe': '', 'api': api,
+                             'web': WEB, 'vorgabe': '', 'api': api, 'service': service,
                              'resolver': resolver()})
         print(f'  {fqdn:38} {titel}')
 

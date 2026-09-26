@@ -65,6 +65,9 @@ SITE_KONF = '/etc/karte-en/sitecodes.conf'
 # Karte wieder selbst (adorfer 22.09.2026, Auftrag der Paketfeed-Session).
 ZEITREIHE = {'neander': 'http://127.0.0.1:8428'}
 
+# Communities mit Service-Menue (adorfer 26.09.2026: nur neander)
+SERVICE = {'neander'}
+
 
 def gemeldete_codes():
     try:
@@ -184,6 +187,11 @@ def main():
     t.append('# Muss deutlich groesser sein als collect_interval, sonst flackern')
     t.append('# Knoten nach einer einzigen verpassten Runde auf offline.')
     t.append(f'offline_after = "{OFFLINE}"')
+    # Service-Menue der Karte (service/service.py, Fork Neanderfunk/yanic):
+    # Koordinaten-Override als Aliase und Loeschauftraege fuer Offline-Knoten
+    if community in SERVICE:
+        t.append(f'aliases_path = "/var/lib/karte/service/aliases-{community}.json"')
+        t.append(f'remove_dir = "/var/lib/karte/service/remove-{community}"')
 
     # Gesamtansicht ohne Filter: diese Instanz hoert nur die Domains dieser
     # Community ab, mehr kann also gar nicht hineingeraten. Ohne Filter

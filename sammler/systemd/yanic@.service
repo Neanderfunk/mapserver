@@ -41,6 +41,11 @@ ProtectHome=yes
 PrivateTmp=yes
 PrivateDevices=yes
 ReadWritePaths=/var/www/karte-en/sites
+# Service-Menue (service/): Aliase lesen, erledigte Loeschauftraege entfernen.
+# Das Verzeichnis gehoert karte-service:yanic; "-" laesst die Unit auch ohne es
+# starten (Communities ohne Service-Menue).
+SupplementaryGroups=yanic
+ReadWritePaths=-/var/lib/karte/service
 StateDirectory=yanic
 
 [Install]

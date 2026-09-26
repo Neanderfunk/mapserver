@@ -494,6 +494,8 @@ SERVICE = """	location /outpost.goauthentik.io {
 	}
 	location @goauthentik_proxy_signin {
 		internal;
+		# relativ, sonst steht hinter dem Proxy http:// in der Umleitung
+		absolute_redirect off;
 		add_header Set-Cookie $auth_cookie;
 		return 302 /outpost.goauthentik.io/start?rd=https://$http_host$request_uri;
 	}

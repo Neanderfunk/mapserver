@@ -239,7 +239,15 @@ grep -v '^#' "$KONF" | grep . | while read -r community code _ _ _ host _; do
     alter=$(alter_von "$datei")
     set -- $(knoten_in "$datei")
     ges=$1 on=$2
-    if [ "$ruht" = 1 ]; then
+    # "WARTET" am Anfang der Begruendung: die Domain wartet auf etwas von
+    # aussen, etwa eine Schluesselfreischaltung (Hildesheim, 26.09.2026).
+    # Steht der Tunnel dann (ein Nachbar), soll das auffallen: WARN, damit
+    # jemand die Zeile aus ruhend.conf nimmt.
+    wartet=0
+    grep -q "^$code[[:space:]]\+WARTET" "$RUHEND" 2>/dev/null && wartet=1
+    if [ "$ruht" = 1 ] && [ "$wartet" = 1 ] && [ "$nachbarn" -gt 0 ]; then
+        zustand=1; text="wartete, jetzt verbunden: $nachbarn Nachbarn, $orig Originatoren, $on Knoten - Zeile aus ruhend.conf nehmen"
+    elif [ "$ruht" = 1 ]; then
         zustand=0; text="ruhende Domain, $orig Originatoren, $on Knoten"
     elif { [ "$nachbarn" -eq 0 ] || [ "$orig" -eq 0 ]; } && [ "$tlaeuft" -lt "$SCHONFRIST" ]; then
         zustand=0; text="Tunnel frisch gestartet (${tlaeuft}s), Mesh noch nicht beisammen"

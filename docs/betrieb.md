@@ -212,8 +212,12 @@ Bindung an der Application.
   (`location: null`), aufheben. Als Alias im Format von hopglass-server in
   `/var/lib/karte/service/aliases-neander.json`; von Hand ergänzbar, etwa um
   Namen zu überschreiben. yanic lädt die Datei jede Minute nach.
+- **Namen ändern:** Hostname auf der Karte überschreiben, etwa für Knoten mit
+  Vorgabenamen (`dusukw_…`), an die gerade niemand herankommt; zurücksetzbar.
+  Bleibt beim Löschen stehen.
 - **Protokoll:** `/var/lib/karte/service/protokoll.jsonl`, je Aktion Zeit,
-  Authentik-Benutzer, Knoten.
+  Authentik-Benutzer, Knoten; die letzten zehn je Knoten stehen als Verlauf
+  auf seiner Service-Seite.
 - **Technik:** `service/service.py` (127.0.0.1:8097, `karte-service.service`,
   Benutzer `karte-service`, Gruppe `yanic`), eingerichtet mit
   `service/einrichten.sh`; nginx-Teil in `web/konfig-erzeugen.py` (`SERVICE`);

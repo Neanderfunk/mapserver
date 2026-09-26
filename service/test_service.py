@@ -176,3 +176,29 @@ def test_loeschen_nimmt_den_override_mit(server):
     assert json.load(open(tmp / 'aliases.json')) == {'aaaaaaaaaaaa': {'nodeinfo': {'hostname': 'x'}}}
     aktionen = [json.loads(z)['aktion'] for z in open(tmp / 'protokoll.jsonl')]
     assert aktionen == ['entfernen', 'ort-aufheben']
+
+
+def test_namen_aendern_und_zuruecksetzen(server):
+    url, tmp = server
+    json.dump({'bbbbbbbbbbbb': {'nodeinfo': {'location': None}}}, open(tmp / 'aliases.json', 'w'))
+    code, _, kopf = anfrage(url + '/nf/service/name',
+                            'node=bbbbbbbbbbbb&was=setzen&name=Unterkunft+West+Flur+2', ANGEMELDET)
+    assert 'gut=1' in kopf['Location']
+    assert json.load(open(tmp / 'aliases.json'))['bbbbbbbbbbbb']['nodeinfo'] == {
+        'location': None, 'hostname': 'Unterkunft West Flur 2'}
+    for schlecht in ('', '<script>', 'x' * 64, 'a%0Ab'):
+        code, _, kopf = anfrage(url + '/nf/service/name', f'node=bbbbbbbbbbbb&was=setzen&name={schlecht}', ANGEMELDET)
+        assert 'gut=0' in kopf['Location'], schlecht
+    anfrage(url + '/nf/service/name', 'node=bbbbbbbbbbbb&was=aufheben', ANGEMELDET)
+    assert json.load(open(tmp / 'aliases.json'))['bbbbbbbbbbbb']['nodeinfo'] == {'location': None}
+    text = anfrage(url + '/nf/service/?node=bbbbbbbbbbbb', kopf={'X-Service-User': 'a'})[1]
+    assert 'Name gesetzt (&quot;Unterkunft West Flur 2&quot;)' in text or 'Name gesetzt ("Unterkunft West Flur 2")' in text
+    assert 'Namens-Override aufgehoben' in text
+
+
+def test_loeschen_laesst_den_namen_stehen(server):
+    url, tmp = server
+    json.dump({'aaaaaaaaaaaa': {'nodeinfo': {'hostname': 'Sinnvoll', 'location': None}}},
+              open(tmp / 'aliases.json', 'w'))
+    anfrage(url + '/nf/service/entfernen', 'node=aaaaaaaaaaaa', ANGEMELDET)
+    assert json.load(open(tmp / 'aliases.json')) == {'aaaaaaaaaaaa': {'nodeinfo': {'hostname': 'Sinnvoll'}}}

@@ -19,6 +19,9 @@ Aktionen, beide fuehrt yanic aus (Fork Neanderfunk/yanic):
   hopglass-server) je Knoten nodeinfo.location auf einen Punkt oder auf null
   (von der Landkarte nehmen); "aufheben" nimmt es zurueck. Andere Felder
   eines Alias bleiben unberuehrt.
+- Namen aendern: setzt nodeinfo.hostname im Alias, etwa fuer Knoten, die
+  mit dem Vorgabenamen aufgestellt wurden und nicht mehr erreichbar sind
+  (adorfer 26.09.2026); "zuruecksetzen" nimmt es zurueck.
 
 Jede Aktion steht mit Benutzer und Zeit in PROTOKOLL.
 
@@ -131,17 +134,16 @@ def aliases_schreiben(daten, pfad=None):
     os.replace(tmp, pfad)
 
 
-def ort_setzen(node_id, ort, pfad=None):
-    """ort: (lat, lon) setzen, None von der Landkarte nehmen, 'aufheben'."""
+def alias_setzen(node_id, feld, wert, pfad=None):
+    """Ein Feld der nodeinfo im Alias setzen; wert 'aufheben' nimmt es raus.
+    Andere Felder desselben Alias bleiben unberuehrt."""
     daten = aliases_lesen(pfad)
     eintrag = daten.get(node_id) if isinstance(daten.get(node_id), dict) else {}
     ni = eintrag.get('nodeinfo') if isinstance(eintrag.get('nodeinfo'), dict) else {}
-    if ort == 'aufheben':
-        ni.pop('location', None)
-    elif ort is None:
-        ni['location'] = None
+    if wert == 'aufheben':
+        ni.pop(feld, None)
     else:
-        ni['location'] = {'latitude': ort[0], 'longitude': ort[1]}
+        ni[feld] = wert
     if ni:
         eintrag['nodeinfo'] = ni
         daten[node_id] = eintrag
@@ -152,6 +154,22 @@ def ort_setzen(node_id, ort, pfad=None):
         else:
             daten.pop(node_id, None)
     aliases_schreiben(daten, pfad)
+
+
+def ort_setzen(node_id, ort, pfad=None):
+    """ort: (lat, lon) setzen, None von der Landkarte nehmen, 'aufheben'."""
+    wert = ort if ort in (None, 'aufheben') else {'latitude': ort[0], 'longitude': ort[1]}
+    alias_setzen(node_id, 'location', wert, pfad)
+
+
+# Namen, wie Gluon sie zulaesst, plus Leerzeichen und Umlaute; keine
+# Steuerzeichen, hoechstens 63 Zeichen (wie ein DNS-Label)
+NAME = re.compile(r'^[^\x00-\x1f\x7f<>"]{1,63}$')
+
+
+def name_setzen(node_id, name, pfad=None):
+    """name: neuer Hostname oder 'aufheben'."""
+    alias_setzen(node_id, 'hostname', name, pfad)
 
 
 def entfernen_beauftragen(node_id, ordner=None):
@@ -194,7 +212,8 @@ def seite(titel, inhalt, neu_laden=None):
 
 
 AKTIONEN = {'entfernen': 'entfernt', 'ort-setzen': 'Ort gesetzt', 'ort-ausblenden':
-            'von der Landkarte genommen', 'ort-aufheben': 'Override aufgehoben'}
+            'von der Landkarte genommen', 'ort-aufheben': 'Koordinaten-Override aufgehoben',
+            'name-setzen': 'Name gesetzt', 'name-aufheben': 'Namens-Override aufgehoben'}
 
 
 def verlauf(node_id, anzahl=10, pfad=None):
@@ -236,6 +255,7 @@ def knotenseite(node_id, benutzer, meldung='', gut=False, warte=False):
     online = bool(n.get('is_online'))
     loc = n.get('location') or {}
     ort = (f'{loc.get("latitude")}, {loc.get("longitude")}' if loc else 'keiner (nicht auf der Landkarte)')
+    name_override = alias.get('hostname', 'keiner') if 'hostname' in alias else 'keiner'
     if 'location' in alias:
         override = ('von der Landkarte genommen' if alias['location'] is None else
                     f'gesetzt auf {alias["location"].get("latitude")}, {alias["location"].get("longitude")}')
@@ -245,7 +265,7 @@ def knotenseite(node_id, benutzer, meldung='', gut=False, warte=False):
               ('Status', 'online' if online else 'offline'),
               ('zuletzt gesehen', n.get('lastseen', '')), ('zuerst gesehen', n.get('firstseen', '')),
               ('Domain', n.get('domain', '')), ('Ort auf der Karte', ort),
-              ('Koordinaten-Override', override)]
+              ('Koordinaten-Override', override), ('Namens-Override', name_override)]
     tab = ''.join(f'<tr><td>{e(k)}</td><td>{e(str(v))}</td></tr>' for k, v in zeilen)
     hinweis = (f'<div class="hinweis{" ok" if gut else ""}">{e(meldung)}</div>' if meldung else '')
     ziel = f'{BASIS}?node={quote(node_id)}'
@@ -272,6 +292,8 @@ def knotenseite(node_id, benutzer, meldung='', gut=False, warte=False):
         was = AKTIONEN.get(v.get('aktion'), v.get('aktion', ''))
         if v.get('aktion') == 'ort-setzen':
             was += f' ({v.get("latitude")}, {v.get("longitude")})'
+        elif v.get('aktion') == 'name-setzen':
+            was += f' ("{v.get("name")}")'
         zeilen_v.append(f'<tr><td>{e(str(v.get("zeit", "")))}</td><td>{e(str(v.get("benutzer", "")))}</td>'
                         f'<td>{e(was)}</td></tr>')
     verlauf_html = (f'<h2>Verlauf</h2><table class="leise">{"".join(zeilen_v)}</table>'
@@ -299,6 +321,16 @@ Google Maps kopierte Links.</p>
 <p class="leise">Liste, Graph und Statistik zeigen den Knoten weiter. Wirkt spätestens nach
 einer Minute; der Override gilt, bis er aufgehoben wird, auch wenn der Knoten selbst
 andere Koordinaten meldet.</p>
+<h2>Namen ändern</h2>
+<form method="post" action="{BASIS}name">
+<input type="hidden" name="node" value="{e(node_id)}">
+<input type="text" name="name" value="{e(n.get("hostname", ""))}" maxlength="63" autocomplete="off">
+<button name="was" value="setzen">Namen setzen</button>
+<button name="was" value="aufheben">Namen zurücksetzen</button>
+</form>
+<p class="leise">Etwa wenn ein Knoten mit dem Vorgabenamen aufgestellt wurde und niemand mehr an
+ihn herankommt. Gilt auf der Karte, bis er zurückgesetzt wird; der Knoten selbst behält
+seinen Namen.</p>
 {verlauf_html}
 <p class="leise"><a href="{ziel}">neu laden</a></p>'''
     return seite(f'Service: {n.get("hostname", "")}', inhalt, neu_laden)
@@ -361,6 +393,8 @@ class Handler(BaseHTTPRequestHandler):
             meldung, gut = self._entfernen(benutzer, node_id)
         elif pfad == BASIS + 'ort':
             meldung, gut = self._ort(benutzer, node_id, felder)
+        elif pfad == BASIS + 'name':
+            meldung, gut = self._name(benutzer, node_id, felder)
         else:
             return self._antwort(404, 'nicht gefunden', 'text/plain; charset=utf-8')
         ziel = f'{BASIS}?node={quote(node_id)}&meldung={quote(meldung)}&gut={"1" if gut else "0"}'
@@ -382,6 +416,21 @@ class Handler(BaseHTTPRequestHandler):
             ort_setzen(node_id, 'aufheben')
             protokoll(benutzer, 'ort-aufheben', node_id, grund='mit entfernt')
         return 'Auftrag angenommen: der Knoten verschwindet spätestens in einer Minute.', True
+
+    def _name(self, benutzer, node_id, felder):
+        was = (felder.get('was') or [''])[0]
+        if was == 'aufheben':
+            name_setzen(node_id, 'aufheben')
+            protokoll(benutzer, 'name-aufheben', node_id)
+            return 'Namens-Override aufgehoben; es gilt wieder der gemeldete Name.', True
+        if was == 'setzen':
+            name = (felder.get('name') or [''])[0].strip()
+            if not NAME.match(name):
+                return 'Kein gültiger Name (1 bis 63 Zeichen, keine Steuerzeichen, keine < > ").', False
+            name_setzen(node_id, name)
+            protokoll(benutzer, 'name-setzen', node_id, name=name)
+            return f'Name gesetzt auf "{name}"; wirkt spätestens in einer Minute.', True
+        return 'Unbekannte Aktion.', False
 
     def _ort(self, benutzer, node_id, felder):
         was = (felder.get('was') or [''])[0]

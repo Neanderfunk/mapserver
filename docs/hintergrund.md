@@ -159,7 +159,9 @@ aktualisiert sich das. Seit 28.09.2026 ohne Ausreisser: Knoten, die hoechstens
 25 km auseinander liegen, bilden eine Gruppe (auch ueber Ketten), und es
 zaehlen nur die groesste Gruppe und Gruppen mit mindestens 10 % der Knoten
 (`kern()`). Vorher reichte ein einzelner Knoten auf Mallorca, und die
-Gesamtkarte oeffnete mit halb Europa.
+Gesamtkarte oeffnete mit halb Europa. Eingepasst wird rechts neben der offenen
+Seitenleiste (Fork, "Startausschnitt neben der Seitenleiste"), sonst laege
+der Westrand unter ihr.
 
 ## Keine fremden Ressourcen im Browser
 

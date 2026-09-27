@@ -472,6 +472,28 @@ Zeilentitel.
   höchstens alle 30 Sekunden. UniFi-APs zeigen die Werte aus dem Controller,
   also einige Minuten alt (siehe `docs/unifi-sites.md`).
 
+### Startausschnitt
+
+Mit welchem Ausschnitt eine Karte öffnet (`fixedCenter`), rechnet
+`karte-en-konfig` aus den Knotenkoordinaten, ohne Ausreißer: Knoten, die
+höchstens 25 km auseinander liegen, bilden eine Gruppe (auch über Ketten),
+es zählen die größte Gruppe und jede mit mindestens 10 % der Knoten
+(`kern()` in `web/konfig-erzeugen.py`, Tests in `web/test_konfig.py`).
+Punkte bei 0/0 zählen nie. Gemessen am 28.09.2026 an neander: 977 von 1002
+Knoten mit Ort, Emmerich bis Bad Berleburg; vorher zogen einzelne Knoten auf
+Mallorca, in Lille oder Zürich den Ausschnitt über halb Europa.
+
+- Neu gerechnet wird nur bei einem Lauf von `karte-en-konfig`, also auch bei
+  `web/einrichten.sh`, nicht laufend.
+- Stellschrauben: `abstand_km` (größer: mehr entfernte Orte hängen sich an
+  die Hauptgruppe) und `anteil` (kleiner: auch kleinere Außenposten zählen).
+- Eingepasst wird rechts neben der offenen Seitenleiste (Fork,
+  `NEANDERFUNK.md`, "Startausschnitt neben der Seitenleiste"). Nimmt die
+  Leiste mehr als die halbe Breite ein oder liegt sie unter der Karte (Handy),
+  gilt das ganze Kartenfeld.
+- Den Unterschied zeigt ein Vergleich der `fixedCenter` aller
+  `config.json` vor und nach dem Lauf (`/var/www/karte-en/sites/*/*/config.json`).
+
 ### Kartenebenen
 
 Drei zur Auswahl, CARTO ist die Vorgabe: CARTO hell, OpenStreetMap deutsch
@@ -703,15 +725,27 @@ als letzter dazu, mit den Umbauten für die Accesspoints (Clients der APs
 beim Router abziehen, Links von beiden Seiten); vorher zwei Patchdateien in
 `sammler/patches/`, jetzt die ersten beiden Commits im Fork.
 
+**Arbeitskopie auf der VM zuerst.** Die Einrichtungsskripte installieren
+Generatoren und Konfiguration aus dem Verzeichnis, in dem sie liegen
+(`~/mapserver` auf map6). Ist diese Kopie älter als das Repo, holt ein Lauf
+die alte Fassung zurück, auch wenn die neue vorher einzeln installiert war
+(so am 28.09.2026 mit `konfig-erzeugen.py`, der Startausschnitt war kurz
+wieder ganz Europa). Also vor jedem Skriptlauf die Kopie auf den Stand des
+Repos bringen, etwa von der Arbeitskopie aus:
+
+```bash
+git archive HEAD | ssh -p 62954 ad-claude@map6.freifunk.space 'tar -x -C ~/mapserver'
+```
+
 **meshviewer** neu bauen, wenn es Neues gibt:
 
 ```bash
 sudo ./web/einrichten.sh
 ```
 
-Das holt den aktuellen `main`, baut und ersetzt den Build. Die neun
-`config.json` werden dabei neu erzeugt, die Kartenausschnitte also an die
-aktuellen Knotenkoordinaten angepasst.
+Das holt den Zweig `neanderfunk` des Forks, baut und ersetzt den Build. Alle
+`config.json` und die nginx-Site werden dabei neu erzeugt, die
+Startausschnitte also an die aktuellen Knotenkoordinaten angepasst.
 
 **yanic** auf eine neue Version: `YANIC_TAG` in `sammler/einrichten.sh`
 ändern, Skript erneut laufen lassen. Die Konfiguration wird neu erzeugt, also

@@ -210,24 +210,21 @@ ATTRIBUTE = [
     {'name': 'node.clients', 'value': 'Clients'},
 ]
 
-# Die belegten Funkkanaele. Sie stehen in keiner Kartendatei, respondd meldet
-# sie aber als Frequenz je Band (node_airtime11g.frequency). Der Kanal ergibt
-# sich daraus: unter 3 GHz (f - 2407) / 5, darueber (f - 5000) / 5. Geraete
-# ohne Funk liefern nichts, dann faellt die Zeile weg.
-_FREQ = ('max by (band) (label_replace({__name__=~"node_airtime11(g|a).frequency",'
-         ' nodeid="$node"}, "band", "$1", "__name__",'
-         ' "node_airtime11(g|a).frequency"))')
-_KANAL = (f'({_FREQ} < bool 3000) * (({_FREQ} - 2407) / 5)'
-          f' + ({_FREQ} >= bool 3000) * (({_FREQ} - 5000) / 5)')
-
-WERTE = [{
-    'name': 'Kanäle',
-    # Bandkennung lesbar machen: g ist 2,4 GHz, a ist 5 GHz
-    'query': ('label_replace(label_replace(' + _KANAL + ','
-              ' "band", "2,4 GHz", "band", "g"), "band", "5 GHz", "band", "a")'),
-    'legendFormat': '{{band}}',
-    'format': '.0f',
-}]
+# Airtime je Band als Balken hinter der Systemlast, wie auf der alten Karte
+# (Fork, airtime; adorfer 27.09.2026). Der Kanal steht im Zeilentitel und
+# ersetzt die fruehere Zeile "Kanäle" am Ende der Tabelle. Die Abfrage liefert
+# je Band (g, a) die Werte busy, rx, tx in Prozent und frequency in MHz, den
+# Kanal rechnet die Karte aus. Die Punkte in den Mustern stehen fuer jedes
+# Zeichen; label_replace verankert selbst.
+AIRTIME = {
+    'query': ('max by (band, wert) (label_replace(label_replace(label_replace('
+              '{__name__=~"node_airtime11(g|a).(chan_util|rx_util|tx_util|frequency)", nodeid="$node"},'
+              ' "band", "$1", "__name__", "node_airtime11(g|a)..*"),'
+              ' "wert", "$1", "__name__", "node_airtime11..(rx|tx|frequency).*"),'
+              ' "wert", "busy", "__name__", "node_airtime11..chan_util"))'),
+    'bands': [{'band': 'g', 'name': '2,4 GHz'}, {'band': 'a', 'name': '5 GHz'}],
+    'after': 'node.systemLoad',
+}
 
 
 ZEITRAEUME = [
@@ -296,7 +293,7 @@ def konfig(titel, pfad, alle):
             'eol': altgeraete(daten), 'eol_text': ALTGERAETE_TEXT,
             'prometheus': {'url': ZEITREIHE_URL}, 'nodeCharts': diagramme(),
             'chartRanges': ZEITRAEUME, 'nodeInfos': VERTIEFUNG,
-            'nodeAttr': ATTRIBUTE, 'nodeValues': WERTE,
+            'nodeAttr': ATTRIBUTE, 'airtime': AIRTIME,
             'statisticsLinks': statistik_links(pfad, alle),
             # Zahnrad im Knotenfenster zum Service-Menue (Fork, serviceLink);
             # auch von den Ortskarten aus auf die Gesamtkarte, nur dort gibt es

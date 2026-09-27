@@ -67,7 +67,8 @@ Commit, erklärt in `NEANDERFUNK.md` im jeweiligen Fork:
   `cu_self_rx`, `cu_self_tx`), so frisch wie der Controller, also einige
   Minuten alt. unifi_respondd rechnet die Prozente in fortlaufende Zähler um,
   wie Gluon sie liefert, yanic bildet daraus wieder dieselben Prozente.
-  Interferenz ist belegt minus eigene.
+  Interferenz ist belegt minus eigene. Auf der Karte stehen sie wie bei
+  jedem Gluon-Knoten als Airtime-Balken hinter der Systemlast.
 - **Systemlast und Speicher**: die des AP selbst (`loadavg_1`, Speicher aus
   dem Controller).
 - **Erstsichtung**: einmalig am 25.09.2026 aus dem Controller übernommen, siehe

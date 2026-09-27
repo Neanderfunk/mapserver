@@ -11,6 +11,7 @@ Werkzeugen und bringt Dinge mit, die der alte Stack nicht kann:
   und ohne doppelt gezählte Clients ([docs/unifi-sites.md](docs/unifi-sites.md)),
 - zusätzliche respondd-Werte aus dem Gluon-Paket `neanderfunk-respondd`
   (Speicherdruck, Kanäle, Offline-Zähler und mehr),
+- Airtime je Funkband als Balken im Knotenfenster, wie auf der alten Karte,
 - Zeitreihen für jeden Knoten, direkt im Knotenfenster der Karte, dazu
   Grafana für lange Zeiträume und eine Gesamtsicht der Community,
 - Schnittstellen für andere, etwa die Adressen je Knoten

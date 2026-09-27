@@ -447,6 +447,31 @@ gemessen:
 - `rate()` wirft den Metriknamen weg, danach sind `rx` und `tx` nicht mehr
   unterscheidbar; `keep_metric_names` hält ihn fest (VictoriaMetrics)
 
+### Airtime im Knotenfenster
+
+Seit 27.09.2026 steht hinter "Systemlast" je Band eine Zeile "Airtime Kanal 9"
+mit einem Balken wie auf der alten Karte (HopGlass): grün empfangen, orange
+gesendet, blau der Rest der Belegung (andere Sender, Störungen), rechts die
+Belegung insgesamt. Der Tooltip nennt die drei Anteile einzeln. Die Zeile
+"Kanäle" am Ende der Tabelle ist damit entfallen, der Kanal steht im
+Zeilentitel.
+
+- Fork: Schlüssel `airtime` (`lib/infobox/airtime.ts`), Konfiguration
+  `AIRTIME` in `web/konfig-erzeugen.py`, nur auf den Karten von neander.
+- Die Abfrage liefert je Band (Label `band`, `g`/`a`) vier Reihen mit dem
+  Label `wert`: `busy`, `rx`, `tx` in Prozent aus
+  `node_airtime11{g,a}.chan_util`, `.rx_util`, `.tx_util`, dazu `frequency`
+  in MHz. Den Kanal rechnet die Karte aus der Frequenz.
+- Die Karte klemmt auf 0 bis 100 % und zeichnet `rx` und `tx` nie breiter
+  als die Belegung; Messfehler einzelner Treiber machen den Balken so nicht
+  kaputt.
+- Ohne Daten (Gerät ohne Funk, Firmware ohne Airtime, lange offline) bleibt
+  die Zeile versteckt. Sie wird nur versteckt, nie aus der Tabelle entfernt,
+  weil meshviewer das Knotenfenster bei jeder neuen Kartendatei neu patcht.
+- Gelesen wird beim Öffnen und bei jeder neuen Kartendatei, dieselbe Abfrage
+  höchstens alle 30 Sekunden. UniFi-APs zeigen die Werte aus dem Controller,
+  also einige Minuten alt (siehe `docs/unifi-sites.md`).
+
 ### Kartenebenen
 
 Drei zur Auswahl, CARTO ist die Vorgabe: CARTO hell, OpenStreetMap deutsch

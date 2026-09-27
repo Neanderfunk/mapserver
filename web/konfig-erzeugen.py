@@ -12,6 +12,7 @@ sonst erfuehre ein fremder Server die Adresse jeder Besucherin. Geraetebilder
 liefern wir ebenfalls selbst aus statt von github.io.
 """
 import json
+import math
 import os
 import sys
 
@@ -63,8 +64,59 @@ def standby():
     return z
 
 
+def kern(orte, abstand_km=25, anteil=0.10):
+    """Die Knoten, die den Ausschnitt bestimmen: ohne Ausreisser.
+
+    Knoten, die hoechstens abstand_km auseinander liegen, gehoeren zu einer
+    Gruppe, auch ueber Ketten hinweg (einfache Verkettung). Es zaehlen die
+    groesste Gruppe und jede, die mindestens anteil aller Knoten hat. Ein
+    Einzelner auf Mallorca oder ein Paar in Lille zieht den Ausschnitt dann
+    nicht mehr ueber halb Europa, das Siegerland (rund ein Achtel) bleibt drin.
+    Gemessen 28.09.2026 an neander: 977 von 1002 Knoten, Emmerich bis
+    Bad Berleburg, statt Mallorca bis Brandenburg.
+    """
+    n = len(orte)
+    if n < 3:
+        return orte
+    # Gitter mit Zellen von mindestens abstand_km, verglichen wird nur mit den
+    # Nachbarzellen; die Laengengrade sind fuer 60 Grad Breite bemessen, also
+    # eher zu breit als zu schmal
+    dlat = abstand_km / 111.2
+    dlon = abstand_km / (111.2 * 0.5)
+    zellen = {}
+    for i, (la, lo) in enumerate(orte):
+        zellen.setdefault((int(la // dlat), int(lo // dlon)), []).append(i)
+    eltern = list(range(n))
+
+    def wurzel(i):
+        while eltern[i] != i:
+            eltern[i] = eltern[eltern[i]]
+            i = eltern[i]
+        return i
+
+    for (zy, zx), drin in zellen.items():
+        nachbarn = [j for dy in (-1, 0, 1) for dx in (-1, 0, 1)
+                    for j in zellen.get((zy + dy, zx + dx), [])]
+        for i in drin:
+            la, lo = orte[i]
+            for j in nachbarn:
+                if j <= i:
+                    continue
+                dy = (la - orte[j][0]) * 111.2
+                dx = (lo - orte[j][1]) * 111.2 * math.cos(math.radians((la + orte[j][0]) / 2))
+                if dy * dy + dx * dx <= abstand_km * abstand_km:
+                    eltern[wurzel(i)] = wurzel(j)
+    gruppen = {}
+    for i in range(n):
+        gruppen.setdefault(wurzel(i), []).append(orte[i])
+    groesste = max(len(g) for g in gruppen.values())
+    return [o for g in gruppen.values()
+            if len(g) == groesste or len(g) >= anteil * n for o in g]
+
+
 def rahmen(datei, rand=0.02):
-    """Eckpunkte aus den vorhandenen Knotenkoordinaten, sonst das EN-Gebiet."""
+    """Eckpunkte des Startausschnitts aus den Knotenkoordinaten, sonst das
+    EN-Gebiet. Ausreisser zaehlen nicht, siehe kern()."""
     vorgabe = [[51.52, 7.05], [51.20, 7.55]]
     try:
         with open(datei, encoding='utf-8') as f:
@@ -75,13 +127,15 @@ def rahmen(datei, rand=0.02):
     # oder falsch eingetragener ("Null Island"). Ein einziger solcher Punkt
     # zoege den Ausschnitt bis in den Golf von Guinea auf.
     orte = [k['location'] for k in knoten if k.get('location')]
-    orte = [o for o in orte
-            if -90 < o.get('latitude', 0) < 90 and -180 < o.get('longitude', 0) < 180
-            and not (abs(o.get('latitude', 0)) < 0.5 and abs(o.get('longitude', 0)) < 0.5)]
-    lat = [o['latitude'] for o in orte]
-    lon = [o['longitude'] for o in orte]
-    if len(lat) < 3:
+    orte = [(o.get('latitude', 0), o.get('longitude', 0)) for o in orte]
+    orte = [(la, lo) for la, lo in orte
+            if -90 < la < 90 and -180 < lo < 180
+            and not (abs(la) < 0.5 and abs(lo) < 0.5)]
+    if len(orte) < 3:
         return vorgabe
+    orte = kern(orte)
+    lat = [la for la, _ in orte]
+    lon = [lo for _, lo in orte]
     return [[round(max(lat) + rand, 4), round(min(lon) - rand, 4)],
             [round(min(lat) - rand, 4), round(max(lon) + rand, 4)]]
 

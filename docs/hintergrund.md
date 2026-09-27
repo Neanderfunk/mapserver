@@ -155,7 +155,11 @@ Datenverzeichnis, nicht eine weitere Kopie des Javascript.
 
 Die Kartenausschnitte (`fixedCenter`) rechnet der Generator aus den
 tatsaechlichen Knotenkoordinaten. Bei jedem Lauf von `karte-en-konfig`
-aktualisiert sich das.
+aktualisiert sich das. Seit 28.09.2026 ohne Ausreisser: Knoten, die hoechstens
+25 km auseinander liegen, bilden eine Gruppe (auch ueber Ketten), und es
+zaehlen nur die groesste Gruppe und Gruppen mit mindestens 10 % der Knoten
+(`kern()`). Vorher reichte ein einzelner Knoten auf Mallorca, und die
+Gesamtkarte oeffnete mit halb Europa.
 
 ## Keine fremden Ressourcen im Browser
 

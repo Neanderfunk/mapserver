@@ -87,7 +87,7 @@ Domaintabelle.
 3. Holt `github.com/freifunk/device-pictures` und liefert die Bilder lokal aus.
 4. Erzeugt je Vhost eine `config.json` und die nginx-Site
    (`karte-en-konfig`, aus `web/konfig-erzeugen.py`), dazu `conf.d`-Dateien
-   (Hash-Größe, Adress-Proxy für die Standortwahl).
+   (Hash-Größe, Adress-Proxy für die Standortwahl, gzip auch für JSON und JS).
 5. `nginx -t`, Neuladen, Probe per HTTP.
 
 ## Die Domaintabelle

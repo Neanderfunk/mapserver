@@ -82,6 +82,7 @@ find "$WEB/sites" -name config.json -exec chmod 0644 {} +
 echo "== nginx =="
 install -m 0644 "$HIER/nginx-hash.conf" /etc/nginx/conf.d/karte-hash.conf
 install -m 0644 "$HIER/nginx-geo.conf" /etc/nginx/conf.d/karte-geo.conf
+install -m 0644 "$HIER/nginx-gzip.conf" /etc/nginx/conf.d/karte-gzip.conf
 install -d -m 0700 -o www-data /var/cache/nginx/karte-geo
 ln -sf /etc/nginx/sites-available/karte-en.conf /etc/nginx/sites-enabled/karte-en.conf
 nginx -t

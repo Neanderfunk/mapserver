@@ -494,6 +494,53 @@ Mallorca, in Lille oder Zürich den Ausschnitt über halb Europa.
 - Den Unterschied zeigt ein Vergleich der `fixedCenter` aller
   `config.json` vor und nach dem Lauf (`/var/www/karte-en/sites/*/*/config.json`).
 
+### Kopierknopf hinter IP-Adressen
+
+Seit 28.09.2026 steht im Knotenfenster hinter jeder Adresse ein kleiner,
+blasser Knopf mit dem Clipboard-Icon (Fork, Schlüssel `ipCopyButton`, in
+`konfig-erzeugen.py` für alle Karten eingeschaltet). Er kopiert genau die
+Adresse und wird danach kurz grün. Mit der Maus markiert nahm der Browser den
+Übergang von der Zelle "IP Adressen" als Tabulator mit, und ein
+`ssh root@<eingefügt>` scheiterte daran.
+
+- Kopiert wird über `navigator.clipboard`, sonst über ein verstecktes
+  Textfeld und `execCommand("copy")`.
+- Die fe80-Adresse bekommt ebenfalls einen Knopf. Sie ist ohne
+  Interface-Angabe (`%br-client` o. ä.) aber nur von einem Rechner im selben
+  Segment nutzbar.
+
+### Pause im Hintergrund-Tab (Firefox)
+
+Liegt ein Kartentab 20 Minuten im Hintergrund, lädt er nicht mehr jede Minute
+`meshviewer.json` neu; wird er wieder sichtbar, lädt er sofort einmal nach
+(Fork, Schlüssel `pauseHiddenAfterMinutes`, in `konfig-erzeugen.py` für alle
+Karten 20).
+
+Anlass (28.09.2026): Firefox 149 hielt in drei Kartentabs 35, 10 und 11 GB,
+dazu 11 GB im GPU-Prozess, der Rechner lagerte aus. `about:memory` zeigte
+davon 11,1 GB als `heap/committed/unused-pages/dirty` bei 0,8 GB wirklich
+belegtem Speicher: Speicher, den die Seite freigegeben, Firefox aber nicht an
+das System zurückgegeben hat. Jede Aktualisierung legt einige zehn MB an und
+gibt sie wieder frei (Knotendaten, Kacheln, Listen). Chromium blieb bei
+demselben Test über 60 Aktualisierungen konstant bei gut 20 MB Heap. Die Seite
+selbst leckt also nicht.
+
+Passender Fehler bei Mozilla, offen:
+[Bug 2070900](https://bugzilla.mozilla.org/show_bug.cgi?id=2070900), "The
+deferred purge never releases the dirty pages of an arena that keeps reusing
+a few of them"; verwandt 2066416, 2067590, 2073270. Holt man einen solchen
+Tab nach vorn, gibt Firefox den Speicher nach einer Weile frei; bis dahin
+reagiert der Tab einige zehn Sekunden nicht.
+
+- Im Vordergrund lädt die Karte weiter jede Minute, dort wächst der Speicher
+  in Firefox langsamer, aber nicht nachweislich gar nicht.
+- **Ausbauen, sobald der Fehler behoben ist:** die Zeile
+  `'pauseHiddenAfterMinutes': 20` in `web/konfig-erzeugen.py` entfernen, der
+  Schlüssel im Fork ist optional.
+- Prüfen lässt sich die Pause mit einem Browser ohne Oberfläche über CDP:
+  `document.hidden` vortäuschen, Intervall verkürzen, Abrufe von
+  `meshviewer.json` zählen (so am 28.09.2026 geprüft).
+
 ### Kartenebenen
 
 Drei zur Auswahl, CARTO ist die Vorgabe: CARTO hell, OpenStreetMap deutsch

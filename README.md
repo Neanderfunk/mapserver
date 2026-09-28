@@ -12,6 +12,7 @@ Werkzeugen und bringt Dinge mit, die der alte Stack nicht kann:
 - zusätzliche respondd-Werte aus dem Gluon-Paket `neanderfunk-respondd`
   (Speicherdruck, Kanäle, Offline-Zähler und mehr),
 - Airtime je Funkband als Balken im Knotenfenster, wie auf der alten Karte,
+- Kopierknopf hinter jeder IP-Adresse im Knotenfenster,
 - Zeitreihen für jeden Knoten, direkt im Knotenfenster der Karte, dazu
   Grafana für lange Zeiträume und eine Gesamtsicht der Community,
 - Schnittstellen für andere, etwa die Adressen je Knoten

@@ -358,6 +358,11 @@ def konfig(titel, pfad, alle):
     return {
         **alt,
         'dataPath': ['./data/'],
+        # Hintergrund-Tabs laden nach 20 Minuten nicht mehr jede Minute neu
+        # (Fork, pauseHiddenAfterMinutes). Firefox behielt den dabei
+        # umgeschlagenen Speicher ueber Stunden, bis zu 35 GB je Tab
+        # (28.09.2026, Bugzilla 2070900). Ausbauen, wenn der Fehler behoben ist.
+        'pauseHiddenAfterMinutes': 20,
         'siteName': titel,
         'maxAge': 21,
         # Beschriftung der Knoten. Im Dunkelmodus nimmt meshviewer sonst die

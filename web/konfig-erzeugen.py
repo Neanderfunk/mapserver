@@ -363,6 +363,9 @@ def konfig(titel, pfad, alle):
         # umgeschlagenen Speicher ueber Stunden, bis zu 35 GB je Tab
         # (28.09.2026, Bugzilla 2070900). Ausbauen, wenn der Fehler behoben ist.
         'pauseHiddenAfterMinutes': 20,
+        # Kopierknopf hinter jeder IP-Adresse im Knotenfenster (Fork,
+        # ipCopyButton); markiert kam der Tabulator mit (adorfer 28.09.2026)
+        'ipCopyButton': True,
         'siteName': titel,
         'maxAge': 21,
         # Beschriftung der Knoten. Im Dunkelmodus nimmt meshviewer sonst die

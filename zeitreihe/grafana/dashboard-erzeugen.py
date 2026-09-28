@@ -111,7 +111,7 @@ KOPF = [
                                   'firmware_image_name': True,
                                   'firmware_subtarget': True},
                 'renameByName': {'hostname': 'Name', 'nodeid': 'node_id',
-                                 'model': 'Geraet', 'site': 'Domain',
+                                 'model': 'Gerät', 'site': 'Domain',
                                  'firmware_release': 'Firmware',
                                  'firmware_target': 'Target',
                                  'autoupdater': 'Autoupdater',
@@ -123,7 +123,7 @@ KOPF = [
     {
         'id': 101, 'title': 'Letzte Meldung', 'type': 'stat', 'datasource': QUELLE,
         'description': 'Abstand zur letzten respondd-Antwort. Mehr als etwa zehn '
-                       'Minuten heisst: der Knoten ist weg.',
+                       'Minuten heißt: der Knoten ist weg.',
         'gridPos': {'h': 5, 'w': 7, 'x': 17, 'y': 0},
         'targets': [dict(ziel('time() - timestamp(last_over_time('
                               '{__name__="node_load", nodeid="$node"}[7d]))', 'vor', 'A'),
@@ -146,7 +146,7 @@ PANELS = KOPF + [
         ziel('max({__name__="node_clients.total", nodeid="$node"})', 'gesamt', 'A'),
         ziel('max({__name__="node_clients.wifi24", nodeid="$node"})', '2,4 GHz', 'B'),
         ziel('max({__name__="node_clients.wifi5", nodeid="$node"})', '5 GHz', 'C'),
-    ], 0, 5, min_=0, beschreibung='Gleichzeitig verbundene Geraete.'),
+    ], 0, 5, min_=0, beschreibung='Gleichzeitig verbundene Geräte.'),
 
     panel(2, 'Bandbreite', [
         ziel('sum(rate({__name__="node_traffic.rx.bytes", nodeid="$node"}[$__rate_interval])) * 8',
@@ -160,8 +160,8 @@ PANELS = KOPF + [
         ziel('sum(rate({__name__="node_traffic.forward.bytes", nodeid="$node"}[$__rate_interval])) * 8',
              'weitergereicht', 'E'),
     ], 12, 5, einheit='bps', min_=0,
-        beschreibung='Alle Betraege positiv. Verwaltung ist der batman-eigene Verkehr '
-                     '(OGMs und Nachbarschaft), weitergereicht ist Verkehr fuer andere '
+        beschreibung='Alle Beträge positiv. Verwaltung ist der batman-eigene Verkehr '
+                     '(OGMs und Nachbarschaft), weitergereicht ist Verkehr für andere '
                      'Knoten im Mesh.'),
 
     panel(3, 'Datenmenge je Tag', [
@@ -170,7 +170,7 @@ PANELS = KOPF + [
         ziel('sum(increase({__name__="node_traffic.tx.bytes", nodeid="$node"}[1d]))',
              'Gesendet', 'B', '1d'),
     ], 0, 13, einheit='bytes', min_=0, balken=True, stapeln=True,
-        beschreibung='Tagesbilanz. Bei Zeitraeumen unter zwei Tagen bleibt das Bild leer.'),
+        beschreibung='Tagesbilanz. Bei Zeiträumen unter zwei Tagen bleibt das Bild leer.'),
 
     # Airtime ausserhalb von 0 bis 100 Prozent ist immer ein Messfehler: der
     # mt76-Unterlauf mancher Gluon-Knoten und einmalig am 25.09.2026 um 11:02
@@ -187,13 +187,13 @@ PANELS = KOPF + [
              ' "band", "$1", "__name__", "node_airtime11(g|a).tx_util")), 0, 100)',
              '{{band}} Senden', 'C'),
     ], 12, 13, einheit='percent', min_=0,
-        beschreibung='g ist 2,4 GHz, a ist 5 GHz. Dauerhaft ueber 60 Prozent belegt heisst: der Kanal ist voll.'),
+        beschreibung='g ist 2,4 GHz, a ist 5 GHz. Dauerhaft über 60 Prozent belegt heißt: der Kanal ist voll.'),
 
     panel(5, 'Speicher', [
-        ziel('max({__name__="node_memory.available", nodeid="$node"}) * 1024', 'verfuegbar', 'A'),
+        ziel('max({__name__="node_memory.available", nodeid="$node"}) * 1024', 'verfügbar', 'A'),
         ziel('max({__name__="node_memory.free", nodeid="$node"}) * 1024', 'frei', 'B'),
     ], 0, 21, einheit='bytes', min_=0,
-        beschreibung='Verfuegbar ist der Wert, auf den es ankommt; frei allein sagt wenig.'),
+        beschreibung='Verfügbar ist der Wert, auf den es ankommt; frei allein sagt wenig.'),
 
     panel(6, 'Last', [
         ziel('max({__name__="node_load", nodeid="$node"})', 'loadavg', 'A'),
@@ -219,17 +219,17 @@ PANELS = KOPF + [
         ziel('sum(rate({__name__="node_nf.refault_file", nodeid="$node"}[$__rate_interval]))',
              'Refaults je Sekunde', 'A'),
     ], 12, 37, min_=0,
-        beschreibung='Fruehindikator fuer Speichermangel: der Knoten liest staendig nach, '
+        beschreibung='Frühindikator für Speichermangel: der Knoten liest ständig nach, '
                      'was er gerade verworfen hat. Braucht das Paket neanderfunk-respondd.'),
 
     panel(11, 'Ethernet', [
         ziel('max by (port) (nf_ethernet_speed{nodeid="$node"})', '{{port}} ausgehandelt', 'A'),
-        ziel('max by (port) (nf_ethernet_possible{nodeid="$node"})', '{{port}} moeglich', 'B'),
+        ziel('max by (port) (nf_ethernet_possible{nodeid="$node"})', '{{port}} möglich', 'B'),
     ], 0, 45, einheit='Mbits', min_=0,
-        beschreibung='Moeglich groesser als ausgehandelt heisst: der Port kam nicht hoch. '
-                     'Ein toter Port meldet beides als 0, dafuer nf_ethernet_carrier.'),
+        beschreibung='Möglich größer als ausgehandelt heißt: der Port kam nicht hoch. '
+                     'Ein toter Port meldet beides als 0, dafür nf_ethernet_carrier.'),
 
-    panel(13, 'Ausfaelle laut Knoten', [
+    panel(13, 'Ausfälle laut Knoten', [
         ziel('max({__name__="node_nf.ssid_changer.offline", nodeid="$node"})',
              'offline gegangen', 'A'),
         ziel('max({__name__="node_nf.ssid_changer.gateway_losses", nodeid="$node"})',
@@ -237,9 +237,9 @@ PANELS = KOPF + [
         ziel('max({__name__="node_nf.ssid_changer.switches", nodeid="$node"})',
              'SSID gewechselt', 'C'),
     ], 0, 53, min_=0,
-        beschreibung='Zaehler des SSID-Changers seit dem letzten Start. Ein Knoten kann '
-                     'nicht melden, dass er offline ist; dieser Zaehler steht danach aber '
-                     'hoeher da und zeigt damit auch kurze Stoerungen ohne Neustart. '
+        beschreibung='Zähler des SSID-Changers seit dem letzten Start. Ein Knoten kann '
+                     'nicht melden, dass er offline ist; dieser Zähler steht danach aber '
+                     'höher da und zeigt damit auch kurze Störungen ohne Neustart. '
                      'Springt er auf null, hat der Knoten neu gestartet. Nur mit dem '
                      'Paket neanderfunk-respondd.'),
 
@@ -309,18 +309,18 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
         ziel('count(last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m]))',
              'Knoten', 'A'),
     ], 0, 5, min_=0,
-        beschreibung='Kanten zu dieser Instanz. Faellt die Zahl, hat der Supernode Knoten verloren.'),
+        beschreibung='Kanten zu dieser Instanz. Fällt die Zahl, hat der Supernode Knoten verloren.'),
 
     panel(2, 'Clients dahinter', [
         ziel('sum(' + DAHINTER % 'last_over_time({__name__="node_clients.total"}[15m])' + ')',
              'laut respondd', 'A'),
         ziel('sum(last_over_time(tt_clients[15m]) * on(sndomain) group_left()'
              ' (label_replace(last_over_time({__name__="node_load", hostname="$sn"}[15m]),'
-             ' "sndomain", "$1", "domain", "(.*)") * 0 + 1))', 'laut Uebersetzungstabelle', 'B'),
+             ' "sndomain", "$1", "domain", "(.*)") * 0 + 1))', 'laut Übersetzungstabelle', 'B'),
     ], 12, 5, min_=0,
-        beschreibung='Zwei Zaehlweisen. respondd summiert, was die Knoten melden, die '
-                     'gerade antworten. Die Uebersetzungstabelle kennt jede Station der '
-                     'Domain, auch hinter stummen Knoten, haelt sie aber noch ein paar '
+        beschreibung='Zwei Zählweisen. respondd summiert, was die Knoten melden, die '
+                     'gerade antworten. Die Übersetzungstabelle kennt jede Station der '
+                     'Domain, auch hinter stummen Knoten, hält sie aber noch ein paar '
                      'Minuten nach dem Abmelden. Untergrenze und Obergrenze also.'),
 
     panel(3, 'Verkehr der Instanz', [
@@ -348,23 +348,23 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
              'Verwaltung gesendet', 'D'),
     ], 12, 13, einheit='bps', min_=0,
         beschreibung='Aus Sicht der Knoten, nicht der Instanz. Die Differenz zum Verkehr '
-                     'der Instanz ist Mesh-Verkehr, der nie zum Supernode laeuft.'),
+                     'der Instanz ist Mesh-Verkehr, der nie zum Supernode läuft.'),
 
-    panel(5, 'Linkqualitaet zu den Knoten', [
+    panel(5, 'Linkqualität zu den Knoten', [
         ziel('min(last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m]))', 'schlechteste', 'A'),
         ziel('avg(last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m]))', 'Mittel', 'B'),
     ], 0, 21, einheit='percent', min_=0,
-        beschreibung='TQ ueber alle Kanten. Faellt das Minimum, hat ein Knoten eine schlechte Anbindung.'),
+        beschreibung='TQ über alle Kanten. Fällt das Minimum, hat ein Knoten eine schlechte Anbindung.'),
 
     panel(6, 'Last der Maschine', [
         ziel('max({__name__="node_load", hostname="$sn"})', 'loadavg', 'A'),
         ziel('max({__name__="node_proc.running", hostname="$sn"})', 'laufende Prozesse', 'B'),
     ], 12, 21, min_=0,
-        beschreibung='Gilt fuer die ganze Maschine, nicht fuer diese Domaininstanz: alle '
+        beschreibung='Gilt für die ganze Maschine, nicht für diese Domaininstanz: alle '
                      '48 respondd-Instanzen eines Supernodes melden dieselben Systemwerte.'),
 
     panel(7, 'Speicher der Maschine', [
-        ziel('max({__name__="node_memory.available", hostname="$sn"}) * 1024', 'verfuegbar', 'A'),
+        ziel('max({__name__="node_memory.available", hostname="$sn"}) * 1024', 'verfügbar', 'A'),
         ziel('max({__name__="node_memory.total", hostname="$sn"}) * 1024', 'gesamt', 'B'),
     ], 0, 29, einheit='bytes', min_=0,
         beschreibung='Ebenfalls maschinenweit, siehe nebenan.'),
@@ -377,7 +377,7 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
 
     {
         'id': 9, 'title': 'Knoten an dieser Instanz', 'type': 'table', 'datasource': QUELLE,
-        'description': 'Momentaufnahme mit Linkqualitaet, absteigend nach TQ.',
+        'description': 'Momentaufnahme mit Linkqualität, absteigend nach TQ.',
         'gridPos': {'h': 10, 'w': 24, 'x': 0, 'y': 37},
         'targets': [dict(ziel(kurzname('last_over_time({__name__="link_tq",'
                               ' "target.hostname"="$sn"}[15m])', 'source.hostname'),
@@ -439,13 +439,19 @@ DOMAIN_VARIABLEN = [
 DATENRATEN = {'bps', 'Bps', 'binbps', 'binBps', 'KBs', 'Kbits', 'MBs', 'Mbits', 'GBs', 'Gbits'}
 
 
-def zahl(nr, titel, ausdruck, x, w=6, einheit='', beschreibung='', warnung=None, y=0):
+# Farbe der Kennzahlen. Ohne eigene Schwellen nimmt Grafana seine Vorgabe
+# (gruen, ab 80 rot): dann standen 1026 Knoten online rot und 45 offline gruen
+# da (28.09.2026). Deshalb immer eigene Schwellen: gruen, oder "text" fuer
+# Zahlen, die weder gut noch schlecht sind; orange erst ab warnung.
+def zahl(nr, titel, ausdruck, x, w=6, einheit='', beschreibung='', warnung=None, y=0,
+         farbe='green'):
     feld = {'unit': einheit}
     if einheit not in DATENRATEN:
         feld['decimals'] = 0
+    stufen = [{'color': farbe, 'value': None}]
     if warnung is not None:
-        feld['thresholds'] = {'mode': 'absolute', 'steps': [
-            {'color': 'green', 'value': None}, {'color': 'orange', 'value': warnung}]}
+        stufen.append({'color': 'orange', 'value': warnung})
+    feld['thresholds'] = {'mode': 'absolute', 'steps': stufen}
     return {
         'id': nr, 'title': titel, 'type': 'stat', 'datasource': QUELLE,
         'description': beschreibung,
@@ -467,16 +473,16 @@ DOMAIN_PANELS = [
                       'seit dem 23.09.2026 in jeder Domain (02:a5:a7:99:f0:fa, '
                       'antwortet weder auf respondd noch auf ping).'),
     zahl(102, 'Clients laut Tabelle', 'last_over_time(tt_clients{domain="$domain"}[15m])', 12,
-         beschreibung='Stationen in der Uebersetzungstabelle, ohne die Knoten selbst.'),
+         beschreibung='Stationen in der Übersetzungstabelle, ohne die Knoten selbst.'),
     zahl(103, 'Clients laut respondd',
          je_domain('last_over_time({__name__="node_clients.total"}[15m])'), 18,
-         beschreibung='Summe ueber die Knoten, die gerade geantwortet haben.'),
+         beschreibung='Summe über die Knoten, die gerade geantwortet haben.'),
 
     panel(1, 'Clients', [
-        ziel('last_over_time(tt_clients{domain="$domain"}[15m])', 'Uebersetzungstabelle', 'A'),
+        ziel('last_over_time(tt_clients{domain="$domain"}[15m])', 'Übersetzungstabelle', 'A'),
         ziel(je_domain('last_over_time({__name__="node_clients.total"}[15m])'), 'respondd', 'B'),
     ], 0, 5, min_=0,
-        beschreibung='Obergrenze und Untergrenze. Die Tabelle haelt Stationen noch einige '
+        beschreibung='Obergrenze und Untergrenze. Die Tabelle hält Stationen noch einige '
                      'Minuten nach dem Abmelden, respondd verfehlt alles hinter stummen Knoten.'),
 
     panel(2, 'Knoten', [
@@ -484,7 +490,7 @@ DOMAIN_PANELS = [
         ziel('last_over_time(tt_dunkel{domain="$domain"}[15m])', 'dunkel', 'B'),
         ziel('last_over_time(tt_originatoren{domain="$domain"}[15m])', 'Originatoren', 'C'),
     ], 12, 5, min_=0,
-        beschreibung='Originatoren sind mehr als Knoten: jede Mesh-Schnittstelle zaehlt '
+        beschreibung='Originatoren sind mehr als Knoten: jede Mesh-Schnittstelle zählt '
                      'einzeln, im Schnitt etwa doppelt.'),
 
     panel(3, 'Verkehr der Domain', [
@@ -497,7 +503,7 @@ DOMAIN_PANELS = [
         ziel(je_domain('rate({__name__="node_traffic.mgmt_tx.bytes"}[$__rate_interval])') + ' * 8',
              'Verwaltung gesendet', 'D'),
     ], 0, 13, einheit='bps', min_=0,
-        beschreibung='Summe ueber alle Knoten der Domain, aus deren Sicht. Alle Betraege '
+        beschreibung='Summe über alle Knoten der Domain, aus deren Sicht. Alle Beträge '
                      'positiv; Verwaltung ist der batman-eigene Verkehr.'),
 
     panel(4, 'Datenmenge je Tag', [
@@ -511,19 +517,19 @@ DOMAIN_PANELS = [
              + dnum('last_over_time(tt_clients{domain="$domain"}[15m])', tt=True) + ' * 0 + 1))',
              'unter 10 MB', 'A'),
     ], 0, 21, min_=0,
-        beschreibung='Kandidaten fuer den Austausch, unabhaengig vom Geraetetyp.'),
+        beschreibung='Kandidaten für den Austausch, unabhängig vom Gerätetyp.'),
 
     panel(6, 'Laufzeit der Knoten', [
         ziel('min(' + dnum('last_over_time({__name__="node_time.up"}[15m])')
              + ' * on(dnum) group_left() ('
              + dnum('last_over_time(tt_clients{domain="$domain"}[15m])', tt=True) + ' * 0 + 1))',
-             'kuerzeste', 'A'),
+             'kürzeste', 'A'),
         ziel('avg(' + dnum('last_over_time({__name__="node_time.up"}[15m])')
              + ' * on(dnum) group_left() ('
              + dnum('last_over_time(tt_clients{domain="$domain"}[15m])', tt=True) + ' * 0 + 1))',
              'im Mittel', 'B'),
     ], 12, 21, einheit='s', min_=0,
-        beschreibung='Faellt die kuerzeste Laufzeit staendig, startet dort etwas immer wieder neu.'),
+        beschreibung='Fällt die kürzeste Laufzeit ständig, startet dort etwas immer wieder neu.'),
 ]
 
 
@@ -577,7 +583,7 @@ def jetzt(metrik, filter_):
 
 def knoten(filter_):
     """Knoten, die gerade antworten, je Knoten einmal (ein Firmwarewechsel
-    macht fuer ein paar Minuten zwei Reihen daraus)."""
+    macht für ein paar Minuten zwei Reihen daraus)."""
     return 'count(count by (nodeid) (%s))' % jetzt('node_load', filter_)
 
 
@@ -587,7 +593,7 @@ def verteilung(label, filter_, leer='unbekannt'):
 
 
 def supernodes():
-    """Supernodes selbst, nicht ihre Instanzen: je Domain laeuft auf einem
+    """Supernodes selbst, nicht ihre Instanzen: je Domain läuft auf einem
     Supernode eine Instanz, Hostname <supernode>_ffnefdNN."""
     return ('count(count by (supernode) (label_replace(%s, "supernode", "$1", '
             '"hostname", "([^_]+)_.*")))' % jetzt('node_load', GATEWAY))
@@ -609,6 +615,9 @@ COMMUNITY_VARIABLEN = [
 ]
 
 TAG = 86400
+# Grafanas Einheit 'd' schreibt auch in der deutschen Oberflaeche "days";
+# ein eigenes Suffix bleibt deutsch.
+TAGE = 'suffix: Tage'
 
 COMMUNITY_PANELS = [
     # Erste Zeile: wer ist da
@@ -616,27 +625,28 @@ COMMUNITY_PANELS = [
          beschreibung='Gluon-Knoten, die in den letzten 10 Minuten geantwortet haben.'),
     zahl(101, 'Knoten offline', 'count(count by (nodeid) (last_over_time({__name__="node_load", '
          + GLUON + '}[7d]))) - ' + knoten(GLUON), 4, w=4,
+         farbe='text',
          beschreibung='In den letzten 7 Tagen gesehen, jetzt nicht.'),
     zahl(102, 'UniFi-APs online', knoten(UNIFI), 8, w=4,
-         beschreibung='Accesspoints aus dem UniFi-Controller, die an einem Freifunk-Router haengen.'),
+         beschreibung='Accesspoints aus dem UniFi-Controller, die an einem Freifunk-Router hängen.'),
     zahl(103, 'Supernodes', supernodes(), 12, w=4,
-         beschreibung='Supernodes, die antworten. Unabhaengig von der Domainauswahl.'),
+         beschreibung='Supernodes, die antworten. Unabhängig von der Domainauswahl.'),
     zahl(109, 'Gateway-Instanzen', knoten(GATEWAY), 16, w=4,
-         beschreibung='Je Domain eine Instanz auf einem Supernode. Unabhaengig von der '
+         beschreibung='Je Domain eine Instanz auf einem Supernode. Unabhängig von der '
                       'Domainauswahl.'),
     zahl(104, 'Clients', 'sum(' + jetzt('node_clients.total', 'is_gateway="false", ' + AUSWAHL) + ')',
          20, w=4,
-         beschreibung='Summe ueber Knoten und APs; Clients an einem AP zaehlen nur dort, '
+         beschreibung='Summe über Knoten und APs; Clients an einem AP zählen nur dort, '
                       'nicht noch einmal beim Router.'),
     # Zweite Zeile: was laeuft
     zahl(105, 'Download jetzt', verkehr('rx'), 0, einheit='bps', y=5,
-         beschreibung='Was die Knoten an ihre Clients ausliefern, Summe ueber alle Gluon-Knoten.'),
+         beschreibung='Was die Knoten an ihre Clients ausliefern, Summe über alle Gluon-Knoten.'),
     zahl(106, 'Upload jetzt', verkehr('tx'), 6, einheit='bps', y=5,
-         beschreibung='Was die Clients ueber die Knoten ins Netz schicken.'),
+         beschreibung='Was die Clients über die Knoten ins Netz schicken.'),
     zahl(107, 'Laufzeit im Mittel', 'avg(' + jetzt('node_time.up', GLUON) + ') / %d' % TAG,
-         12, einheit='d', y=5, beschreibung='Tage seit dem letzten Start, Mittel ueber die Gluon-Knoten.'),
-    zahl(108, 'Laufzeit hoechste', 'max(' + jetzt('node_time.up', GLUON) + ') / %d' % TAG,
-         18, einheit='d', y=5, beschreibung='Der Knoten, der am laengsten durchlaeuft.'),
+         12, einheit=TAGE, y=5, beschreibung='Tage seit dem letzten Start, Mittel über die Gluon-Knoten.'),
+    zahl(108, 'Laufzeit höchste', 'max(' + jetzt('node_time.up', GLUON) + ') / %d' % TAG,
+         18, einheit=TAGE, y=5, beschreibung='Der Knoten, der am längsten durchläuft.'),
 
     panel(1, 'Knoten', [
         ziel(knoten(GLUON), 'Gluon-Knoten', 'A'),
@@ -658,7 +668,7 @@ COMMUNITY_PANELS = [
         ziel(verkehr('mgmt_rx'), 'Verwaltung empfangen', 'D'),
         ziel(verkehr('mgmt_tx'), 'Verwaltung gesendet', 'E'),
     ], 0, 18, einheit='bps', min_=0,
-        beschreibung='Summe ueber die Gluon-Knoten, aus deren Sicht. Verwaltung ist der '
+        beschreibung='Summe über die Gluon-Knoten, aus deren Sicht. Verwaltung ist der '
                      'batman-eigene Verkehr.'),
     # Was ein Knoten empfaengt, hat ein Gateway gesendet, und umgekehrt: beide
     # Summen muessen fast gleich sein (am 25.09.2026: 764 zu 771 Mbit/s und
@@ -673,8 +683,8 @@ COMMUNITY_PANELS = [
         ziel('sum(rate({__name__="node_traffic.rx.bytes", %s}[$__rate_interval])) * 8' % GATEWAY,
              'Gateways empfangen', 'D'),
     ], 0, 74, w=24, einheit='bps', min_=0,
-        beschreibung='Je zwei Linien sollten aufeinanderliegen. Gilt fuer alle Domains; '
-                     'die Gateways lassen sich nicht nach Domain auswaehlen.'),
+        beschreibung='Je zwei Linien sollten aufeinanderliegen. Gilt für alle Domains; '
+                     'die Gateways lassen sich nicht nach Domain auswählen.'),
     panel(4, 'Datenmenge je Tag', [
         ziel('sum(increase({__name__="node_traffic.rx.bytes", %s}[1d]))' % GLUON, 'Download', 'A', '1d'),
         ziel('sum(increase({__name__="node_traffic.tx.bytes", %s}[1d]))' % GLUON, 'Upload', 'B', '1d'),
@@ -683,9 +693,9 @@ COMMUNITY_PANELS = [
     panel(5, 'Laufzeit', [
         ziel('avg(' + jetzt('node_time.up', GLUON) + ') / %d' % TAG, 'Mittel', 'A'),
         ziel('quantile(0.5, ' + jetzt('node_time.up', GLUON) + ') / %d' % TAG, 'Median', 'B'),
-        ziel('max(' + jetzt('node_time.up', GLUON) + ') / %d' % TAG, 'hoechste', 'C'),
-    ], 0, 26, einheit='d', min_=0,
-        beschreibung='Tage seit dem letzten Start. Der woechentliche Neustart (Do 3:15) '
+        ziel('max(' + jetzt('node_time.up', GLUON) + ') / %d' % TAG, 'höchste', 'C'),
+    ], 0, 26, einheit=TAGE, min_=0,
+        beschreibung='Tage seit dem letzten Start. Der wöchentliche Neustart (Do 3:15) '
                      'begrenzt die meisten Knoten auf sieben Tage.'),
     panel(6, 'Autoupdater', [
         ziel(verteilung('autoupdater', GLUON), '{{autoupdater}}', 'A'),
@@ -696,12 +706,12 @@ COMMUNITY_PANELS = [
         ziel(verteilung('firmware_release', GLUON), '{{firmware_release}}', 'A'),
     ], 0, 34, w=24, h=10, min_=0, stapeln=True, sortieren=True,
         beschreibung='Gluon-Knoten je Firmwarestand, gestapelt. Beim Ausrollen wandert die '
-                     'Flaeche von einem Stand zum naechsten.'),
+                     'Fläche von einem Stand zum nächsten.'),
 
     panel(8, 'Targets', [
         ziel(verteilung('firmware_target', GLUON), '{{firmware_target}}', 'A'),
     ], 0, 44, min_=0, stapeln=True, sortieren=True,
-        beschreibung='Plattform der Gluon-Knoten. "unbekannt": aeltere Firmware meldet sie nicht.'),
+        beschreibung='Plattform der Gluon-Knoten. "unbekannt": ältere Firmware meldet sie nicht.'),
     panel(9, 'Arbeitsspeicher', [
         ziel('count(count by (nodeid) (%s < 40000))' % jetzt('node_memory.total', GLUON), 'bis 32 MB', 'A'),
         ziel('count(count by (nodeid) (%s >= 40000 < 80000))' % jetzt('node_memory.total', GLUON), '64 MB', 'B'),
@@ -711,10 +721,10 @@ COMMUNITY_PANELS = [
         beschreibung='Gluon-Knoten nach Arbeitsspeicher. Beim Austausch alter Hardware '
                      'schrumpfen die unteren Klassen.'),
 
-    panel(10, 'Geraete', [
+    panel(10, 'Geräte', [
         ziel('topk_last(20, ' + verteilung('model', GLUON) + ', "model=andere")', '{{model}}', 'A'),
     ], 0, 52, w=24, h=12, min_=0, stapeln=True, sortieren=True,
-        beschreibung='Die 20 haeufigsten Modelle der Gluon-Knoten, der Rest als "andere".'),
+        beschreibung='Die 20 häufigsten Modelle der Gluon-Knoten, der Rest als "andere".'),
 
     panel(11, 'UniFi-APs: Firmware', [
         ziel(verteilung('firmware_release', UNIFI), '{{firmware_release}}', 'A'),
@@ -729,7 +739,7 @@ COMMUNITY = {
     'uid': 'nf-community',
     'title': 'Community',
     'description': 'Gesamtsicht: Knoten, APs, Gateways, Clients, Verkehr, Laufzeit, '
-                   'Firmware- und Hardwarestaende im Verlauf.',
+                   'Firmware- und Hardwarestände im Verlauf.',
     'tags': ['neanderfunk'],
     'timezone': 'browser',
     'schemaVersion': 39,
@@ -770,7 +780,7 @@ DASHBOARD = {
 SUPERNODE = {
     'uid': 'nf-supernode',
     'title': 'Supernode',
-    'description': 'Eine Supernode-Instanz und was an ihr haengt. Je Domain '
+    'description': 'Eine Supernode-Instanz und was an ihr hängt. Je Domain '
                    'gibt es eine Instanz.',
     'tags': ['neanderfunk'],
     'timezone': 'browser',

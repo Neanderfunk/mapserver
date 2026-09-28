@@ -432,8 +432,17 @@ DOMAIN_VARIABLEN = [
 ]
 
 
+# Datenraten ohne feste Nachkommastellen: Grafana waehlt dann selbst so viele,
+# dass drei gueltige Ziffern stehen (1.03 Gb/s, 45.6 Mb/s, 110 Mb/s), gut
+# 1 % Aufloesung. Mit decimals 0 stand "1 Gb/s" fuer alles von 0,5 bis 1,5
+# (adorfer 28.09.2026: mindestens etwa 5 % Genauigkeit).
+DATENRATEN = {'bps', 'Bps', 'binbps', 'binBps', 'KBs', 'Kbits', 'MBs', 'Mbits', 'GBs', 'Gbits'}
+
+
 def zahl(nr, titel, ausdruck, x, w=6, einheit='', beschreibung='', warnung=None, y=0):
-    feld = {'unit': einheit, 'decimals': 0}
+    feld = {'unit': einheit}
+    if einheit not in DATENRATEN:
+        feld['decimals'] = 0
     if warnung is not None:
         feld['thresholds'] = {'mode': 'absolute', 'steps': [
             {'color': 'green', 'value': None}, {'color': 'orange', 'value': warnung}]}

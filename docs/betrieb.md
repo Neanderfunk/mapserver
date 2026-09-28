@@ -754,7 +754,7 @@ Upstream-Stand plus unsere Änderungen, **je Funktion ein Commit**, erklärt in
 
 | Fork | Upstream | Basis |
 | --- | --- | --- |
-| [Neanderfunk/meshviewer](https://github.com/Neanderfunk/meshviewer) | freifunk/meshviewer | `6c68e3d` (18.09.2026) |
+| [Neanderfunk/meshviewer](https://github.com/Neanderfunk/meshviewer) | freifunk/meshviewer | `6c68e3d` (18.09.2026), per Merge nachgezogen bis `df76ed7` (26.09.2026) |
 | [Neanderfunk/unifi_respondd](https://github.com/Neanderfunk/unifi_respondd) | freifunkMUC/unifi_respondd | `6976651` (18.09.2026) |
 | [Neanderfunk/yanic](https://github.com/Neanderfunk/yanic) | FreifunkBremen/yanic (Codeberg) | `v1.9.0` |
 
@@ -765,8 +765,10 @@ behalten die Lizenz des Originals (AGPL-3.0 bzw. GPL-3.0); beim meshviewer
 erfüllt der öffentliche Fork zugleich die AGPL-Pflicht, den Quelltext der
 ausgelieferten Fassung zugänglich zu machen.
 
-Upstream nachziehen: im Fork `git fetch upstream`, `neanderfunk` auf den
-neuen Stand rebasen, Tests laufen lassen, pushen, dann hier
+Upstream nachziehen: im Fork `git fetch upstream`, dann **per Merge**, nicht
+per Rebase: auf die Commits der Forks verweisen veröffentlichte Links
+(Forenbeitrag zur Karte, 28.09.2026), ein Rebase änderte ihre IDs und
+bräuchte einen Force-Push. Tests laufen lassen, pushen, dann hier
 `sudo ./web/einrichten.sh` bzw. `sudo ./sammler/einrichten.sh`. yanic kam
 als letzter dazu, mit den Umbauten für die Accesspoints (Clients der APs
 beim Router abziehen, Links von beiden Seiten); vorher zwei Patchdateien in

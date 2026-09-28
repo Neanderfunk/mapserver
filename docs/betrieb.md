@@ -487,6 +487,11 @@ Mallorca, in Lille oder Zürich den Ausschnitt über halb Europa.
   `web/einrichten.sh`, nicht laufend.
 - Stellschrauben: `abstand_km` (größer: mehr entfernte Orte hängen sich an
   die Hauptgruppe) und `anteil` (kleiner: auch kleinere Außenposten zählen).
+- Die Gesamtkarte (nur `neander/alle`) startet eine Zoomstufe enger als
+  eingepasst (Fork, `fixedCenterZoomOffset: 1`, seit 28.09.2026): der Kern
+  füllt das Bild, Ränder wie das Siegerland liegen je nach Bildschirmbreite
+  am Rand oder knapp außerhalb und sind per Schieben erreichbar. Halbe
+  Stufen gehen nicht, Leaflet zoomt hier in ganzen Stufen.
 - Eingepasst wird rechts neben der offenen Seitenleiste (Fork,
   `NEANDERFUNK.md`, "Startausschnitt neben der Seitenleiste"). Nimmt die
   Leiste mehr als die halbe Breite ein oder liegt sie unter der Karte (Handy),

@@ -755,8 +755,8 @@ Upstream-Stand plus unsere Änderungen, **je Funktion ein Commit**, erklärt in
 | Fork | Upstream | Basis |
 | --- | --- | --- |
 | [Neanderfunk/meshviewer](https://github.com/Neanderfunk/meshviewer) | freifunk/meshviewer | `6c68e3d` (18.09.2026), per Merge nachgezogen bis `df76ed7` (26.09.2026) |
-| [Neanderfunk/unifi_respondd](https://github.com/Neanderfunk/unifi_respondd) | freifunkMUC/unifi_respondd | `6976651` (18.09.2026) |
-| [Neanderfunk/yanic](https://github.com/Neanderfunk/yanic) | FreifunkBremen/yanic (Codeberg) | `v1.9.0` |
+| [Neanderfunk/unifi_respondd](https://github.com/Neanderfunk/unifi_respondd) | freifunkMUC/unifi_respondd | `6976651` (18.09.2026), am 28.09.2026 aktueller Upstream-Stand |
+| [Neanderfunk/yanic](https://github.com/Neanderfunk/yanic) | FreifunkBremen/yanic (Codeberg) | `v1.9.0`, per Merge nachgezogen bis `89bd94c` (04.05.2026) |
 
 Bis dahin waren es Patchdateien in diesem Repo. adorfers Regel: kleine
 Ergänzungen als Patch, sobald bestehende Logik umgebaut wird oder

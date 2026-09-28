@@ -419,6 +419,11 @@ def konfig(titel, pfad, alle):
                             'www.govdata.de/dl-de/by-2-0</a>)')}},
         ],
         'fixedCenter': rahmen(daten),
+        # Gesamtkarte eine Stufe enger als eingepasst (Fork,
+        # fixedCenterZoomOffset): der Kern fuellt das Bild, wer weiter will,
+        # schiebt oder zoomt heraus (adorfer 28.09.2026). Ortskarten nicht,
+        # dort laege der Rand ihrer Domain sonst ausserhalb.
+        **({'fixedCenterZoomOffset': 1} if pfad == 'neander/alle' else {}),
         'siteNames': [{'site': d['code'], 'name': d['name']} for d in alle],
         'domainNames': [{'domain': d['code'], 'name': d['name']} for d in alle],
         'devicePictures': '/pictures-svg/{MODEL_NORMALIZED}.svg',

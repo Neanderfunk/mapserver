@@ -186,8 +186,9 @@ erreichbar. Nur die Einträge der Translation Table führen auf `br-client`, wo
 respondd lauscht. Messwert: über Originatoren 0 Antworten, über die
 Translation Table 25 von 40.
 
-Damit yanic diese Adressen mitfragt, braucht es
-`sammler/patches/yanic-seeds.patch`, 51 Zeilen: es liest
+Damit yanic diese Adressen mitfragt, braucht es den Commit "Zusätzliche
+Zieladressen aus einer Datei (seeds)" im Fork Neanderfunk/yanic (bis
+25.09.2026 die Patchdatei `sammler/patches/yanic-seeds.patch`): er liest
 eine Adressliste und fragt sie in jeder Runde mit. Die Antworten kommen an
 yanics eigenem Socket an, es lernt Adresse und Knoten wie sonst auch.
 

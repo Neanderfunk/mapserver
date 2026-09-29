@@ -447,6 +447,13 @@ gemessen:
 - `rate()` wirft den Metriknamen weg, danach sind `rx` und `tx` nicht mehr
   unterscheidbar; `keep_metric_names` hält ihn fest (VictoriaMetrics)
 
+**Verbindungsfenster** (seit 29.09.2026): Diagramm "Linkqualität (TQ)" aus
+`link_tq`, eine Linie je Richtung, bei mehreren Schnittstellenpaaren (2,4 und
+5 GHz) der jeweils beste Wert. Dieselbe Zeitraumleiste wie im Knotenfenster
+(Fork, `linkCharts`), Konfiguration `VERBINDUNGSDIAGRAMME` in
+`web/konfig-erzeugen.py`. Lücken im Diagramm heißen: die Verbindung stand in
+dieser Zeit nicht in den Daten, batman kannte sie also nicht.
+
 ### Airtime im Knotenfenster
 
 Seit 27.09.2026 steht hinter "Systemlast" je Band eine Zeile "Airtime Kanal 9"

@@ -315,6 +315,28 @@ def statistik_links(pfad, alle):
              'href': GESAMTSICHT % '&var-domain='.join(codes)}]
 
 
+# Diagramme im Verbindungsfenster (Fork, linkCharts mit Zeitraumleiste).
+# yanic schreibt link_tq je Richtung und je Paar von Schnittstellen; zwischen
+# zwei Knoten laufen oft zwei Paare (2,4 und 5 GHz). Eine Linie je Richtung,
+# der jeweils beste Wert; mit den MAC-Adressen der Schnittstellen waere die
+# Legende unlesbar (adorfer 29.09.2026, wie auf der alten Karte).
+_VERBINDUNG = 'source.id=~"$source|$target", target.id=~"$source|$target"'
+VERBINDUNGSDIAGRAMME = [
+    {'name': 'Linkqualität (TQ)',
+     'query': ('max by (von, nach) (label_replace(label_replace('
+               'last_over_time({__name__="link_tq", ' + _VERBINDUNG + '}[10m]),'
+               ' "von", "$1", "source.hostname", "(.*)"),'
+               ' "nach", "$1", "target.hostname", "(.*)"))'),
+     'legendFormat': '{{von}} → {{nach}}', 'format': '.0f', 'unitSuffix': ' %'},
+]
+
+
+def verbindungsdiagramme():
+    return [dict(d, datasourceType='prometheus-direct', datasourceUid='vm',
+                 **{'from': 'now-7d', 'to': 'now', 'maxDataPoints': 300})
+            for d in VERBINDUNGSDIAGRAMME]
+
+
 def diagramme():
     return [dict(d, datasourceType='prometheus-direct', datasourceUid='vm',
                  **{'from': 'now-7d', 'to': 'now', 'maxDataPoints': 300})
@@ -345,7 +367,7 @@ def konfig(titel, pfad, alle):
     # ueberall abgeschaltet, auch dort, wo die Liste gesetzt war.
     alt = ({'deprecation_enabled': True,
             'eol': altgeraete(daten), 'eol_text': ALTGERAETE_TEXT,
-            'prometheus': {'url': ZEITREIHE_URL}, 'nodeCharts': diagramme(),
+            'prometheus': {'url': ZEITREIHE_URL}, 'nodeCharts': diagramme(), 'linkCharts': verbindungsdiagramme(),
             'chartRanges': ZEITRAEUME, 'nodeInfos': VERTIEFUNG,
             'nodeAttr': ATTRIBUTE, 'airtime': AIRTIME,
             'statisticsLinks': statistik_links(pfad, alle),

@@ -108,6 +108,12 @@ Der Wächter (`tunnel/waechter.sh`, alle fünf Minuten) startet seit dem
 30.09.2026 einen Tunnel ohne batman-Nachbarn selbst neu: beim zweiten Fund in
 Folge, höchstens einmal je Domain und halbe Stunde, nicht für Domains aus
 `tunnel/ruhend.conf`. Im Journal: `journalctl -t karte-en | grep Nachbarn`.
+Gluon-Knoten haben dafür seit jeher einen eigenen Watchdog
+(`tunneldigger-watchdog` in gluon-mesh-vpn-tunneldigger bzw.
+ff-mesh-vpn-tunneldigger): alle fünf Minuten `batctl o`, ohne Zeile mit
+mesh-vpn Neustart des Tunnels. Der Tunneldigger-Client selbst merkt den
+Zustand nicht, seine Keepalives laufen über den Kontrollkanal, nicht über das
+L2TP-Interface. map6 fehlte bis 30.09.2026 das Gegenstück.
 
 **Originatoren da, aber keine Knoten in der Ausgabe.** Dann kommt die
 respondd-Antwort nicht durch. Von Hand nachstellen:

@@ -17,11 +17,51 @@ KONF=/etc/karte-en/domains.conf
 MERK=/run/karte-en-waechter
 
 mkdir -p "$MERK"
+
+# Zweiter Fall: die Schnittstelle ist da, aber batman sieht darueber keinen
+# Nachbarn. Am 30.09.2026 beobachtet: amalthea baute den Tunnel fuer Velbert
+# um 06:33 ab und nahm ihn sofort wieder an ("Tunnel successfully
+# established"), hing seine Seite aber nicht an die batman-Instanz. Senden
+# lief weiter, empfangen kam nichts, und die ganze Domain stand stundenlang
+# auf offline. Ein neuer Tunnel ist eine neue Sitzung beim Broker.
+# Ausgenommen sind Domains aus ruhend.conf: dort ist ein leerer Tunnel
+# erwartet (Freischaltung steht aus, Domain nicht belegt). Auch hier erst
+# beim zweiten Fund in Folge, und hoechstens einmal je halbe Stunde, damit
+# ein kaputter Broker nicht im Fuenf-Minuten-Takt angefragt wird.
+RUHEND=/etc/karte-en/ruhend.conf
+PAUSE=1800
+leer_pruefen() {
+	code=$1 dienst=$2
+	if grep -q "^$code[[:space:]]" "$RUHEND" 2>/dev/null; then
+		rm -f "$MERK/$code.leer"
+		return
+	fi
+	nachbarn=$(batctl meshif "bat-$code" n -H 2>/dev/null | wc -l)
+	if [ "${nachbarn:-0}" -gt 0 ]; then
+		rm -f "$MERK/$code.leer"
+		return
+	fi
+	if [ ! -f "$MERK/$code.leer" ]; then
+		: > "$MERK/$code.leer"
+		logger -t karte-en "Waechter: td-$code ohne batman-Nachbarn, beim naechsten Lauf wird neu gestartet"
+		return
+	fi
+	jetzt=$(date +%s)
+	zuletzt=$(cat "$MERK/$code.neustart" 2>/dev/null || echo 0)
+	if [ $((jetzt - zuletzt)) -lt "$PAUSE" ]; then
+		return
+	fi
+	logger -t karte-en "Waechter: td-$code weiterhin ohne batman-Nachbarn, $dienst wird neu gestartet"
+	echo "$jetzt" > "$MERK/$code.neustart"
+	rm -f "$MERK/$code.leer"
+	systemctl restart "$dienst" || true
+}
 for code in $(awk '!/^#/ && NF { print $2 }' "$KONF"); do
 	dienst="karte-en-tunnel@$code.service"
 	[ "$(systemctl is-active "$dienst" 2>/dev/null)" = active ] || continue
 	if [ -d "/sys/class/net/td-$code" ]; then
 		rm -f "$MERK/$code"
+		leer_pruefen "$code" "$dienst"
 		continue
 	fi
 	if [ -f "$MERK/$code" ]; then

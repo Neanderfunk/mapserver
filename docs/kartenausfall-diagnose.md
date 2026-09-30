@@ -60,6 +60,25 @@ vollständig da. Der Tunneldigger-Client setzt die MTU erst rund zwanzig
 Sekunden nach dem Verbindungsaufbau, und danach sortiert batman sich neu. Wer
 früher misst, misst Unsinn. Die Checks haben deshalb eine Schonfrist.
 
+**Falle: Tunnel steht, aber der Broker hängt ihn nicht an.** Der Client
+meldet "Tunnel successfully established", `td-<code>` hängt bei uns aktiv am
+batman, aber `neighbors` bleibt leer. Der Blick auf die Zähler zeigt es:
+
+```bash
+ip -s link show td-<code>     # zweimal im Abstand von 10 s
+```
+
+Steigen nur die gesendeten Pakete, kommt von der Gegenseite nichts: Der
+Broker hat seine Seite nicht an seine batman-Instanz gehängt. Der
+Tunneldigger-Client bemerkt das nicht, seine Keepalives laufen über den
+Kontrollkanal, und den beantwortet der Broker weiter. Am 30.09.2026 so in
+Velbert, sechs Stunden lang, nachdem amalthea den Tunnel um 06:33 abgebaut und
+sofort wieder angenommen hatte. Ein Neustart des Tunnels (neue Sitzung) heilt
+es. Seitdem macht das der Wächter selbst (`tunnel/waechter.sh`: zweimal in
+Folge ohne Nachbarn, höchstens einmal je halbe Stunde). Gluon-Knoten haben
+dafür ihren eigenen `tunneldigger-watchdog` (alle fünf Minuten `batctl o`,
+ohne mesh-vpn-Zeile Neustart), sie heilen sich nach fünf bis neun Minuten.
+
 ## Schicht 3: IP
 
 ```bash
@@ -230,6 +249,7 @@ das Gespräch ist billiger als beides:
 | Dienst aktiv, `td-*` fehlt | Tunnel | stiller Abriss, neu starten |
 | "No suitable brokers found" | Tunnel | Brokerliste unvollständig |
 | alles null, Maschine frisch gestartet | batman | drei Minuten warten |
+| Tunnel "established", keine Nachbarn, nur TX steigt | batman | Broker hat seine Seite nicht angehängt; Wächter startet neu |
 | `ff02::1` nur die eigene Adresse, `batctl ping` geht | IP | Multicast tot, Unicast heil |
 | nur Supernodes antworten | respondd | falsche Abfragegruppe |
 | Pakete fließen, Karte leer | Filter | site_code stimmt nicht |

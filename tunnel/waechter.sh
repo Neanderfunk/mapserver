@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # Wacht ueber die Tunnel: laeuft der Dienst, aber die L2TP-Schnittstelle ist
-# weg, wird er neu gestartet.
+# weg, oder sieht batman ueber sie keinen Nachbarn (siehe leer_pruefen), wird
+# er neu gestartet. Dazu Collector und mesh-announce, siehe unten.
 #
 # Am 20.09.2026 beobachtet: der Client meldete um 21:44 "Tunnel successfully
 # established", die Schnittstelle td-ffen verschwand spaeter trotzdem, und der

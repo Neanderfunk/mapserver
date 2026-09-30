@@ -92,9 +92,22 @@ werkzeug/broker-probe.py            # liest /etc/karte-en/domains.conf
 **Alle Domains gleichzeitig weg.** Dann ist der Broker oder unser
 Internetzugang das Problem, nicht acht Tunnel auf einmal.
 
-**Tunnel steht, aber keine Originatoren.** Das L2TP-Interface hängt nicht am
-batman. Der Hook hat versagt oder wurde nicht gerufen:
-`journalctl -t karte-en`. Heilt durch `systemctl restart karte-en-tunnel@<code>`.
+**Tunnel steht, aber keine Originatoren.** Zwei Ursachen, beide heilt
+`systemctl restart karte-en-tunnel@<code>`:
+
+- Bei uns hängt das L2TP-Interface nicht am batman. Der Hook hat versagt oder
+  wurde nicht gerufen: `journalctl -t karte-en`, `batctl meshif bat-<code> if`.
+- Beim Broker hängt seine Seite nicht am batman. Bei uns sieht alles richtig
+  aus, aber an `td-<code>` steigen nur die gesendeten Pakete
+  (`ip -s link show td-<code>`), batman kennt keinen Nachbarn. So am
+  30.09.2026 in Velbert: amalthea baute den Tunnel um 06:33 ab, nahm ihn
+  sofort wieder an ("Tunnel successfully established") und hängte ihn nicht
+  an; alle Knoten der Domain standen sechs Stunden auf offline.
+
+Der Wächter (`tunnel/waechter.sh`, alle fünf Minuten) startet seit dem
+30.09.2026 einen Tunnel ohne batman-Nachbarn selbst neu: beim zweiten Fund in
+Folge, höchstens einmal je Domain und halbe Stunde, nicht für Domains aus
+`tunnel/ruhend.conf`. Im Journal: `journalctl -t karte-en | grep Nachbarn`.
 
 **Originatoren da, aber keine Knoten in der Ausgabe.** Dann kommt die
 respondd-Antwort nicht durch. Von Hand nachstellen:

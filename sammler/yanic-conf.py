@@ -192,6 +192,8 @@ def main():
     if community in SERVICE:
         t.append(f'aliases_path = "/var/lib/karte/service/aliases-{community}.json"')
         t.append(f'remove_dir = "/var/lib/karte/service/remove-{community}"')
+        # Rahmen fuer die Ortsangaben (Fork, location_bbox): Deutschland, grob
+        t.append('location_bbox = [47.2, 5.8, 55.1, 15.1]')
 
     # Gesamtansicht ohne Filter: diese Instanz hoert nur die Domains dieser
     # Community ab, mehr kann also gar nicht hineingeraten. Ohne Filter

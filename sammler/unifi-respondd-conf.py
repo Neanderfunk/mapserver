@@ -87,6 +87,9 @@ def konfiguration(benutzer, passwort, host, port, ifs):
         'interface': 'lo',
         'interfaces': ifs,
         'cache_seconds': 60,
+        # Rahmen fuer die Ortsangaben (Fork, location_bbox): Deutschland,
+        # grob [sued, west, nord, ost]
+        'location_bbox': [47.2, 5.8, 55.1, 15.1],
         'verbose': False,
         'logging_config': {
             'version': 1,

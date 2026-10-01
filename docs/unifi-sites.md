@@ -116,7 +116,7 @@ nodelist prüfen; bei den ersten Einträgen lag er bei 7 bis 88 m.
 | Konfiguration | bei jedem Start aus `karte-unifi-respondd-conf` (`sammler/unifi-respondd-conf.py`): `sitecodes.conf` + Zugang + weitere Controller aus `/etc/unifi_respondd/controller/` |
 | Zuordnung | `karte-unifi-zuordnung.timer`, Datei `/var/lib/karte/unifi-zuordnung.json` |
 | Einrichtung | `sudo ./sammler/unifi-einrichten.sh` (setzt `/etc/unifi_respondd/zugang` voraus) |
-| Überwachung | Checkmk `mapserver-unifi`: Dienst läuft, Zuordnung höchstens 30 min alt, APs online; `mapserver-tunnel-<schnittstelle>` je Tunnel zu einem Controller: letzter Handshake höchstens 5 min alt; höchstens WARN |
+| Überwachung | Checkmk `mapserver-unifi`: Dienst läuft, Zuordnung höchstens 30 min alt, APs online; `mapserver-tunnel-<name>` je Controller hinter NAT: letzter Handshake höchstens 5 min alt; höchstens WARN |
 
 **Aktualisieren:** Fork pflegen und pushen, dann auf map6
 `sudo ./sammler/unifi-einrichten.sh` oder von Hand `git -C /opt/unifi_respondd
@@ -213,23 +213,42 @@ die UDM einen WireGuard-Tunnel zur VM auf (VPN-Client), die VM fragt sie
 darüber ab. Keine Freigabe im Provider-Router nötig, ein wechselndes Präfix
 stört nicht.
 
-1. Auf der VM: `sudo ./sammler/controller-tunnel.sh wg-<name>
-   172.31.<n>.1/30 172.31.<n>.2 [port] > client.conf`. Legt beide
-   Schlüsselpaare an, startet `wg-quick@wg-<name>` und gibt die
-   Client-Konfiguration aus. Den privaten Schlüssel des Clients behält die VM
-   nicht. Je Controller eigenes /30 und eigener Port (Vorgabe 51820).
-2. In der UDM: Settings → VPN → VPN Client → WireGuard, `client.conf`
-   hochladen. Keine Policy-Based Route anlegen; durch den Tunnel soll nur
-   die VM zur UDM.
-3. Firewall der UDM (Regel-Editor ohne Zonen): Typ **Internet Local**,
-   Accept, TCP, Quelle die Tunneladresse der VM, Ziel-Port 443. "Internet
-   In" wäre der Weg in die Netze hinter der UDM, nicht zur UDM selbst.
-4. Prüfen von der VM: `curl -sk https://172.31.<n>.2/` gibt 200.
+Alle Controller hängen als Peers an einer Schnittstelle `wg-ctl` auf der VM
+(172.31.253.1/24, UDP 51820). Nur dieser Port muss erreichbar sein: über
+IPv6 direkt, über IPv4 per DNAT auf twin2 (137.74.94.20:51820 an die VM),
+für Standorte ohne IPv6.
+
+1. Auf der VM: `sudo ./sammler/controller-tunnel.sh NAME 172.31.253.<n>
+   [ZIEL ...] > client.conf`. Legt einen Peer mit eigenem Schlüsselpaar an,
+   startet `wg-ctl` neu (die anderen Peers verlieren dabei einige Sekunden)
+   und gibt die Client-Konfiguration aus. Den privaten Schlüssel des Clients
+   behält die VM nicht. ZIEL sind Adressen hinter der Gegenstelle, die die
+   VM erreichen soll, etwa ein Cloud Key im LAN; sie werden als /32 in den
+   Tunnel geroutet, nicht das ganze LAN.
+2. **UDM als Client**: Settings → VPN → VPN Client → WireGuard,
+   `client.conf` hochladen. Keine Policy-Based Route anlegen; durch den
+   Tunnel soll nur die VM zur UDM. Firewall der UDM (Regel-Editor ohne
+   Zonen): Typ **Internet Local**, Accept, TCP, Quelle 172.31.253.1,
+   Ziel-Port 443. "Internet In" wäre der Weg in die Netze hinter der UDM,
+   nicht zur UDM selbst.
+   **OpenWrt vor einem Cloud Key als Client**: Schnittstelle `map6` (proto
+   wireguard, Adresse 172.31.253.<n>/32, Peer mit `route_allowed_ips` auf
+   172.31.253.1/32), eigene Firewall-Zone `map6` (input und forward
+   REJECT) und eine Regel `map6` → `lan`, nur TCP 443 zur Adresse des
+   Cloud Keys. Masquerading braucht es nicht, der Cloud Key antwortet über
+   sein Standard-Gateway, das OpenWrt.
+3. Prüfen von der VM: `curl -sk https://172.31.253.<n>/` bzw. die Adresse
+   des Cloud Keys gibt 200.
+
+Weil die ZIELE als /32 in einer gemeinsamen Routingtabelle stehen, dürfen
+sich die LAN-Adressen zweier Standorte nicht überschneiden; sonst auf dem
+OpenWrt per DNAT eine eigene Tunneladresse für den Controller vergeben.
 
 **MTU 1412**: PPPoE (1492) minus WireGuard über IPv6 (80). Die Antworten
 des Controllers sind groß, eine zu große MTU fiele erst bei der Client-Liste
 auf. **Keepalive 25 s** vom Client hält den NAT-Eintrag offen; WireGuard
-erneuert den Handshake alle zwei Minuten, Checkmk warnt ab fünf.
+erneuert den Handshake alle zwei Minuten, Checkmk warnt ab fünf (je
+Peer ein Dienst `mapserver-tunnel-NAME`).
 
 **Zertifikat**: die UDM hat ein selbstsigniertes, daher `ssl_verify = nein`.
 Der Weg läuft nur durch den Tunnel. Die Warnung, die pyunifi dabei je

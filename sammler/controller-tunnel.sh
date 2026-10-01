@@ -1,75 +1,98 @@
 #!/bin/bash
 # SPDX-License-Identifier: BSD-3-Clause
 #
-# WireGuard-Tunnel zu einem UniFi-Controller, der von aussen nicht erreichbar
-# ist (etwa eine UDM hinter NAT). Der Controller baut den Tunnel als
-# VPN-Client auf, die Karten-VM fragt ihn darueber ab. Auf der Karten-VM als
-# root:
+# WireGuard-Tunnel zu UniFi-Controllern, die von aussen nicht erreichbar sind
+# (UDM hinter NAT, Cloud Key hinter einem OpenWrt). Die Gegenstelle baut den
+# Tunnel als Client auf, die Karten-VM fragt den Controller darueber ab. Alle
+# haengen als Peers an einer Schnittstelle wg-ctl, Port 51820: nur dieser
+# Port muss erreichbar sein (IPv6 direkt, IPv4 per DNAT auf twin2).
 #
-#   sudo ./controller-tunnel.sh wg-udm 172.31.253.1/30 172.31.253.2 > client.conf
+# Auf der Karten-VM als root, je Controller einmal:
 #
-# Legt beim ersten Lauf beide Schluesselpaare an und schreibt die
-# Client-Konfiguration auf stdout; die gehoert in den Controller (Settings ->
-# VPN -> VPN Client -> WireGuard -> Upload File) und wird hier nicht
-# gespeichert. Gibt es die Schnittstelle schon, bleibt sie, wie sie ist, und
-# es kommt nichts auf stdout: fuer einen neuen Client-Schluessel erst
-# /etc/wireguard/<schnittstelle>.conf entfernen.
+#   sudo ./controller-tunnel.sh NAME TUNNELADRESSE [ZIEL ...] > client.conf
 #
-# Im Controller zusaetzlich eine Firewall-Regel: von der Tunneladresse der
-# Karten-VM auf TCP 443 der UDM selbst (alte Regeln: "Internet Local").
-# Hintergrund: docs/unifi-sites.md ("Controller hinter NAT").
+#   NAME           Name des Controllers, steht als Kommentar am Peer und in
+#                  Checkmk (mapserver-tunnel-NAME)
+#   TUNNELADRESSE  Adresse der Gegenstelle im Tunnel, 172.31.253.2 bis .254
+#   ZIEL           weitere Adressen hinter der Gegenstelle, die die VM
+#                  erreichen soll, etwa der Cloud Key im LAN eines OpenWrt;
+#                  bei einer UDM keine, sie hat die Tunneladresse selbst
+#
+# Schreibt die Client-Konfiguration (wg-quick-Format) auf stdout; sie wird
+# hier nicht gespeichert. Gibt es den Peer schon, kommt nichts auf stdout:
+# fuer einen neuen Schluessel erst seinen Block aus /etc/wireguard/wg-ctl.conf
+# entfernen. Hintergrund: docs/unifi-sites.md ("Controller hinter NAT").
 set -euo pipefail
 
-SCHNITTSTELLE=${1:?Schnittstelle, etwa wg-udm}
-HIER_ADRESSE=${2:?eigene Tunneladresse mit Netz, etwa 172.31.253.1/30}
-DORT=${3:?Tunneladresse des Controllers, etwa 172.31.253.2}
-PORT=${4:-51820}
+NAME=${1:?Name des Controllers, etwa WIR-Haus}
+DORT=${2:?Tunneladresse der Gegenstelle, etwa 172.31.253.2}
+shift 2
+ZIELE=("$@")
+
+SCHNITTSTELLE=wg-ctl
+HIER=172.31.253.1
+NETZ=24
+PORT=51820
 # PPPoE (1492) minus WireGuard ueber IPv6 (80); die Antworten des Controllers
 # sind gross, eine zu grosse MTU faellt erst bei der Client-Liste auf
-MTU=${5:-1412}
+MTU=1412
 KONF=/etc/wireguard/$SCHNITTSTELLE.conf
+# IPv4 hat die VM nur hinter twin2, dort leitet DNAT UDP 51820 hierher
+IPV4_ENDPUNKT=137.74.94.20
 
 [ "$(id -u)" = 0 ] || { echo "Bitte als root starten." >&2; exit 1; }
+[[ $NAME =~ ^[A-Za-z0-9_-]+$ ]] || { echo "Name nur aus Buchstaben, Ziffern, - und _" >&2; exit 1; }
 
 export DEBIAN_FRONTEND=noninteractive
 command -v wg >/dev/null || apt-get install -y -qq wireguard-tools >&2
+umask 077
+install -d -m 0700 /etc/wireguard
 
-if [ -e "$KONF" ]; then
-	echo "$KONF gibt es schon, bleibt unveraendert" >&2
-else
-	umask 077
-	install -d -m 0700 /etc/wireguard
-	eigener=$(wg genkey)
-	client=$(wg genkey)
+if [ ! -e "$KONF" ]; then
 	cat > "$KONF" <<-K
-		# UniFi-Controller als WireGuard-Client; die Karten-VM fragt ihn ueber
-		# den Tunnel ab. Angelegt von sammler/controller-tunnel.sh.
+		# UniFi-Controller als WireGuard-Clients, je Controller ein Peer.
+		# Angelegt von sammler/controller-tunnel.sh.
 		[Interface]
-		Address = $HIER_ADRESSE
+		Address = $HIER/$NETZ
 		ListenPort = $PORT
 		MTU = $MTU
-		PrivateKey = $eigener
+		PrivateKey = $(wg genkey)
+	K
+fi
 
+if grep -q "^# Controller: $NAME\$" "$KONF"; then
+	echo "Peer $NAME gibt es schon, bleibt unveraendert" >&2
+else
+	client=$(wg genkey)
+	erlaubt=$DORT/32
+	for z in "${ZIELE[@]}"; do erlaubt="$erlaubt, ${z%/*}/32"; done
+	cat >> "$KONF" <<-K
+
+		# Controller: $NAME
 		[Peer]
 		PublicKey = $(printf '%s' "$client" | wg pubkey)
-		AllowedIPs = $DORT/32
+		AllowedIPs = $erlaubt
 	K
-	# Oeffentliche IPv6 der VM als Endpunkt; die Karten-VM hat kein IPv4
-	endpunkt=$(ip -6 route get 2001:4860:4860::8888 | grep -o 'src [0-9a-f:]*' | cut -d' ' -f2)
+	eigener=$(sed -n 's/^PrivateKey = //p' "$KONF" | head -1 | wg pubkey)
+	endpunkt6=$(ip -6 route get 2001:4860:4860::8888 | grep -o 'src [0-9a-f:]*' | cut -d' ' -f2)
 	cat <<-K
+		# $NAME -> Karten-VM. Endpoint ueber IPv6; ohne IPv6 am Standort
+		# stattdessen Endpoint = $IPV4_ENDPUNKT:$PORT
 		[Interface]
 		PrivateKey = $client
-		Address = $DORT/${HIER_ADRESSE#*/}
+		Address = $DORT/32
 		MTU = $MTU
 
 		[Peer]
-		PublicKey = $(printf '%s' "$eigener" | wg pubkey)
-		Endpoint = [$endpunkt]:$PORT
-		AllowedIPs = ${HIER_ADRESSE%/*}/32
+		PublicKey = $eigener
+		Endpoint = [$endpunkt6]:$PORT
+		AllowedIPs = $HIER/32
 		PersistentKeepalive = 25
 	K
 fi
 
-systemctl enable -q --now "wg-quick@$SCHNITTSTELLE"
-wg show "$SCHNITTSTELLE" latest-handshakes | awk -v n="$(date +%s)" \
-	'{ print ($2 ? "letzter Handshake vor " n - $2 " s" : "noch kein Handshake") }' >&2
+systemctl enable -q "wg-quick@$SCHNITTSTELLE"
+# Neu starten statt syncconf: wg-quick legt die Routen zu den ZIELEN nur beim
+# Start an. Die anderen Peers verlieren dabei einige Sekunden.
+systemctl restart "wg-quick@$SCHNITTSTELLE"
+wg show "$SCHNITTSTELLE" latest-handshakes >&2

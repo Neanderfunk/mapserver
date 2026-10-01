@@ -11,6 +11,9 @@
 # Benutzer, Passwort, Controller-URL:
 #   install -d -m 0750 /etc/unifi_respondd
 #   install -m 0600 /dev/stdin /etc/unifi_respondd/zugang < zugang
+# Weitere Controller je eine Datei in /etc/unifi_respondd/controller/, Format im
+# Kopf von unifi-respondd-conf.py; einen Controller hinter NAT erreicht die VM
+# ueber einen Tunnel aus controller-tunnel.sh.
 set -euo pipefail
 
 HIER=$(cd "$(dirname "$0")" && pwd)
@@ -33,6 +36,8 @@ chown root:unifi-respondd "$ETC"
 chmod 0750 "$ETC"
 chown root:root "$ETC/zugang"
 chmod 0600 "$ETC/zugang"
+install -d -m 0700 -o root -g root "$ETC/controller"
+find "$ETC/controller" -type f -exec chown root:root {} + -exec chmod 0600 {} +
 install -d -m 0755 /var/lib/karte
 
 echo "== unifi_respondd ($QUELLE, Zweig $ZWEIG) =="

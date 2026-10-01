@@ -378,6 +378,25 @@ print(z, len(ap), sum(1 for x in ap if x.get('is_online')), sum(x.get('clients')
     fi
 fi
 
+# Tunnel zu Controllern hinter NAT (sammler/controller-tunnel.sh). Der
+# Controller haelt ihn mit einem Keepalive alle 25 s offen, WireGuard erneuert
+# den Handshake alle zwei Minuten. Ohne Tunnel fehlen nur die APs dieses
+# Controllers: WARN.
+if command -v wg >/dev/null; then
+    jetzt=$(date +%s)
+    wg show all latest-handshakes 2>/dev/null | while read -r ifname _peer zeit; do
+        alter=$(( zeit ? jetzt - zeit : -1 ))
+        perf="handshake_alter=$alter"
+        if [ "$zeit" = 0 ]; then
+            echo "1 mapserver-tunnel-$ifname $perf noch kein Handshake, Controller nicht verbunden"
+        elif [ "$alter" -gt 300 ]; then
+            echo "1 mapserver-tunnel-$ifname $perf letzter Handshake vor $((alter / 60)) min, Controller nicht verbunden"
+        else
+            echo "0 mapserver-tunnel-$ifname $perf letzter Handshake vor $alter s"
+        fi
+    done
+fi
+
 # --- Clients und dunkle Knoten ----------------------------------------------
 # Aus der Uebersetzungstabelle, geschrieben von karte-clients. Dunkel heisst:
 # im Mesh sichtbar, aber keinem Knoten der Karte zuzuordnen, also ein

@@ -106,10 +106,10 @@ nodelist prüfen; bei den ersten Einträgen lag er bei 7 bis 88 m.
 | --- | --- |
 | Dienst | `unifi-respondd.service`, Benutzer `unifi-respondd`, Port 1001 |
 | Code | `/opt/unifi_respondd` (Fork, Zweig `neanderfunk`), venv darin |
-| Konfiguration | bei jedem Start aus `karte-unifi-respondd-conf` (`sammler/unifi-respondd-conf.py`): `sitecodes.conf` + Zugang |
+| Konfiguration | bei jedem Start aus `karte-unifi-respondd-conf` (`sammler/unifi-respondd-conf.py`): `sitecodes.conf` + Zugang + weitere Controller aus `/etc/unifi_respondd/controller/` |
 | Zuordnung | `karte-unifi-zuordnung.timer`, Datei `/var/lib/karte/unifi-zuordnung.json` |
 | Einrichtung | `sudo ./sammler/unifi-einrichten.sh` (setzt `/etc/unifi_respondd/zugang` voraus) |
-| Überwachung | Checkmk `mapserver-unifi`: Dienst läuft, Zuordnung höchstens 30 min alt, APs online; höchstens WARN |
+| Überwachung | Checkmk `mapserver-unifi`: Dienst läuft, Zuordnung höchstens 30 min alt, APs online; `mapserver-tunnel-<schnittstelle>` je Tunnel zu einem Controller: letzter Handshake höchstens 5 min alt; höchstens WARN |
 
 **Aktualisieren:** Fork pflegen und pushen, dann auf map6
 `sudo ./sammler/unifi-einrichten.sh` oder von Hand `git -C /opt/unifi_respondd
@@ -143,8 +143,10 @@ baut aus dem Fork `Neanderfunk/yanic`.
   aktives 6-GHz-Modul.
 - **Rauschen** (noise) liefert der Controller nicht.
 - **Out-of-band verwaltete Installationen**: ihr Router lässt sich nicht
-  aus der Übersetzungstabelle messen, dort bräuchte es `offloader_mac` von
-  Hand; zwei solche Sites sind für unser Konto derzeit nicht sichtbar.
+  aus der Übersetzungstabelle messen. Für einen eigenen Controller steht er
+  seit 01.10.2026 als `router.<Site>` in dessen Datei (siehe "Weitere
+  Controller"); im ersten Controller sind zwei solche Sites für unser Konto
+  derzeit nicht sichtbar.
 
 ## In-band oder out-of-band
 
@@ -158,6 +160,73 @@ Freifunk-Netz, ihre MAC steht in der Übersetzungstabelle von batman, und
 der Freifunk-SSID wird ins Client-Netz gebrückt. Im Mesh stehen dann nur die
 WLAN-Clients und kein AP; der Router muss von Hand eingetragen werden
 (`offloader_mac` je Site), am einfachsten über den Kartenlink des Knotens.
+
+## Weitere Controller
+
+Seit 01.10.2026 fragt unifi_respondd neben dem ersten Controller weitere ab
+(Fork, Schlüssel `controllers`). Fällt einer aus, kommen die APs der anderen
+trotzdem; nur wenn keiner antwortet, bleibt der letzte Stand stehen.
+
+**Je Controller eine Datei** in `/etc/unifi_respondd/controller/` (0600 root,
+Verzeichnis 0700), der Dateiname ist der Name im Log. Format im Kopf von
+`sammler/unifi-respondd-conf.py`:
+
+```
+benutzer = leser
+passwort = ...
+url = https://172.31.253.2
+version = UDMP-unifiOS
+ssl_verify = nein
+router.Default = 80:af:ca:00:00:01
+```
+
+- **Konto**: lokaler Admin mit Username und Passwort, Rolle der Network-App
+  "View Only", alle anderen Apps "None". Ein Konto, das nur eine E-Mail hat
+  (UI.com-Einladung), kann sich lokal nicht anmelden: 403
+  `AUTHENTICATION_FAILED_INVALID_CREDENTIALS`. In der Datei steht der
+  Username, nicht die E-Mail.
+- **`version`**: `UDMP-unifiOS` für UDM und Cloud Gateways (Anmeldung an
+  `/api/auth/login`, Network unter `/proxy/network/`), sonst `v5`.
+- **`router.<Site>`**: der Freifunk-Router für alle APs dieser Site, für
+  out-of-band verwaltete APs. Eine gemessene Zuordnung geht vor. Den Router
+  findet man über die WLAN-Clients der Freifunk-SSID: ihre MAC steht in der
+  Übersetzungstabelle (`batctl meshif bat-<code> tg`) hinter dem Originator
+  des Routers.
+- Gemeldet werden nur APs, die eine Freifunk-SSID ausstrahlen
+  (`ssid_regex`), gezählt nur deren Clients.
+
+Nach dem Anlegen oder Ändern `systemctl restart unifi-respondd`; die
+Konfiguration entsteht bei jedem Start neu.
+
+### Controller hinter NAT
+
+Eine UDM hinter einem Provider-Router ist von der Karten-VM aus nicht
+erreichbar, und ihr Management-Netz soll nicht nach außen. Stattdessen baut
+die UDM einen WireGuard-Tunnel zur VM auf (VPN-Client), die VM fragt sie
+darüber ab. Keine Freigabe im Provider-Router nötig, ein wechselndes Präfix
+stört nicht.
+
+1. Auf der VM: `sudo ./sammler/controller-tunnel.sh wg-<name>
+   172.31.<n>.1/30 172.31.<n>.2 [port] > client.conf`. Legt beide
+   Schlüsselpaare an, startet `wg-quick@wg-<name>` und gibt die
+   Client-Konfiguration aus. Den privaten Schlüssel des Clients behält die VM
+   nicht. Je Controller eigenes /30 und eigener Port (Vorgabe 51820).
+2. In der UDM: Settings → VPN → VPN Client → WireGuard, `client.conf`
+   hochladen. Keine Policy-Based Route anlegen; durch den Tunnel soll nur
+   die VM zur UDM.
+3. Firewall der UDM (Regel-Editor ohne Zonen): Typ **Internet Local**,
+   Accept, TCP, Quelle die Tunneladresse der VM, Ziel-Port 443. "Internet
+   In" wäre der Weg in die Netze hinter der UDM, nicht zur UDM selbst.
+4. Prüfen von der VM: `curl -sk https://172.31.<n>.2/` gibt 200.
+
+**MTU 1412**: PPPoE (1492) minus WireGuard über IPv6 (80). Die Antworten
+des Controllers sind groß, eine zu große MTU fiele erst bei der Client-Liste
+auf. **Keepalive 25 s** vom Client hält den NAT-Eintrag offen; WireGuard
+erneuert den Handshake alle zwei Minuten, Checkmk warnt ab fünf.
+
+**Zertifikat**: die UDM hat ein selbstsigniertes, daher `ssl_verify = nein`.
+Der Weg läuft nur durch den Tunnel. Die Warnung, die pyunifi dabei je
+Anfrage schrieb, unterdrückt der Fork nur für solche Controller.
 
 ## Standorte, Konto und Zugänge
 

@@ -170,6 +170,11 @@ ALTGERAETE_TEXT = (
     'target="_blank" rel="noopener">Zur Router-Austauschaktion</a>'
 )
 
+# Seiten des Vereins, oben in der Seitenleiste der neander-Karten
+VEREINSLINKS = [{'title': titel, 'href': 'https://neanderfunk.de/' + seite + '/'}
+                for titel, seite in (('Mitmachen', 'mitmachen'), ('Spenden', 'spenden'),
+                                     ('Kontakt', 'kontakt'), ('Impressum', 'impressum'))]
+
 
 # Zeitreihen im Knotenfenster. meshviewer zeichnet sie selbst mit d3 als SVG
 # im Browser; kein iframe, kein PNG aus einem Grafana. Upstream holt die Daten
@@ -375,7 +380,10 @@ def konfig(titel, pfad, alle):
             # auch von den Ortskarten aus auf die Gesamtkarte, nur dort gibt es
             # das Menue
             'serviceLink': {'title': 'Service (Anmeldung)',
-                            'href': 'https://neander.map.freifunk.space/nf/service/?node={NODE_ID}'}}
+                            'href': 'https://neander.map.freifunk.space/nf/service/?node={NODE_ID}'},
+            # Links oben unter den Zahlen, wie auf der Karte von Freifunk EN
+            # (adorfer 01.10.2026)
+            'linkList': VEREINSLINKS}
            if community == 'neander' else {'deprecation_enabled': False})
     return {
         **alt,
@@ -388,6 +396,9 @@ def konfig(titel, pfad, alle):
         # Kopierknopf hinter jeder IP-Adresse im Knotenfenster (Fork,
         # ipCopyButton); markiert kam der Tabulator mit (adorfer 28.09.2026)
         'ipCopyButton': True,
+        # "Letzte Aktualisierung" nur, wenn die Daten veraltet sind (Fork,
+        # lastUpdateAfterMinutes); yanic schreibt jede Minute (adorfer 01.10.2026)
+        'lastUpdateAfterMinutes': 10,
         'siteName': titel,
         'maxAge': 21,
         # Beschriftung der Knoten. Im Dunkelmodus nimmt meshviewer sonst die

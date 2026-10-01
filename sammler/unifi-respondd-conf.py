@@ -158,6 +158,9 @@ def konfiguration(benutzer, passwort, host, port, ifs, controllers=()):
         # Rahmen fuer die Ortsangaben (Fork, location_bbox): Deutschland,
         # grob [sued, west, nord, ost]
         'location_bbox': [47.2, 5.8, 55.1, 15.1],
+        # "Ubiquiti UniFi AC Mesh" statt "U7MSH" (Fork, model_names); der
+        # Code fuehrte zu Rueckfragen, U7MSH ist kein U7 (adorfer 01.10.2026)
+        'model_names': True,
         # Weitere Controller (Fork, controllers), siehe Kopf
         'controllers': list(controllers),
         'verbose': False,

@@ -69,6 +69,13 @@ Commit, erklärt in `NEANDERFUNK.md` im jeweiligen Fork:
   wie Gluon sie liefert, yanic bildet daraus wieder dieselben Prozente.
   Interferenz ist belegt minus eigene. Auf der Karte stehen sie wie bei
   jedem Gluon-Knoten als Airtime-Balken hinter der Systemlast.
+- **Modell**: als Name, wie dieselbe Hardware mit Gluon heißt ("Ubiquiti
+  UniFi AC Mesh"), nicht als interner Code des Controllers ("U7MSH"). Die
+  Codes führten zu Rückfragen: U7MSH ist das AC Mesh von 2017, der U7 Lite
+  heißt UAPA693. Fork, `model_names`; die Tabelle stammt aus Ubiquitis
+  Gerätedatenbank und wird mit `werkzeug/modelle-erzeugen.py` im Fork
+  erneuert, wenn ein neues Modell als Code auftaucht. Gleiche Namen heißt
+  auch: Statistik und Gerätebilder zählen UniFi- und Gluon-Geräte gemeinsam.
 - **Systemlast und Speicher**: die des AP selbst (`loadavg_1`, Speicher aus
   dem Controller).
 - **Erstsichtung**: einmalig am 25.09.2026 aus dem Controller übernommen, siehe

@@ -525,6 +525,17 @@ Mallorca, in Lille oder Zürich den Ausschnitt über halb Europa.
 - Den Unterschied zeigt ein Vergleich der `fixedCenter` aller
   `config.json` vor und nach dem Lauf (`/var/www/karte-en/sites/*/*/config.json`).
 
+### Kopf der Seitenleiste
+
+Seit 01.10.2026 stehen auf den neander-Karten unter den Zahlen Links auf
+Mitmachen, Spenden, Kontakt und Impressum von neanderfunk.de, wie auf der
+Karte von Freifunk EN (Upstream-Schlüssel `linkList`, `VEREINSLINKS` in
+`konfig-erzeugen.py`). Die Zeile "Letzte Aktualisierung vor ..." erscheint
+auf allen Karten nur noch, wenn die Daten älter als 10 Minuten sind (Fork,
+`lastUpdateAfterMinutes`). Die Karte prüft das auch dann jede Minute, wenn
+keine neuen Daten mehr kommen; eine sichtbare Zeile heißt also: yanic schreibt
+nicht mehr, oder der Browser erreicht den Server nicht.
+
 ### Kopierknopf hinter IP-Adressen
 
 Seit 28.09.2026 steht im Knotenfenster hinter jeder Adresse ein kleiner,

@@ -25,6 +25,12 @@ Aktionen, beide fuehrt yanic aus (Fork Neanderfunk/yanic):
 
 Jede Aktion steht mit Benutzer und Zeit in PROTOKOLL.
 
+Welche Knoten einen Override haben, steht oeffentlich in UEBERSICHT
+({node_id: ["ort" | "ort-weg" | "name", ...]}), ausgeliefert von nginx unter
+/nf/overrides.json; die Karte faerbt damit das Zahnrad (Fork,
+serviceOverrides). Nur welche Felder, nicht die Werte; die stehen ohnehin auf
+der Karte. Geschrieben bei jeder Aenderung und beim Start.
+
 Schutz gegen fremde Seiten, die ein Formular hierher abschicken: POST nur
 mit Origin (oder Referer) der Karte.
 """
@@ -46,6 +52,7 @@ ORDNER = '/var/lib/karte/service'
 ALIASES = ORDNER + '/aliases-neander.json'
 REMOVE_DIR = ORDNER + '/remove-neander'
 PROTOKOLL = ORDNER + '/protokoll.jsonl'
+UEBERSICHT = ORDNER + '/overrides.json'
 
 NODE_ID = re.compile(r'^[0-9a-f]{12}$')
 
@@ -125,13 +132,37 @@ def aliases_lesen(pfad=None):
         return {}
 
 
-def aliases_schreiben(daten, pfad=None):
-    pfad = pfad or ALIASES
-    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(pfad), prefix='.aliases-')
+def _json_ablegen(daten, pfad):
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(pfad), prefix='.' + os.path.basename(pfad) + '-')
     with os.fdopen(fd, 'w', encoding='utf-8') as f:
         json.dump(daten, f, ensure_ascii=False, indent=1, sort_keys=True)
     os.chmod(tmp, 0o644)
     os.replace(tmp, pfad)
+
+
+def uebersicht(daten):
+    """Je Knoten die ueberschriebenen Felder, ohne Werte."""
+    ergebnis = {}
+    for node_id, eintrag in daten.items():
+        ni = (eintrag or {}).get('nodeinfo') if isinstance(eintrag, dict) else None
+        if not isinstance(ni, dict):
+            continue
+        felder = []
+        if 'location' in ni:
+            felder.append('ort' if ni['location'] is not None else 'ort-weg')
+        if 'hostname' in ni:
+            felder.append('name')
+        if felder:
+            ergebnis[node_id] = felder
+    return ergebnis
+
+
+def aliases_schreiben(daten, pfad=None, uebersicht_pfad=None):
+    pfad = pfad or ALIASES
+    _json_ablegen(daten, pfad)
+    # Ohne eigenen Pfad liegt die Uebersicht neben der Alias-Datei; so
+    # schreiben Tests mit tmp_path nicht ins echte Verzeichnis
+    _json_ablegen(uebersicht(daten), uebersicht_pfad or os.path.join(os.path.dirname(pfad), os.path.basename(UEBERSICHT)))
 
 
 def alias_setzen(node_id, feld, wert, pfad=None):
@@ -457,6 +488,8 @@ def main():
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument('--port', type=int, default=8097)
     a = p.parse_args()
+    # Uebersicht auch fuer Overrides, die vor ihrer Einfuehrung gesetzt wurden
+    _json_ablegen(uebersicht(aliases_lesen()), UEBERSICHT)
     ThreadingHTTPServer(('127.0.0.1', a.port), Handler).serve_forever()
 
 

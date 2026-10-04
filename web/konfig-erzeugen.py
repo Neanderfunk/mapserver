@@ -381,6 +381,9 @@ def konfig(titel, pfad, alle):
             # das Menue
             'serviceLink': {'title': 'Service (Anmeldung)',
                             'href': 'https://neander.map.freifunk.space/nf/service/?node={NODE_ID}'},
+            # Zahnrad gelb, wenn Name oder Ort per Override kommen (Fork,
+            # serviceOverrides; adorfer 04.10.2026)
+            'serviceOverrides': 'https://neander.map.freifunk.space/nf/overrides.json',
             # Links oben unter den Zahlen, wie auf der Karte von Freifunk EN
             # (adorfer 01.10.2026)
             'linkList': VEREINSLINKS}
@@ -595,6 +598,15 @@ SERVICE = """	location /outpost.goauthentik.io {
 		absolute_redirect off;
 		add_header Set-Cookie $auth_cookie;
 		return 302 /outpost.goauthentik.io/start?rd=https://$http_host$request_uri;
+	}
+	# Welche Knoten einen Override haben, nur die Felder, ohne Anmeldung: die
+	# Karte faerbt damit das Zahnrad (service.py schreibt sie, Fork
+	# serviceOverrides). Auch die Ortskarten fragen hier an, daher CORS.
+	location = /nf/overrides.json {
+		alias /var/lib/karte/service/overrides.json;
+		default_type application/json;
+		add_header Cache-Control "no-cache";
+		add_header Access-Control-Allow-Origin "*";
 	}
 	# Service-Menue (service/service.py), unter /nf/, weil der Service Worker
 	# der Karte dort nicht eingreift

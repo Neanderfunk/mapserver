@@ -202,3 +202,27 @@ def test_loeschen_laesst_den_namen_stehen(server):
               open(tmp / 'aliases.json', 'w'))
     anfrage(url + '/nf/service/entfernen', 'node=aaaaaaaaaaaa', ANGEMELDET)
     assert json.load(open(tmp / 'aliases.json')) == {'aaaaaaaaaaaa': {'nodeinfo': {'hostname': 'Sinnvoll'}}}
+
+
+def test_uebersicht_nur_felder_ohne_werte():
+    daten = {
+        'aaaaaaaaaaaa': {'nodeinfo': {'location': {'latitude': 51.0, 'longitude': 7.0}, 'hostname': 'x'}},
+        'bbbbbbbbbbbb': {'nodeinfo': {'location': None}},
+        'cccccccccccc': {'nodeinfo': {}},
+        'dddddddddddd': {'anderes': 1},
+        'eeeeeeeeeeee': 'kaputt',
+    }
+    assert svc.uebersicht(daten) == {'aaaaaaaaaaaa': ['ort', 'name'], 'bbbbbbbbbbbb': ['ort-weg']}
+
+
+def test_uebersicht_folgt_jeder_aenderung(tmp_path):
+    p = str(tmp_path / 'a.json')
+    ue = tmp_path / 'overrides.json'
+    svc.name_setzen('aaaaaaaaaaaa', 'Neu', p)
+    assert json.load(open(ue)) == {'aaaaaaaaaaaa': ['name']}
+    assert oct(os.stat(ue).st_mode & 0o777) == '0o644'
+    svc.ort_setzen('aaaaaaaaaaaa', None, p)
+    assert json.load(open(ue)) == {'aaaaaaaaaaaa': ['ort-weg', 'name']}
+    svc.name_setzen('aaaaaaaaaaaa', 'aufheben', p)
+    svc.ort_setzen('aaaaaaaaaaaa', 'aufheben', p)
+    assert json.load(open(ue)) == {}

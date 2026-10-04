@@ -234,6 +234,14 @@ Bindung an der Application.
 - **Namen ändern:** Hostname auf der Karte überschreiben, etwa für Knoten mit
   Vorgabenamen (`dusukw_…`), an die gerade niemand herankommt; zurücksetzbar.
   Bleibt beim Löschen stehen.
+- **Gelbes Zahnrad** (seit 04.10.2026): Knoten mit Namens- oder
+  Orts-Override bekommen ein gelbes, voll sichtbares Zahnrad; der Tooltip
+  nennt, was überschrieben ist ("per Override: Ort"). Grundlage ist
+  `/var/lib/karte/service/overrides.json` ({node_id: ["ort" | "ort-weg" |
+  "name"]}, nur Felder, keine Werte), geschrieben von `service.py` bei jeder
+  Änderung und beim Start, öffentlich unter `/nf/overrides.json` (mit CORS
+  für die Ortskarten). Die Karte lädt sie höchstens einmal je Minute
+  (Fork, `serviceOverrides`).
 - **Protokoll:** `/var/lib/karte/service/protokoll.jsonl`, je Aktion Zeit,
   Authentik-Benutzer, Knoten; die letzten zehn je Knoten stehen als Verlauf
   auf seiner Service-Seite.

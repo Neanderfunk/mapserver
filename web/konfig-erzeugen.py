@@ -508,8 +508,13 @@ server {
 		alias %(web)s/sites/%(host)s/data/;
 		add_header Cache-Control "no-cache";
 	}
-	location /pictures-svg/ {
-		alias %(web)s/pictures-svg/;
+	# Geraetebilder: device-pictures, dann eigene Fotos (SVG oder JPG), dann
+	# ein Ersatzbild aus conf.d/karte-geraetebilder.conf; ein JPG kommt unter
+	# der .svg-Adresse mit seinem eigenen Content-Type
+	location ~ ^/pictures-svg/(?<geraetebild>[^/]+)\\.svg$ {
+		root %(web)s;
+		try_files /pictures-svg/$geraetebild.svg /pictures-eigen/$geraetebild.svg
+			/pictures-eigen/$geraetebild.jpg /pictures-svg/$geraetebild_ersatz.svg =404;
 		expires 30d;
 	}
 	location /assets/ {

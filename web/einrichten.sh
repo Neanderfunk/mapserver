@@ -69,6 +69,11 @@ if [ -d "$BILDER/pictures-svg" ]; then
 	rsync -rlt --delete "$BILDER/pictures-svg/" "$WEB/pictures-svg/"
 	echo "  $(find "$WEB/pictures-svg" -name '*.svg' | wc -l) Bilder"
 fi
+# Eigene Fotos fuer Modelle, die device-pictures nicht hat; getrennt, damit
+# das rsync oben sie nicht wegraeumt
+install -d -m 0755 "$WEB/pictures-eigen"
+rsync -rlt --delete --include='*.svg' --include='*.jpg' --exclude='*' "$HIER/geraetebilder/" "$WEB/pictures-eigen/"
+echo "  $(find "$WEB/pictures-eigen" -type f | wc -l) eigene Bilder"
 
 echo "== Konfigurationen =="
 install -m 0755 "$HIER/konfig-erzeugen.py" /usr/local/sbin/karte-en-konfig
@@ -83,6 +88,7 @@ echo "== nginx =="
 install -m 0644 "$HIER/nginx-hash.conf" /etc/nginx/conf.d/karte-hash.conf
 install -m 0644 "$HIER/nginx-geo.conf" /etc/nginx/conf.d/karte-geo.conf
 install -m 0644 "$HIER/nginx-gzip.conf" /etc/nginx/conf.d/karte-gzip.conf
+install -m 0644 "$HIER/nginx-geraetebilder.conf" /etc/nginx/conf.d/karte-geraetebilder.conf
 install -d -m 0700 -o www-data /var/cache/nginx/karte-geo
 ln -sf /etc/nginx/sites-available/karte-en.conf /etc/nginx/sites-enabled/karte-en.conf
 nginx -t

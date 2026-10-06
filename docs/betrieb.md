@@ -591,6 +591,26 @@ reagiert der Tab einige zehn Sekunden nicht.
   `document.hidden` vortäuschen, Intervall verkürzen, Abrufe von
   `meshviewer.json` zählen (so am 28.09.2026 geprüft).
 
+### Gerätebilder
+
+Die Knoteninfo zeigt `/pictures-svg/<modell>.svg` (meshviewer
+`{MODEL_NORMALIZED}`). Seit 06.10.2026 sucht der Vhost der Reihe nach:
+
+1. das Bild aus freifunk/device-pictures (`pictures-svg/`, von
+   `web/einrichten.sh` per rsync aktuell gehalten),
+2. ein eigenes Foto in `pictures-eigen/` (SVG oder JPG; Quelle
+   `web/geraetebilder/`, siehe `LIESMICH.md` dort). Ein JPG kommt unter der
+   `.svg`-Adresse mit `image/jpeg`,
+3. ein Ersatzbild aus `conf.d/karte-geraetebilder.conf`
+   (`web/nginx-geraetebilder.conf`): x86-Symbole für VMs, FUTROs und Boards
+   ohne Herstellerangabe, dazu zwei Geräte, die device-pictures unter anderem
+   Namen führt.
+
+Damit fiel die Lücke von 277 auf 134 Knoten. Welche Modelle noch ein Foto
+brauchen, steht in der Router-Werkstatt (`docs/geraetefotos.md`, intern).
+Lizenz der device-pictures: CC BY-NC-SA 4.0 mit Ausnahmen, die je Datei im
+SVG stehen.
+
 ### Kartenebenen
 
 Drei zur Auswahl, CARTO ist die Vorgabe: CARTO hell, OpenStreetMap deutsch

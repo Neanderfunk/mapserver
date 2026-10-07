@@ -402,6 +402,11 @@ def konfig(titel, pfad, alle):
         # "Letzte Aktualisierung" nur, wenn die Daten veraltet sind (Fork,
         # lastUpdateAfterMinutes); yanic schreibt jede Minute (adorfer 01.10.2026)
         'lastUpdateAfterMinutes': 10,
+        # Kabel-Links blau schon ab TQ 0.9 statt 0.99 (Fork, otherLinkMinTq):
+        # ueber Kabel meldet batman oft 0.98, dann sahen sie aus wie Funk;
+        # unter 0.9 bleibt ein Kabel-Link farbig, das ist dann ein echtes
+        # Problem (adorfer 07.10.2026)
+        'otherLinkMinTq': 0.9,
         'siteName': titel,
         'maxAge': 21,
         # Beschriftung der Knoten. Im Dunkelmodus nimmt meshviewer sonst die

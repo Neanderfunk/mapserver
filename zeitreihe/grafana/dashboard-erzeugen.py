@@ -50,6 +50,21 @@ def ziel(expr, legende='', refid='A', schritt=''):
     return z
 
 
+def linie_rechts(name):
+    """Override: diese Reihe als Linie auf eigener Achse rechts, nicht
+    gestapelt. Fuer eine Groesse, die um Groessenordnungen neben den Balken
+    liegt und sie sonst plattdrueckt."""
+    return {'matcher': {'id': 'byName', 'options': name}, 'properties': [
+        {'id': 'custom.drawStyle', 'value': 'line'},
+        {'id': 'custom.axisPlacement', 'value': 'right'},
+        {'id': 'custom.stacking', 'value': {'mode': 'none', 'group': 'rechts'}},
+        {'id': 'custom.fillOpacity', 'value': 0},
+        {'id': 'custom.lineWidth', 'value': 2},
+        {'id': 'custom.showPoints', 'value': 'always'},
+        {'id': 'color', 'value': {'mode': 'fixed', 'fixedColor': 'red'}},
+    ]}
+
+
 def feld(einheit='', min_=None, balken=False, stapeln=False):
     eigen = {'drawStyle': 'bars' if balken else 'line',
              'lineWidth': 1 if balken else 2,
@@ -66,7 +81,8 @@ def feld(einheit='', min_=None, balken=False, stapeln=False):
 
 
 def panel(nr, titel, ziele, x, y, w=12, h=8, einheit='', min_=None,
-          balken=False, stapeln=False, beschreibung='', sortieren=False):
+          balken=False, stapeln=False, beschreibung='', sortieren=False,
+          abweichend=()):
     legende = {'displayMode': 'table', 'placement': 'bottom', 'showLegend': True,
                'calcs': ['mean', 'lastNotNull', 'max']}
     if sortieren:
@@ -78,7 +94,8 @@ def panel(nr, titel, ziele, x, y, w=12, h=8, einheit='', min_=None,
         'datasource': QUELLE,
         'gridPos': {'h': h, 'w': w, 'x': x, 'y': y},
         'targets': ziele,
-        'fieldConfig': feld(einheit, min_, balken, stapeln),
+        'fieldConfig': dict(feld(einheit, min_, balken, stapeln),
+                            overrides=list(abweichend)),
         'options': {'legend': legende,
                     'tooltip': {'mode': 'multi', 'sort': 'desc'}},
     }
@@ -169,8 +186,15 @@ PANELS = KOPF + [
              'Empfangen', 'A', '1d'),
         ziel('sum(increase({__name__="node_traffic.tx.bytes", nodeid="$node"}[1d]))',
              'Gesendet', 'B', '1d'),
+        # Fuer andere Knoten im Mesh durchgereicht (adorfer 11.10.2026). Oft
+        # tausendmal so viel wie der eigene Verkehr, deshalb eigene Achse.
+        ziel('sum(increase({__name__="node_traffic.forward.bytes", nodeid="$node"}[1d]))',
+             'Weitergereicht', 'C', '1d'),
     ], 0, 13, einheit='bytes', min_=0, balken=True, stapeln=True,
-        beschreibung='Tagesbilanz. Bei Zeiträumen unter zwei Tagen bleibt das Bild leer.'),
+        abweichend=[linie_rechts('Weitergereicht')],
+        beschreibung='Tagesbilanz. Balken: eigener Verkehr des Knotens. Linie (Achse '
+                     'rechts): für andere Knoten im Mesh weitergereicht. Bei Zeiträumen '
+                     'unter zwei Tagen bleibt das Bild leer.'),
 
     # Airtime ausserhalb von 0 bis 100 Prozent ist immer ein Messfehler: der
     # mt76-Unterlauf mancher Gluon-Knoten und einmalig am 25.09.2026 um 11:02

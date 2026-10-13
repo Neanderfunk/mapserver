@@ -93,9 +93,13 @@ def holen(pfad, **param):
 
 
 def jobs():
-    d = holen('query', query='count by (job) (last_over_time('
-                             'statistics_clients_total{job=~"nef.*"}[100d]))')
-    return sorted(x['metric']['job'] for x in d['result'])
+    """Alle nef-Jobs im Zeitraum. last_over_time ueber 100 Tage lehnt das alte
+    Prometheus als zu schwer ab (HTTP 400), also Stichproben, vereinigt."""
+    gefunden = set()
+    for versatz in ('', ' offset 30d', ' offset 60d', ' offset 90d'):
+        d = holen('query', query=f'count by (job) (statistics_clients_total{{job=~"nef.*"}}{versatz})')
+        gefunden.update(x['metric']['job'] for x in d['result'])
+    return sorted(gefunden)
 
 
 def umsetzen(name, metrik, umbenennen):

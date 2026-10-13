@@ -10,7 +10,8 @@ query_range). Prometheus haelt dort rund 98 Tage vor. Unsere eigenen
 Zeitreihen beginnen am 22.09.2026; alles davor holt dieses Skript, soweit es
 noch da ist (adorfer 14.10.2026). An der alten Karte aendert es nichts.
 
-Uebernommen wird nur Neanderfunk (Jobs nef*), umgerechnet auf unsere Namen
+Uebernommen wird nur Neanderfunk (Jobs nef*, die Duesseldorfer 12-17 und
+22-24, die RBK-Domains rbk*; nicht "wup", das ist Wuppertal), umgerechnet auf unsere Namen
 und Einheiten, mit dem Label quelle="altkarte". Damit lassen sich die Reihen
 restlos wieder entfernen, ohne eigene Daten zu beruehren:
 
@@ -37,6 +38,9 @@ ENDE = 1790094300            # erster Wert in unserem VictoriaMetrics, 22.09.202
 SCHRITT = 300
 STUECK = 30 * 86400          # query_range liefert hoechstens 11000 Punkte je Reihe
 PAUSE = 1.0                  # zwischen zwei Abfragen; die alte Karte ist in Betrieb
+
+# Unsere Domains in der alten Karte; "wup" (Wuppertal) gehoert nicht dazu
+MUSTER = 'nef.*|rbk.*|[0-9][0-9].*'
 
 KNOTEN = ('nodeid', 'hostname', 'model', 'site')
 BEI = 'nodeid,hostname,model,site'
@@ -97,7 +101,7 @@ def jobs():
     Prometheus als zu schwer ab (HTTP 400), also Stichproben, vereinigt."""
     gefunden = set()
     for versatz in ('', ' offset 30d', ' offset 60d', ' offset 90d'):
-        d = holen('query', query=f'count by (job) (statistics_clients_total{{job=~"nef.*"}}{versatz})')
+        d = holen('query', query=f'count by (job) (statistics_clients_total{{job=~"{MUSTER}"}}{versatz})')
         gefunden.update(x['metric']['job'] for x in d['result'])
     return sorted(gefunden)
 

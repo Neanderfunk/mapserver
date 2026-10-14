@@ -463,27 +463,42 @@ andere unter `/nf/prom/` gibt 403.
 
 ### Vorgeschichte aus der alten Karte
 
-Am 14.10.2026 aus dem Prometheus der alten Karte (map.eulenfunk.de)
-übernommen, lesend über deren Grafana-Datasource-Proxy, an der alten Karte
-hat sich nichts geändert: `zeitreihe/altkarte-uebernehmen.py`. Zeitraum
-09.07.2026 (so weit das alte Prometheus mit rund 98 Tagen zurückreichte) bis
-22.09.2026 18:25 (Beginn unserer eigenen Reihen), alle 48 Domains, ohne
-Wuppertal. Rund 1050 Knoten, 446 Millionen Werte, VictoriaMetrics danach
-1,9 GB.
+Aus dem Prometheus der alten Karte (map.eulenfunk.de) übernommen, lesend über
+deren Grafana-Datasource-Proxy, an der alten Karte hat sich nichts geändert:
+`zeitreihe/altkarte-uebernehmen.py`. Erster Lauf am 14.10.2026, am
+15.10.2026 gelöscht und mit Labels für das Community-Dashboard neu
+eingespielt. Zeitraum ab 08.07.2026 (so weit das alte Prometheus mit rund
+98 Tagen zurückreichte) bis 22.09.2026 18:25 (Beginn unserer eigenen
+Reihen), alle 48 Domains, ohne Wuppertal. Rund 1000 Gluon-Knoten und 48
+Gateway-Instanzen, 441 Millionen Werte.
 
 - **Übernommen**, umgerechnet auf unsere Namen und Einheiten: Clients
   (`node_clients.total/wifi/wifi24/wifi5`), `node_load`, `node_time.up`,
   Traffic (`node_traffic.rx/tx/forward/mgmt_rx/mgmt_tx.bytes`), Airtime
   (aus den alten Zählern `active/busy/rx/tx` in Prozent wie yanic, dazu
   `noise`), `link_tq` (alt 0 bis 1, neu 0 bis 100; Labels umbenannt).
-- **Nicht übernommen**: Speicher und Flash (alt nur als Anteil), alles aus
-  neanderfunk-respondd, die Clientzählung aus batman (`tt_*`), die UniFi-APs
-  (gab es vorher nicht auf der Karte).
+- **Labels zur Art des Knotens**, damit das Community-Dashboard die Werte
+  findet: `firmware_release` je Zeitpunkt aus dem Label `firmware` der alten
+  Metrik `online`; Supernodes ("KVM VirtualMachine" mit Ubuntu-Version)
+  `is_gateway="true"`, `firmware_base="Ubuntu"`; andere Server mit
+  Ubuntu-Version (himalia, horst, eulenmap) Ubuntu ohne Gateway; alle
+  übrigen `firmware_base="gluon"`, `is_gateway="false"`.
+- **Nicht übernommen**: Speicher und Flash (alt nur als Anteil, im
+  Community-Dashboard "Arbeitsspeicher" daher leer), Autoupdater-Zweig und
+  Target (dort "unbekannt"), alles aus neanderfunk-respondd, die
+  Clientzählung aus batman (`tt_*`), die UniFi-APs (gab es vorher nicht auf
+  der Karte).
 - **Label `quelle="altkarte"`** an jeder übernommenen Reihe. Entfernen ohne
   Folgen für eigene Daten: `delete_series` mit `match[]={quelle="altkarte"}`
-  (Schlüssel in `/etc/victoria-metrics/geheim.env`).
+  und dem Wert von `-deleteAuthKey` aus `/etc/victoria-metrics/geheim.env`
+  (die Datei enthält fertige Startparameter, nicht nur den Schlüssel). Labels
+  lassen sich nicht nachträglich ergänzen; für eine Änderung löschen und neu
+  einspielen, ein zweiter Import daneben verdoppelte die Summen.
 - Geprüft an Velbert: Tagesmengen alt und übernommen gleich (4,2 / 3,87 /
   0,46 GiB an drei Stichtagen), Kurven laufen über den 22.09. durch.
+  Community-Dashboard über 100 Tage: Knoten, Clients, Verkehr, Datenmenge,
+  Laufzeit und Firmware durchgehend. Spitzen bei "Laufzeit höchste" im Juli
+  sind echt (ein Knoten mit Firmware von 2017, ohne wöchentlichen Neustart).
 
 ### Diagramme im Knotenfenster
 

@@ -53,7 +53,7 @@ in `betrieb.md`).
 | Skript | auf der VM als | Zweck |
 | --- | --- | --- |
 | `sammler/erstsichtung-uebernehmen.py` | `karte-erstsichtung` | Erstsichtung aus einer älteren Karte übernehmen; yanic vorher anhalten |
-| `zeitreihe/altkarte-uebernehmen.py` | (aus der Arbeitskopie) | Zeitreihen der alten Karte übernehmen, Label `quelle="altkarte"`; gelaufen am 14.10.2026, siehe `betrieb.md` |
+| `zeitreihe/altkarte-uebernehmen.py` | (aus der Arbeitskopie) | Zeitreihen der alten Karte übernehmen, Label `quelle="altkarte"`; zuletzt gelaufen am 15.10.2026, siehe `betrieb.md` |
 | `tunnel/kennung-wechseln.sh` | `karte-en-kennung-wechseln` (von Hand abgelegt) | neue Kennung (MACs, Broker-Name) für alle Domains, als Probe |
 | `tunnel/kennungstest.sh` | `karte-en-kennungstest` (von Hand abgelegt) | einmalige Probe, ob Knoten nach einer Pause wieder antworten |
 

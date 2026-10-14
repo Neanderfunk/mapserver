@@ -23,10 +23,20 @@ unserer eigenen Reihen; davor gibt es keine Ueberschneidung.
 
 Nicht uebertragbar: Speicher und Flash (alt nur als Anteil), alles aus
 neanderfunk-respondd und der Clientzaehlung aus batman (gab es vorher nicht).
+
+Labels fuer das Community-Dashboard, das nach Art des Knotens filtert
+(15.10.2026): firmware_release aus dem Label firmware der alten Metrik
+online, je Zeitpunkt; Supernodes sind dort "KVM VirtualMachine" mit einer
+Ubuntu-Version als Firmware und bekommen is_gateway="true",
+firmware_base="Ubuntu" wie bei uns; andere Server mit Ubuntu-Version
+firmware_base="Ubuntu" ohne Gateway; alle anderen mit Firmware
+is_gateway="false", firmware_base="gluon".
+Autoupdater-Zweig, Target und Speichergroesse kennt die alte Karte nicht.
 """
 import argparse
 import json
 import math
+import re
 import sys
 import time
 import urllib.parse
@@ -106,6 +116,43 @@ def jobs():
     return sorted(gefunden)
 
 
+def firmware_je_knoten(job, von, bis):
+    """{nodeid: {Zeitstempel: (firmware, model)}} aus der alten Metrik online."""
+    d = holen('query_range', query=f'max by (nodeid, model, firmware) (online{{job="{job}"}})',
+              start=von, end=bis, step=SCHRITT)
+    je = {}
+    for r in d['result']:
+        m = r['metric']
+        if not m.get('nodeid'):
+            continue
+        zeiten = je.setdefault(m['nodeid'], {})
+        for zeit, _ in r['values']:
+            zeiten[int(float(zeit))] = (m.get('firmware', ''), m.get('model', ''))
+    return je
+
+
+def art(firmware, model):
+    """Labels zur Art des Knotens, wie unsere eigenen Reihen sie tragen."""
+    if re.fullmatch(r'\d\d\.\d\d', firmware):
+        # Ubuntu-Version: Supernode-Instanz (KVM) oder ein anderer Server ohne
+        # Modell (himalia, horst, eulenmap), weder Gateway noch Gluon
+        return {'firmware_release': firmware, 'firmware_base': 'Ubuntu',
+                'is_gateway': 'true' if model == 'KVM VirtualMachine' else 'false'}
+    if firmware:
+        return {'firmware_release': firmware, 'firmware_base': 'gluon', 'is_gateway': 'false'}
+    return {'is_gateway': 'false'}
+
+
+def nach_firmware(werte, zeiten):
+    """Teilt die Punkte einer Reihe nach der Firmware, die zum jeweiligen
+    Zeitpunkt galt; fehlt sie, gilt die zuletzt bekannte."""
+    teile, zuletzt = {}, ('', '')
+    for zeit, wert in werte:
+        zuletzt = zeiten.get(int(float(zeit)), zuletzt)
+        teile.setdefault(zuletzt, []).append((zeit, wert))
+    return teile
+
+
 def umsetzen(name, metrik, umbenennen):
     if umbenennen:
         neu = {umbenennen[k]: v for k, v in metrik.items() if k in umbenennen}
@@ -140,23 +187,33 @@ def main():
     gesamt_reihen = gesamt_punkte = 0
     for job in liste:
         punkte = anzahl = 0
+        firmware = {}
         for name, ausdruck, umbenennen in reihen(job):
             von = beginn
             while von < ENDE:
                 bis = min(von + STUECK, ENDE - SCHRITT)
+                if (von, bis) not in firmware:
+                    firmware[(von, bis)] = firmware_je_knoten(job, von, bis)
                 d = holen('query_range', query=ausdruck, start=von, end=bis, step=SCHRITT)
                 zeilen = []
                 for r in d['result']:
-                    ts, ws = [], []
-                    for t, w in r['values']:
-                        w = float(w)
-                        if math.isfinite(w):
-                            ts.append(int(float(t) * 1000))
-                            ws.append(w)
-                    if ts:
-                        zeilen.append({'metric': umsetzen(name, r['metric'], umbenennen),
-                                       'values': ws, 'timestamps': ts})
-                        punkte += len(ts)
+                    labels = umsetzen(name, r['metric'], umbenennen)
+                    if umbenennen:
+                        teile = {None: r['values']}
+                    else:
+                        teile = nach_firmware(r['values'],
+                                              firmware[(von, bis)].get(labels.get('nodeid'), {}))
+                    for fw, werte in teile.items():
+                        ts, ws = [], []
+                        for zeit, w in werte:
+                            w = float(w)
+                            if math.isfinite(w):
+                                ts.append(int(float(zeit) * 1000))
+                                ws.append(w)
+                        if ts:
+                            zeilen.append({'metric': dict(labels, **(art(*fw) if fw else {})),
+                                           'values': ws, 'timestamps': ts})
+                            punkte += len(ts)
                 anzahl += len(zeilen)
                 if not a.trocken:
                     schreiben(zeilen)

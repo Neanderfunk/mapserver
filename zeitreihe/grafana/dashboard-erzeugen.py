@@ -199,7 +199,7 @@ PANELS = KOPF + [
     # Airtime ausserhalb von 0 bis 100 Prozent ist immer ein Messfehler: der
     # mt76-Unterlauf mancher Gluon-Knoten und einmalig am 25.09.2026 um 11:02
     # die UniFi-APs (alte Bytezaehler gegen neue Airtime-Zaehler). Ohne die
-    # Klammer sprengt ein einziger solcher Wert die Achse fuer 400 Tage.
+    # Klammer sprengt ein einziger solcher Wert die Achse fuer die ganze Aufbewahrung.
     panel(4, 'Airtime', [
         ziel('clamp(max by (band) (label_replace({__name__=~"node_airtime11(g|a).chan_util", nodeid="$node"},'
              ' "band", "$1", "__name__", "node_airtime11(g|a).chan_util")), 0, 100)',

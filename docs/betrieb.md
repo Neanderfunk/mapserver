@@ -452,7 +452,7 @@ andere unter `/nf/prom/` gibt 403.
   daneben.
 - `owner` wird beim Empfang verworfen (`/etc/victoria-metrics/relabel.yml`),
   yanic kennt für diesen Ausgang kein `no_owner`.
-- Aufbewahrung 400 Tage (`-retentionPeriod=400d`), Limits für Abfragen in
+- Aufbewahrung 1300 Tage, gut dreieinhalb Jahre (`-retentionPeriod=1300d`, seit 14.10.2026; vorher 400 Tage), Limits für Abfragen in
   `/etc/default/victoria-metrics`. VictoriaMetrics lauscht nur auf
   `127.0.0.1:8428`, die Paketvorgabe wäre `0.0.0.0` gewesen.
 - Einrichtung: `sudo ./zeitreihe/einrichten.sh`. Das Skript richtet auch

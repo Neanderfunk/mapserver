@@ -62,6 +62,11 @@ install -m 0755 "$HIER/clients-zaehlen.py" /usr/local/sbin/karte-clients
 install -m 0755 "$HIER/erstsichtung-uebernehmen.py" /usr/local/sbin/karte-erstsichtung
 install -m 0644 "$HIER/systemd/karte-clients@.service" "$HIER/systemd/karte-clients@.timer" /etc/systemd/system/
 install -m 0644 "$HIER/systemd/karte-adressbuch@.service" "$HIER/systemd/karte-adressbuch@.timer" /etc/systemd/system/
+# Zeile je Domain alle fuenf Minuten in /var/lib/karte/verlauf.csv (verlauf.py).
+# Lief seit 21.09.2026 von Hand installiert; seit 14.10.2026 hier, damit eine
+# Neuinstallation es nicht verliert.
+install -m 0755 "$HIER/verlauf.py" /usr/local/sbin/karte-verlauf
+install -m 0644 "$HIER/systemd/karte-verlauf.service" "$HIER/systemd/karte-verlauf.timer" /etc/systemd/system/
 install -d -m 0755 -o yanic -g www-data /var/lib/karte/adressbuch /var/www/karte-en/api
 [ -f /etc/karte-en/sitecodes.conf ] || install -m 0644 "$HIER/sitecodes.conf" /etc/karte-en/sitecodes.conf
 systemctl daemon-reload
@@ -72,7 +77,7 @@ for g in $communities; do
 	chmod 0644 "/etc/yanic-$g.conf"
 	systemctl enable --now "yanic@$g.service"
 done
-systemctl enable --now karte-adressbuch@neander.timer karte-clients@neander.timer
+systemctl enable --now karte-adressbuch@neander.timer karte-clients@neander.timer karte-verlauf.timer
 sleep 20
 for g in $communities; do
 	printf '  %-10s %s, %s Schnittstellen\n' "$g" \

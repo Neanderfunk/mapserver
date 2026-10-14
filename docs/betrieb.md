@@ -15,14 +15,14 @@ Es gibt keinen Timer und keinen Cron. yanic sammelt im Takt von
 
 ```
 /etc/karte-en/domains.conf              Domaintabelle, einzige Quelle
-/etc/yanic.conf                         erzeugt, nicht von Hand pflegen
+/etc/yanic-<community>.conf             erzeugt, nicht von Hand pflegen
 /etc/modules-load.d/karte-en.conf       l2tp_eth, l2tp_netlink, batman-adv
 /etc/nginx/sites-available/karte-en.conf erzeugt
 /usr/local/bin/tunneldigger             C-Client
 /usr/local/bin/yanic                    Collector
 /usr/local/sbin/karte-en-tunnel         Starter je Domain
 /usr/local/sbin/karte-en-hook           Hook, hängt Tunnel an batman
-/usr/local/sbin/karte-en-yanic-conf     erzeugt /etc/yanic.conf
+/usr/local/sbin/karte-en-yanic-conf     erzeugt /etc/yanic-<community>.conf
 /usr/local/sbin/karte-en-konfig         erzeugt config.json und nginx-Site
 /usr/local/src/{tunneldigger,yanic,meshviewer,device-pictures}
 /var/lib/yanic/state.json               Zwischenstand, überlebt Neustarts
@@ -32,6 +32,9 @@ Es gibt keinen Timer und keinen Cron. yanic sammelt im Takt von
 /var/www/karte-en/sites/<host>/data/meshviewer.json
 /var/www/karte-index/index.html         Vorgabeseite unter dem VM-Namen
 ```
+
+Alle Skripte mit ihrem Namen auf der VM und dem, was sie aufruft:
+[`skripte.md`](skripte.md).
 
 Für die Gesamtsicht schreibt yanic zusätzlich `nodes.json` (Version 2),
 `graph.json` und `nodelist.json` in `sites/alle/data/`. Das sind die Formate,

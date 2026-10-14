@@ -70,9 +70,3 @@ Aus der Arbeitskopie aufrufen. Wo sie in der Diagnose vorkommen, steht in
 | `werkzeug/broker-probe.py` | Tunneldigger-Broker per COOKIE anklopfen, ohne Tunnel |
 | `werkzeug/respondd-probe.py` | respondd-Rundruf auf einer batman-Instanz, zählt Antworten; auf der VM zusätzlich als `karte-en-respondd-probe` |
 | `zeitreihe/grafana/dashboard-erzeugen.py` | Grafana-Dashboards; aufgerufen von `zeitreihe/einrichten.sh` |
-
-## Auf der VM ohne Quelle im Repo
-
-`/usr/local/sbin/karte-en-css` (Stand 14.10.2026): früherer Einbau der
-eigenen CSS-Regeln in die meshviewer-Seite. Das macht seit dem Fork
-`web/einrichten.sh` selbst; die Datei wird nirgends mehr aufgerufen.

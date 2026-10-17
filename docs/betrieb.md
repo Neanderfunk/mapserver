@@ -603,10 +603,16 @@ Adresse und wird danach kurz grün. Mit der Maus markiert nahm der Browser den
 
 ### Pause im Hintergrund-Tab (Firefox)
 
-Liegt ein Kartentab 10 Minuten im Hintergrund, lädt er nicht mehr jede Minute
-`meshviewer.json` neu; wird er wieder sichtbar, lädt er sofort einmal nach
-(Fork, Schlüssel `pauseHiddenAfterMinutes`, in `konfig-erzeugen.py` für alle
-Karten 10, bis 17.10.2026 20).
+Liegt ein Kartentab in Firefox 10 Minuten im Hintergrund, lädt er nicht mehr
+jede Minute `meshviewer.json` neu; wird er wieder sichtbar, lädt er sofort
+einmal nach (Fork, Schlüssel `pauseHiddenAfterMinutes`, in
+`konfig-erzeugen.py` für alle Karten 10, bis 17.10.2026 20).
+
+Seit 17.10.2026 gilt das nur für Gecko, also Firefox und Abkömmlinge wie
+LibreWolf, Waterfox oder Tor Browser (Schlüssel `pauseHiddenGeckoOnly`).
+Erkannt wird Gecko an `Gecko/<Datum>` in der Browserkennung (Chromium und
+Safari schreiben nur `like Gecko`) oder an der Gecko-Eigenschaft
+`MozAppearance`. Chromium und Safari laden im Hintergrund weiter jede Minute.
 
 Anlass (28.09.2026): Firefox 149 hielt in drei Kartentabs 35, 10 und 11 GB,
 dazu 11 GB im GPU-Prozess, der Rechner lagerte aus. `about:memory` zeigte
@@ -627,8 +633,8 @@ reagiert der Tab einige zehn Sekunden nicht.
 - Im Vordergrund lädt die Karte weiter jede Minute, dort wächst der Speicher
   in Firefox langsamer, aber nicht nachweislich gar nicht.
 - **Ausbauen, sobald der Fehler behoben ist:** die Zeile
-  `'pauseHiddenAfterMinutes': 10` in `web/konfig-erzeugen.py` entfernen, der
-  Schlüssel im Fork ist optional.
+  `'pauseHiddenAfterMinutes': 10` und `'pauseHiddenGeckoOnly': True` in
+  `web/konfig-erzeugen.py` entfernen, die Schlüssel im Fork sind optional.
 - Prüfen lässt sich die Pause mit einem Browser ohne Oberfläche über CDP:
   `document.hidden` vortäuschen, Intervall verkürzen, Abrufe von
   `meshviewer.json` zählen (so am 28.09.2026 geprüft).

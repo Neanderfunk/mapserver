@@ -395,8 +395,11 @@ def konfig(titel, pfad, alle):
         # (Fork, pauseHiddenAfterMinutes). Firefox behielt den dabei
         # umgeschlagenen Speicher ueber Stunden, bis zu 35 GB je Tab
         # (28.09.2026, Bugzilla 2070900); 10 statt 20 Minuten seit 17.10.2026
-        # (adorfer). Ausbauen, wenn der Fehler behoben ist.
+        # (adorfer). Nur in Firefox und Abkoemmlingen (Gecko), Chromium und
+        # Safari laden weiter (pauseHiddenGeckoOnly, adorfer 17.10.2026).
+        # Ausbauen, wenn der Fehler behoben ist.
         'pauseHiddenAfterMinutes': 10,
+        'pauseHiddenGeckoOnly': True,
         # Kopierknopf hinter jeder IP-Adresse im Knotenfenster (Fork,
         # ipCopyButton); markiert kam der Tabulator mit (adorfer 28.09.2026)
         'ipCopyButton': True,

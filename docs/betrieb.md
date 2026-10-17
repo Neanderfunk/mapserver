@@ -603,10 +603,10 @@ Adresse und wird danach kurz grün. Mit der Maus markiert nahm der Browser den
 
 ### Pause im Hintergrund-Tab (Firefox)
 
-Liegt ein Kartentab 20 Minuten im Hintergrund, lädt er nicht mehr jede Minute
+Liegt ein Kartentab 10 Minuten im Hintergrund, lädt er nicht mehr jede Minute
 `meshviewer.json` neu; wird er wieder sichtbar, lädt er sofort einmal nach
 (Fork, Schlüssel `pauseHiddenAfterMinutes`, in `konfig-erzeugen.py` für alle
-Karten 20).
+Karten 10, bis 17.10.2026 20).
 
 Anlass (28.09.2026): Firefox 149 hielt in drei Kartentabs 35, 10 und 11 GB,
 dazu 11 GB im GPU-Prozess, der Rechner lagerte aus. `about:memory` zeigte
@@ -627,7 +627,7 @@ reagiert der Tab einige zehn Sekunden nicht.
 - Im Vordergrund lädt die Karte weiter jede Minute, dort wächst der Speicher
   in Firefox langsamer, aber nicht nachweislich gar nicht.
 - **Ausbauen, sobald der Fehler behoben ist:** die Zeile
-  `'pauseHiddenAfterMinutes': 20` in `web/konfig-erzeugen.py` entfernen, der
+  `'pauseHiddenAfterMinutes': 10` in `web/konfig-erzeugen.py` entfernen, der
   Schlüssel im Fork ist optional.
 - Prüfen lässt sich die Pause mit einem Browser ohne Oberfläche über CDP:
   `document.hidden` vortäuschen, Intervall verkürzen, Abrufe von

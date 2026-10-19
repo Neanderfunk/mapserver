@@ -426,7 +426,12 @@ def konfig(titel, pfad, alle):
                        'vpnLinkDistance': 150, 'gatewaysOnRim': True,
                        # Namen auf 2/3 der Canvas-Vorgabe 10px, sie
                        # ueberdeckten sich (adorfer 19.10.2026)
-                       'labelSize': 6.6},
+                       'labelSize': 6.6,
+                       # Offline-Knoten mit Namen, gedecktes Altrosa: blasser
+                       # als die weissen Online-Namen, in der Farbrichtung
+                       # der roten Offline-Punkte (adorfer 19.10.2026)
+                       'offlineLabels': True,
+                       'offlineLabelColor': 'rgba(232, 160, 152, 0.6)'},
         'siteName': titel,
         'maxAge': 21,
         # Beschriftung der Knoten. Im Dunkelmodus nimmt meshviewer sonst die

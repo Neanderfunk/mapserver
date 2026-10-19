@@ -416,9 +416,10 @@ def konfig(titel, pfad, alle):
         # Daempfung (Original 0.15), VPN-Links ziehen deutlich (Original
         # 0.02; ergibt je Domain eine eigene, nicht ueberschneidende
         # "Galaxie", das ist gewollt), Gateways starten auf einem Kreis. Abstossung
-        # nur bis 300: unbegrenzt drueckten sich auch weit entfernte Wolken
-        # auseinander, der Raum dazwischen war zu gross (adorfer 19.10.2026)
-        'forceGraph': {'charge': -300, 'chargeDistanceMax': 300,
+        # nur bis 600: unbegrenzt drueckten sich auch weit entfernte Wolken
+        # auseinander, der Raum dazwischen war zu gross; bei 300 lagen die
+        # Knoten innerhalb einer Domain zu dicht (adorfer 19.10.2026)
+        'forceGraph': {'charge': -300, 'chargeDistanceMax': 600,
                        'velocityDecay': 0.1, 'vpnLinkStrength': 0.3,
                        'gatewaysOnRim': True},
         'siteName': titel,

@@ -649,8 +649,9 @@ und 0.1; ohne die Schlüssel gelten die Werte des Originals, -30 und 0.15.
 - `charge` ist die Stärke von d3 `forceManyBody`: je negativer, desto weiter
   stoßen sich die Knoten ab. Die alte Karte (d3 v3) nutzte -250.
 - `chargeDistanceMax` begrenzt die Reichweite der Abstoßung (Original
-  unbegrenzt, Versuch 300). Unbegrenzt drücken sich bei -300 auch weit
-  entfernte Wolken auseinander, der Raum dazwischen wurde zu groß.
+  unbegrenzt, Versuch 600). Unbegrenzt drücken sich bei -300 auch weit
+  entfernte Wolken auseinander, der Raum dazwischen wurde zu groß; bei 300
+  lagen die Knoten innerhalb einer Domain zu dicht.
 - `centerStrength` ist der Zug zur Mitte (`forceX`/`forceY`, Original 0.02).
 - `velocityDecay` ist der Anteil der Geschwindigkeit, den ein Knoten je
   Schritt verliert: ein höherer Wert (am 19.10.2026 kurz 0.5) bringt den

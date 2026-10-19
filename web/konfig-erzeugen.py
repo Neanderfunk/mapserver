@@ -411,10 +411,12 @@ def konfig(titel, pfad, alle):
         # unter 0.9 bleibt ein Kabel-Link farbig, das ist dann ein echtes
         # Problem (adorfer 07.10.2026)
         'otherLinkMinTq': 0.9,
-        # Kraefte im Graphen (Fork, forceGraph.charge/velocityDecay):
-        # staerkere Abstossung (Original -30, alte Karte -250) und staerkere
-        # Daempfung (Original 0.15), Versuch adorfer 19.10.2026
-        'forceGraph': {'charge': -300, 'velocityDecay': 0.5},
+        # Kraefte im Graphen (Fork, forceGraph.*), Versuch adorfer 19.10.2026:
+        # staerkere Abstossung (Original -30, alte Karte -250), etwas weniger
+        # Daempfung (Original 0.15), VPN-Links ziehen deutlich (Original
+        # 0.02), Gateways starten auf einem Kreis um das Netz
+        'forceGraph': {'charge': -300, 'velocityDecay': 0.1,
+                       'vpnLinkStrength': 0.3, 'gatewaysOnRim': True},
         'siteName': titel,
         'maxAge': 21,
         # Beschriftung der Knoten. Im Dunkelmodus nimmt meshviewer sonst die

@@ -641,16 +641,23 @@ reagiert der Tab einige zehn Sekunden nicht.
 
 ### Kräfte im Graphen
 
-Abstoßung und Dämpfung der Graphansicht kommen aus der Konfiguration (Fork,
-Schlüssel `forceGraph.charge` und `forceGraph.velocityDecay`, in
-`konfig-erzeugen.py` für alle Karten). Seit 19.10.2026 ein Versuch mit -300
-und 0.5; ohne die Schlüssel gelten die Werte des Originals, -30 und 0.15.
+Abstoßung, Dämpfung und VPN-Zug der Graphansicht kommen aus der Konfiguration
+(Fork, Schlüssel unter `forceGraph`, in `konfig-erzeugen.py` für alle
+Karten). Seit 19.10.2026 ein Versuch mit -300
+und 0.1; ohne die Schlüssel gelten die Werte des Originals, -30 und 0.15.
 
 - `charge` ist die Stärke von d3 `forceManyBody`: je negativer, desto weiter
   stoßen sich die Knoten ab. Die alte Karte (d3 v3) nutzte -250.
 - `velocityDecay` ist der Anteil der Geschwindigkeit, den ein Knoten je
-  Schritt verliert: 0.5 heißt, der Graph kommt schneller zur Ruhe und
-  schwingt weniger, braucht aber länger bis zur fertigen Form.
+  Schritt verliert: ein höherer Wert (am 19.10.2026 kurz 0.5) bringt den
+  Graphen schneller zur Ruhe, er schwingt weniger, erstarrt aber eher, bevor er fertig entfaltet ist. Die
+  alte Karte verlor 0.1 (d3 v3 `friction(0.9)`).
+- `vpnLinkStrength` ist der Zug der VPN-Links zum Gateway (Original 0.02,
+  alte Karte 0, Versuch 0.3). Die Linklänge bleibt 0.
+- `gatewaysOnRim`: Gateways (Supernodes, `is_gateway`) starten auf einem
+  Kreis um das Netz, nach Domain sortiert, damit sich jede Domain in ihrem
+  Abschnitt entfaltet. Radius `sqrt(Knoten/π)·75·1.41`. Gilt nur für die
+  Startposition, danach bewegen sie sich frei.
 - Ändern ohne Neubau: Wert in `konfig-erzeugen.py` setzen, das Skript als
   `/usr/local/sbin/karte-en-konfig` installieren und ausführen.
 

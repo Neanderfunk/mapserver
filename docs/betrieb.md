@@ -639,6 +639,21 @@ reagiert der Tab einige zehn Sekunden nicht.
   `document.hidden` vortäuschen, Intervall verkürzen, Abrufe von
   `meshviewer.json` zählen (so am 28.09.2026 geprüft).
 
+### Kräfte im Graphen
+
+Abstoßung und Dämpfung der Graphansicht kommen aus der Konfiguration (Fork,
+Schlüssel `forceGraph.charge` und `forceGraph.velocityDecay`, in
+`konfig-erzeugen.py` für alle Karten). Seit 19.10.2026 ein Versuch mit -300
+und 0.5; ohne die Schlüssel gelten die Werte des Originals, -30 und 0.15.
+
+- `charge` ist die Stärke von d3 `forceManyBody`: je negativer, desto weiter
+  stoßen sich die Knoten ab. Die alte Karte (d3 v3) nutzte -250.
+- `velocityDecay` ist der Anteil der Geschwindigkeit, den ein Knoten je
+  Schritt verliert: 0.5 heißt, der Graph kommt schneller zur Ruhe und
+  schwingt weniger, braucht aber länger bis zur fertigen Form.
+- Ändern ohne Neubau: Wert in `konfig-erzeugen.py` setzen, das Skript als
+  `/usr/local/sbin/karte-en-konfig` installieren und ausführen.
+
 ### Gerätebilder
 
 Die Knoteninfo zeigt `/pictures-svg/<modell>.svg` (meshviewer

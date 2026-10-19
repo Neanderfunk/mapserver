@@ -411,25 +411,18 @@ def konfig(titel, pfad, alle):
         # unter 0.9 bleibt ein Kabel-Link farbig, das ist dann ein echtes
         # Problem (adorfer 07.10.2026)
         'otherLinkMinTq': 0.9,
-        # Kraefte im Graphen (Fork, forceGraph.*), Versuch adorfer 19.10.2026:
-        # staerkere Abstossung (Original -30, alte Karte -250), etwas weniger
-        # Daempfung (Original 0.15), VPN-Links ziehen deutlich (Original
-        # 0.02; ergibt je Domain eine eigene, nicht ueberschneidende
-        # "Galaxie", das ist gewollt), Gateways starten auf einem Kreis. Abstossung
-        # nur bis 600: unbegrenzt drueckten sich auch weit entfernte Wolken
-        # auseinander, der Raum dazwischen war zu gross; bei 300 lagen die
-        # Knoten innerhalb einer Domain zu dicht (adorfer 19.10.2026)
-        # Danach -400 und VPN-Links 150 lang statt 0 (Mesh-Links 75), damit
-        # die Knoten um ihr Gateway mehr Platz haben (adorfer 19.10.2026)
+        # Graphansicht (Fork, forceGraph.*), eingestellt mit adorfer am
+        # 19.10.2026. Jede Domain eine eigene Galaxie (VPN-Zug 0.3, gewollt),
+        # in sich locker (Abstossung -400, VPN-Links 150 lang), wenig Raum
+        # dazwischen (Abstossung nur bis 600). Werte und Gruende einzeln in
+        # docs/betrieb.md, Abschnitt "Graphansicht".
         'forceGraph': {'charge': -400, 'chargeDistanceMax': 600,
                        'velocityDecay': 0.1, 'vpnLinkStrength': 0.3,
                        'vpnLinkDistance': 150, 'gatewaysOnRim': True,
-                       # Namen auf 2/3 der Canvas-Vorgabe 10px, sie
-                       # ueberdeckten sich (adorfer 19.10.2026)
+                       # Namen auf 2/3 der Canvas-Vorgabe 10px
                        'labelSize': 6.6,
-                       # Offline-Knoten mit Namen, gedecktes Altrosa: blasser
-                       # als die weissen Online-Namen, in der Farbrichtung
-                       # der roten Offline-Punkte (adorfer 19.10.2026)
+                       # Offline-Knoten mit Namen in Altrosa, blasser als die
+                       # weissen Online-Namen
                        'offlineLabels': True,
                        'offlineLabelColor': 'rgba(232, 160, 152, 0.8)'},
         'siteName': titel,

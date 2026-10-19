@@ -639,46 +639,44 @@ reagiert der Tab einige zehn Sekunden nicht.
   `document.hidden` vortäuschen, Intervall verkürzen, Abrufe von
   `meshviewer.json` zählen (so am 28.09.2026 geprüft).
 
-### Kräfte im Graphen
+### Graphansicht
 
-Abstoßung, Dämpfung und VPN-Zug der Graphansicht kommen aus der Konfiguration
-(Fork, Schlüssel unter `forceGraph`, in `konfig-erzeugen.py` für alle
-Karten). Seit 19.10.2026 ein Versuch mit -400
-und 0.1; ohne die Schlüssel gelten die Werte des Originals, -30 und 0.15.
+Kräfte, Startpositionen und Beschriftung der Graphansicht kommen aus der
+Konfiguration (Fork, Schlüssel unter `forceGraph`, gesetzt in
+`konfig-erzeugen.py` für alle Karten). Ohne die Schlüssel verhält sich der
+Fork wie das Original. Eingestellt am 19.10.2026 mit adorfer, Schritt für
+Schritt am Bild der Neanderfunk-Karte.
 
-- `charge` ist die Stärke von d3 `forceManyBody`: je negativer, desto weiter
-  stoßen sich die Knoten ab. Die alte Karte (d3 v3) nutzte -250, der
-  Versuch erst -300, dann -400.
-- `chargeDistanceMax` begrenzt die Reichweite der Abstoßung (Original
-  unbegrenzt, Versuch 600). Unbegrenzt drücken sich bei -300 auch weit
-  entfernte Wolken auseinander, der Raum dazwischen wurde zu groß; bei 300
-  lagen die Knoten innerhalb einer Domain zu dicht.
-- `centerStrength` ist der Zug zur Mitte (`forceX`/`forceY`, Original 0.02).
-- `velocityDecay` ist der Anteil der Geschwindigkeit, den ein Knoten je
-  Schritt verliert: ein höherer Wert (am 19.10.2026 kurz 0.5) bringt den
-  Graphen schneller zur Ruhe, er schwingt weniger, erstarrt aber eher, bevor er fertig entfaltet ist. Die
-  alte Karte verlor 0.1 (d3 v3 `friction(0.9)`).
-- `vpnLinkStrength` ist der Zug der VPN-Links zum Gateway (Original 0.02,
-  alte Karte 0, Versuch 0.3).
-- `vpnLinkDistance` ist die Länge der VPN-Links (Original und alte Karte 0,
-  Versuch 150, Mesh-Links 75). Mit 0 lagen die Knoten einer Domain dicht
-  um ihr Gateway. Bei 0.3 zieht jeder
-  Uplink-Knoten auf sein Gateway, jede Domain wird zu einer eigenen
-  "Galaxie", die sich mit den anderen nicht überschneidet. Das ist gewollt
-  (adorfer 19.10.2026), beim weiteren Einstellen erhalten.
-- `gatewaysOnRim`: Gateways (Supernodes, `is_gateway`) starten auf einem
-  Kreis um das Netz, nach Domain sortiert, damit sich jede Domain in ihrem
-  Abschnitt entfaltet. Radius `sqrt(Knoten/π)·75·1.41`. Gilt nur für die
-  Startposition, danach bewegen sie sich frei.
-- `labelSize` ist die Schriftgröße der Knotennamen in px (Original 10, die
-  Vorgabe des Canvas; seit 19.10.2026 6.6, vorher überdeckten sich die
-  Namen). Die Namen erscheinen erst ab Zoomstufe 1 und wachsen mit dem Zoom.
-- `offlineLabels` beschriftet auch Offline-Knoten (Original: nur online), in
-  `offlineLabelColor`. Gewählt ist ein gedecktes Altrosa mit 80 % Deckkraft (60 % war zu dunkel):
-  Auf dem dunklen Grund wirkt jede helle Farbe kräftig, auch "blasses" Rosa;
-  blasser heißt hier weniger Helligkeit als die weißen Online-Namen.
+Ziel: Jede Domain ist eine eigene "Galaxie", die sich mit den anderen nicht
+überschneidet. Innerhalb einer Galaxie liegen die Knoten so locker, dass
+Gruppen wie ein großes Haus mit vielen Knoten erkennbar und die Namen lesbar
+sind. Der leere Raum zwischen den Galaxien bleibt klein.
+
+| Schlüssel | Original | alte Karte | jetzt | Warum |
+|---|---|---|---|---|
+| `charge` | -30 | -250 | -400 | Mit -30 klebten die Knoten aufeinander. Bei -300 waren Gruppen wieder erkennbar, bei begrenzter Reichweite aber noch zu dicht; -400 gibt den Knoten um ihr Gateway genug Platz. |
+| `chargeDistanceMax` | unbegrenzt | unbegrenzt | 600 | Unbegrenzt drücken sich bei starker Abstoßung auch weit entfernte Galaxien gegenseitig weg, der Raum dazwischen wurde zu groß. 300 machte die Galaxien in sich zu dicht. |
+| `velocityDecay` | 0.15 | 0.1 | 0.1 | Kurz 0.5 probiert: zu stark gebremst, der Graph erstarrt, bevor er entfaltet ist (die Abkühlung bleibt bei etwa 300 Schritten). 0.1 entspricht der alten Karte (d3 v3 `friction(0.9)`). |
+| `vpnLinkStrength` | 0.02 | 0 | 0.3 | Der Zug zum Gateway macht aus jeder Domain eine eigene Galaxie. Das ist gewollt und beim weiteren Einstellen zu erhalten. |
+| `vpnLinkDistance` | 0 | 0 | 150 | Mit 0 saßen die Uplinks auf ihrem Gateway und bildeten enge Blüten. Mit 150 (doppelte Mesh-Linklänge 75) liegen sie auf einem Ring darum. |
+| `gatewaysOnRim` | aus | - | an | Gateways (`is_gateway`) starten auf einem Kreis um das Netz, nach Domain sortiert, damit sich jede Domain in ihrem Abschnitt entfaltet. Radius `sqrt(Knoten/π)·75·1.41`. Nur Startposition, danach bewegen sie sich frei; der VPN-Zug holt die Gateways einer Domain zusammen. |
+| `centerStrength` | 0.02 | - | 0.02 | Zug zur Mitte (`forceX`/`forceY`), nicht verändert. Nächster Hebel, falls der Raum zwischen den Galaxien wieder zu groß wird. |
+| `labelSize` | 10 | - | 6.6 | Schriftgröße der Knotennamen in px (Original: Vorgabe des Canvas). Auf 2/3, die Namen überdeckten sich. Sie erscheinen erst ab Zoomstufe 1 und wachsen mit dem Zoom. |
+| `offlineLabels` | aus | - | an | Offline-Knoten bekommen ihren Namen. Der Hostname steht in den Daten, das Original zeichnete ihn nur für Online-Knoten. |
+| `offlineLabelColor` | - | - | `rgba(232, 160, 152, 0.8)` | Altrosa, in der Farbrichtung der roten Offline-Punkte, blasser als die weißen Online-Namen. Auf dem dunklen Grund wirkt jede helle Farbe kräftig, auch "blasses" Rosa; blasser heißt hier weniger Helligkeit. 60 % Deckkraft war zu dunkel. |
+
+"alte Karte" meint den d3-v3-Graphen der vorherigen Karte; deren Formeln
+weichen ab (`gravity` statt `forceX/Y`, `friction` statt `velocityDecay`),
+die Zahlen sind nur sinngemäß vergleichbar. Die Kollision (`forceCollide`)
+hat im Original Radius 1 und wirkt praktisch nicht; ein Schlüssel dafür
+fehlt noch, er wäre der Hebel gegen sich überlappende Knoten, ohne die
+Galaxien weiter auseinanderzudrücken.
+
 - Ändern ohne Neubau: Wert in `konfig-erzeugen.py` setzen, das Skript als
-  `/usr/local/sbin/karte-en-konfig` installieren und ausführen.
+  `/usr/local/sbin/karte-en-konfig` installieren und ausführen. Im Browser
+  reicht dann normales Neuladen; nach einem Neubau des Forks hart neu laden
+  (Service Worker).
+- Ein neuer Schlüssel braucht einen Fork-Commit und `web/einrichten.sh`.
 
 ### Gerätebilder
 

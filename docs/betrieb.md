@@ -643,11 +643,12 @@ reagiert der Tab einige zehn Sekunden nicht.
 
 Abstoßung, Dämpfung und VPN-Zug der Graphansicht kommen aus der Konfiguration
 (Fork, Schlüssel unter `forceGraph`, in `konfig-erzeugen.py` für alle
-Karten). Seit 19.10.2026 ein Versuch mit -300
+Karten). Seit 19.10.2026 ein Versuch mit -400
 und 0.1; ohne die Schlüssel gelten die Werte des Originals, -30 und 0.15.
 
 - `charge` ist die Stärke von d3 `forceManyBody`: je negativer, desto weiter
-  stoßen sich die Knoten ab. Die alte Karte (d3 v3) nutzte -250.
+  stoßen sich die Knoten ab. Die alte Karte (d3 v3) nutzte -250, der
+  Versuch erst -300, dann -400.
 - `chargeDistanceMax` begrenzt die Reichweite der Abstoßung (Original
   unbegrenzt, Versuch 600). Unbegrenzt drücken sich bei -300 auch weit
   entfernte Wolken auseinander, der Raum dazwischen wurde zu groß; bei 300
@@ -658,7 +659,10 @@ und 0.1; ohne die Schlüssel gelten die Werte des Originals, -30 und 0.15.
   Graphen schneller zur Ruhe, er schwingt weniger, erstarrt aber eher, bevor er fertig entfaltet ist. Die
   alte Karte verlor 0.1 (d3 v3 `friction(0.9)`).
 - `vpnLinkStrength` ist der Zug der VPN-Links zum Gateway (Original 0.02,
-  alte Karte 0, Versuch 0.3). Die Linklänge bleibt 0. Bei 0.3 zieht jeder
+  alte Karte 0, Versuch 0.3).
+- `vpnLinkDistance` ist die Länge der VPN-Links (Original und alte Karte 0,
+  Versuch 150, Mesh-Links 75). Mit 0 lagen die Knoten einer Domain dicht
+  um ihr Gateway. Bei 0.3 zieht jeder
   Uplink-Knoten auf sein Gateway, jede Domain wird zu einer eigenen
   "Galaxie", die sich mit den anderen nicht überschneidet. Das ist gewollt
   (adorfer 19.10.2026), beim weiteren Einstellen erhalten.

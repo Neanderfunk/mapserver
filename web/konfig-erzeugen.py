@@ -419,9 +419,11 @@ def konfig(titel, pfad, alle):
         # nur bis 600: unbegrenzt drueckten sich auch weit entfernte Wolken
         # auseinander, der Raum dazwischen war zu gross; bei 300 lagen die
         # Knoten innerhalb einer Domain zu dicht (adorfer 19.10.2026)
-        'forceGraph': {'charge': -300, 'chargeDistanceMax': 600,
+        # Danach -400 und VPN-Links 150 lang statt 0 (Mesh-Links 75), damit
+        # die Knoten um ihr Gateway mehr Platz haben (adorfer 19.10.2026)
+        'forceGraph': {'charge': -400, 'chargeDistanceMax': 600,
                        'velocityDecay': 0.1, 'vpnLinkStrength': 0.3,
-                       'gatewaysOnRim': True},
+                       'vpnLinkDistance': 150, 'gatewaysOnRim': True},
         'siteName': titel,
         'maxAge': 21,
         # Beschriftung der Knoten. Im Dunkelmodus nimmt meshviewer sonst die

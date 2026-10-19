@@ -657,7 +657,10 @@ und 0.1; ohne die Schlüssel gelten die Werte des Originals, -30 und 0.15.
   Graphen schneller zur Ruhe, er schwingt weniger, erstarrt aber eher, bevor er fertig entfaltet ist. Die
   alte Karte verlor 0.1 (d3 v3 `friction(0.9)`).
 - `vpnLinkStrength` ist der Zug der VPN-Links zum Gateway (Original 0.02,
-  alte Karte 0, Versuch 0.3). Die Linklänge bleibt 0.
+  alte Karte 0, Versuch 0.3). Die Linklänge bleibt 0. Bei 0.3 zieht jeder
+  Uplink-Knoten auf sein Gateway, jede Domain wird zu einer eigenen
+  "Galaxie", die sich mit den anderen nicht überschneidet. Das ist gewollt
+  (adorfer 19.10.2026), beim weiteren Einstellen erhalten.
 - `gatewaysOnRim`: Gateways (Supernodes, `is_gateway`) starten auf einem
   Kreis um das Netz, nach Domain sortiert, damit sich jede Domain in ihrem
   Abschnitt entfaltet. Radius `sqrt(Knoten/π)·75·1.41`. Gilt nur für die

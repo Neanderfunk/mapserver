@@ -414,7 +414,8 @@ def konfig(titel, pfad, alle):
         # Kraefte im Graphen (Fork, forceGraph.*), Versuch adorfer 19.10.2026:
         # staerkere Abstossung (Original -30, alte Karte -250), etwas weniger
         # Daempfung (Original 0.15), VPN-Links ziehen deutlich (Original
-        # 0.02), Gateways starten auf einem Kreis um das Netz. Abstossung
+        # 0.02; ergibt je Domain eine eigene, nicht ueberschneidende
+        # "Galaxie", das ist gewollt), Gateways starten auf einem Kreis. Abstossung
         # nur bis 300: unbegrenzt drueckten sich auch weit entfernte Wolken
         # auseinander, der Raum dazwischen war zu gross (adorfer 19.10.2026)
         'forceGraph': {'charge': -300, 'chargeDistanceMax': 300,

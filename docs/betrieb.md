@@ -670,6 +670,9 @@ und 0.1; ohne die Schlüssel gelten die Werte des Originals, -30 und 0.15.
   Kreis um das Netz, nach Domain sortiert, damit sich jede Domain in ihrem
   Abschnitt entfaltet. Radius `sqrt(Knoten/π)·75·1.41`. Gilt nur für die
   Startposition, danach bewegen sie sich frei.
+- `labelSize` ist die Schriftgröße der Knotennamen in px (Original 10, die
+  Vorgabe des Canvas; seit 19.10.2026 6.6, vorher überdeckten sich die
+  Namen). Die Namen erscheinen erst ab Zoomstufe 1 und wachsen mit dem Zoom.
 - Ändern ohne Neubau: Wert in `konfig-erzeugen.py` setzen, das Skript als
   `/usr/local/sbin/karte-en-konfig` installieren und ausführen.
 

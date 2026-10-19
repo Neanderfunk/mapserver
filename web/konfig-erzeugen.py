@@ -423,7 +423,10 @@ def konfig(titel, pfad, alle):
         # die Knoten um ihr Gateway mehr Platz haben (adorfer 19.10.2026)
         'forceGraph': {'charge': -400, 'chargeDistanceMax': 600,
                        'velocityDecay': 0.1, 'vpnLinkStrength': 0.3,
-                       'vpnLinkDistance': 150, 'gatewaysOnRim': True},
+                       'vpnLinkDistance': 150, 'gatewaysOnRim': True,
+                       # Namen auf 2/3 der Canvas-Vorgabe 10px, sie
+                       # ueberdeckten sich (adorfer 19.10.2026)
+                       'labelSize': 6.6},
         'siteName': titel,
         'maxAge': 21,
         # Beschriftung der Knoten. Im Dunkelmodus nimmt meshviewer sonst die

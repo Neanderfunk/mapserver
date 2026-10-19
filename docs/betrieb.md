@@ -674,7 +674,7 @@ und 0.1; ohne die Schlüssel gelten die Werte des Originals, -30 und 0.15.
   Vorgabe des Canvas; seit 19.10.2026 6.6, vorher überdeckten sich die
   Namen). Die Namen erscheinen erst ab Zoomstufe 1 und wachsen mit dem Zoom.
 - `offlineLabels` beschriftet auch Offline-Knoten (Original: nur online), in
-  `offlineLabelColor`. Gewählt ist ein gedecktes Altrosa mit 60 % Deckkraft:
+  `offlineLabelColor`. Gewählt ist ein gedecktes Altrosa mit 80 % Deckkraft (60 % war zu dunkel):
   Auf dem dunklen Grund wirkt jede helle Farbe kräftig, auch "blasses" Rosa;
   blasser heißt hier weniger Helligkeit als die weißen Online-Namen.
 - Ändern ohne Neubau: Wert in `konfig-erzeugen.py` setzen, das Skript als

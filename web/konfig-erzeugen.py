@@ -431,7 +431,7 @@ def konfig(titel, pfad, alle):
                        # als die weissen Online-Namen, in der Farbrichtung
                        # der roten Offline-Punkte (adorfer 19.10.2026)
                        'offlineLabels': True,
-                       'offlineLabelColor': 'rgba(232, 160, 152, 0.6)'},
+                       'offlineLabelColor': 'rgba(232, 160, 152, 0.8)'},
         'siteName': titel,
         'maxAge': 21,
         # Beschriftung der Knoten. Im Dunkelmodus nimmt meshviewer sonst die

@@ -690,8 +690,19 @@ Die Knoteninfo zeigt `/pictures-svg/<modell>.svg` (meshviewer
    `.svg`-Adresse mit `image/jpeg`,
 3. ein Ersatzbild aus `conf.d/karte-geraetebilder.conf`
    (`web/nginx-geraetebilder.conf`): x86-Symbole für VMs, FUTROs und Boards
-   ohne Herstellerangabe, dazu zwei Geräte, die device-pictures unter anderem
-   Namen führt.
+   ohne Herstellerangabe, dazu Geräte, die device-pictures unter anderem
+   Namen führt (seit 21.10.2026 auch GL.iNet GL-AR300M (NOR): die Karte
+   fragt `gl.inet-…`, device-pictures hat nur `gl-inet-…`).
+
+Eigene Bilder kommen auch aus der Bildsammlung des Firmware-Selectors
+(firmware-selector-config, `ffnef/bilder/`), betreut von der Supernode-Seite;
+übernommen werden sie nach `web/geraetebilder/` (erstes: TOTOLINK X5000R,
+21.10.2026). Vor der Übernahme prüfen: nur Zeichenelemente, kein Skript,
+keine externen Verweise, Urheber und Lizenz im Kopf, `viewBox` vorhanden.
+
+Nach dem Einspielen die Bildadresse von außen abrufen. Am 21.10.2026 kam
+eine neue Ersatzregel nach `web/einrichten.sh` noch mit 404, erst ein
+zweites `systemctl reload nginx` brachte sie; die Ursache ist offen.
 
 Damit fiel die Lücke von 277 auf 134 Knoten. Welche Modelle noch ein Foto
 brauchen, steht in der Router-Werkstatt (`docs/geraetefotos.md`, intern).
@@ -961,8 +972,20 @@ vorher prüfen, ob die neue Version dieselben Felder erwartet.
 ändert sich selten; ein Wechsel unterbricht alle acht Tunnel für wenige
 Sekunden.
 
-**Debian** normal per `apt`. Ein Kernelwechsel bedeutet einen Neustart und
-damit eine Lücke von etwa einer Minute in den Daten.
+**Debian** normal per `apt`, auch per Ansible von außen. Ein Kernelwechsel
+bedeutet einen Neustart und damit eine Lücke von etwa einer Minute in den
+Daten.
+
+- Ob ein Neustart aussteht, zeigt `/var/run/reboot-required` hier nicht:
+  Debian legt die Datei ohne needrestart oder unattended-upgrades nicht an.
+  Stattdessen `uname -r` mit dem neuesten installierten `linux-image-*`
+  vergleichen.
+- Läuft gerade ein apt (etwa ein Ansible-Lauf), bricht `web/einrichten.sh`
+  gleich im Schritt "Pakete" an der dpkg-Sperre ab (`E: Sperre
+  /var/lib/dpkg/lock-frontend`) und richtet nichts ein. Abwarten, bis apt
+  fertig ist, dann erneut starten; den fremden Lauf nicht abbrechen. Wer ihn
+  gestartet hat, steht in `/var/log/apt/history.log` (`Requested-By`) und im
+  Journal.
 
 ## Ressourcen
 

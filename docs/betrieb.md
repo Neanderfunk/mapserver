@@ -995,6 +995,6 @@ liegt unter 1. Der Spitzenbedarf entsteht nur beim meshviewer-Build.
 
 Das Journal ist auf 1 GB begrenzt
 (`/etc/systemd/journald.conf.d/groesse.conf`, `SystemMaxUse=1G`, gesetzt am
-22.10.2026 beim Sicherheitsrundgang; vorher galt die Debian-Vorgabe von 10 %
-der Platte, belegt waren 684 MB). Kein Einrichtungsskript legt die Datei an,
+22.10.2026 beim Sicherheitsrundgang; vorher galt die Vorgabe von systemd, 10 %
+der Platte bis höchstens 4 GB, belegt waren 684 MB). Kein Einrichtungsskript legt die Datei an,
 bei einem Neuaufbau von Hand setzen.

@@ -993,8 +993,11 @@ Im Leerlauf belegt die Installation rund 370 MB Arbeitsspeicher und etwa
 4,3 GB Platte, davon der größte Teil Quellen und `node_modules`. Die Last
 liegt unter 1. Der Spitzenbedarf entsteht nur beim meshviewer-Build.
 
-Das Journal ist auf 1 GB begrenzt
-(`/etc/systemd/journald.conf.d/groesse.conf`, `SystemMaxUse=1G`, gesetzt am
-22.10.2026 beim Sicherheitsrundgang; vorher galt die Vorgabe von systemd, 10 %
-der Platte bis höchstens 4 GB, belegt waren 684 MB). Kein Einrichtungsskript legt die Datei an,
-bei einem Neuaufbau von Hand setzen.
+Das Journal ist begrenzt: `/etc/systemd/journald.conf.d/90-groesse.conf` mit
+`SystemMaxUse=1G`, `SystemKeepFree=2G` und `MaxRetentionSec=4week`, gesetzt
+am 22.10.2026 beim Sicherheitsrundgang. Name und Inhalt sind der Standard
+aller Neanderfunk-Hosts, eine Ansible-Rolle (`log_hygiene`) soll dieselbe
+Datei anlegen; deshalb keinen anderen Namen wählen, sonst stehen zwei
+Drop-ins nebeneinander. Vorher galt die Vorgabe von systemd, 10 % der Platte
+bis höchstens 4 GB, belegt waren 684 MB. Kein Einrichtungsskript dieses
+Repos legt die Datei an, bei einem Neuaufbau von Hand setzen.

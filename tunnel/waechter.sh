@@ -88,6 +88,24 @@ for dienst in $(systemctl list-units --no-legend --state=active 'yanic@*.service
 	if [ "${tot:-0}" -gt 0 ]; then
 		logger -t karte-en "Waechter: $dienst haengt an $tot verschwundenen Schnittstellen, Neustart"
 		systemctl restart "$dienst" || true
+		continue
+	fi
+	# Ebenso stumm: die Schnittstelle gibt es noch, aber nicht mehr die
+	# Adresse, an die yanic seinen Socket gebunden hat. Am 22.10.2026 nahm
+	# yanic nach dem Neustart der VM fuer bat-02_met die Link-Local-Adresse
+	# der zufaelligen MAC, mit der batman die Instanz anlegt, bevor der Hook
+	# die feste MAC setzt. Beim Tunnelabbau um 23:31 verschwand diese
+	# Adresse, die Antworten der Knoten gingen ins Leere, und die Domain
+	# stand bei laufendem Tunnel und Mesh auf offline.
+	weg=''
+	for s in $(ss -Huanp 2>/dev/null | grep "pid=$pid," | awk '{ print $4 }' | grep '^\[fe80'); do
+		adr=${s#\[}; adr=${adr%%\]*}
+		ifn=${s#*%}; ifn=${ifn%:*}
+		ip -6 addr show dev "$ifn" 2>/dev/null | grep -q "inet6 $adr/" || weg="$weg $ifn"
+	done
+	if [ -n "$weg" ]; then
+		logger -t karte-en "Waechter: $dienst lauscht auf einer Adresse, die es nicht mehr gibt ($weg ), Neustart"
+		systemctl restart "$dienst" || true
 	fi
 done
 

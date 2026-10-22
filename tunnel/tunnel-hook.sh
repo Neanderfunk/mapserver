@@ -48,6 +48,28 @@ setze() {
 	[ -e "/proc/sys/$1" ] && printf '%s' "$2" > "/proc/sys/$1" || true
 }
 
+# Link-Local-Adresse (EUI-64) zu einer MAC, so geschrieben, wie ip sie zeigt.
+# Gleiche Funktion in sammler/warten.sh.
+linklocal() {
+	set -- $(echo "$1" | tr ':' ' ')
+	printf 'fe80::%x:%x:%x:%x' $(((0x$1 ^ 2) << 8 | 0x$2)) $((0x$3 << 8 | 0xff)) \
+		$((0xfe00 | 0x$4)) $((0x$5 << 8 | 0x$6))
+}
+
+# Jede andere Link-Local-Adresse der bat-Instanz entfernen. yanic bindet sich
+# beim Start an eine beliebige davon; verschwindet sie spaeter, ist die
+# Domain stumm (22.10.2026, bat-02_met: yanic auf fe80::705a:8ff:fed0:7fd,
+# einer Adresse, die nicht zur festen MAC gehoerte; woher sie kam, liess sich
+# nicht mehr klaeren).
+fremde_linklocal_weg() {
+	soll=$(linklocal "$2")
+	for a in $(ip -6 addr show dev "$1" scope link 2>/dev/null | awk '/inet6 fe80/ { sub("/.*", "", $2); print $2 }'); do
+		[ "$a" = "$soll" ] && continue
+		ip -6 addr del "$a/64" dev "$1" 2>/dev/null || true
+		logger -t karte-en "$CODE: fremde Link-Local-Adresse $a von $1 entfernt (soll $soll)"
+	done
+}
+
 case "$HOOK" in
 session.up)
 	ip link set dev "$IF" down
@@ -85,6 +107,7 @@ session.up)
 	setze "net/ipv6/conf/$BAT/autoconf" 1
 	setze "net/ipv6/conf/$BAT/accept_ra" 1
 	ip link set dev "$BAT" up
+	fremde_linklocal_weg "$BAT" "$MAC_BAT"
 	logger -t karte-en "$CODE: $IF an $BAT, Originator $MAC_IF"
 	;;
 session.down)

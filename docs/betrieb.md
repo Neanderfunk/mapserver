@@ -139,6 +139,26 @@ Jede Zeile ist eine stumme Domain. Der Wächter startet den Collector dann
 innerhalb von fünf Minuten neu; von Hand `systemctl restart yanic@<community>`.
 Hintergrund in [kartenausfall-diagnose.md](kartenausfall-diagnose.md).
 
+Zweite Spielart: Die Schnittstelle gibt es noch, aber nicht mehr die
+Link-Local-Adresse, an die yanic gebunden hat. Am 22.10.2026 nahm yanic nach
+dem Neustart der VM für `bat-02_met` die Adresse der zufälligen MAC, mit der
+batman die Instanz anlegt, bevor der Hook die feste MAC `02:45:4e:…` setzt.
+Beim Tunnelabbau durch den Broker um 23:31 verschwand diese Adresse. Tunnel,
+batman und Probe waren in Ordnung, yanic sendete aber nichts mehr (in einer
+Aufzeichnung fragte nur noch die alte Karte), und die Domain stand
+anderthalb Stunden auf offline. Zum Vergleich:
+
+```bash
+ss -Hulnp | grep yanic
+ip -6 -br addr show dev bat-<code>
+```
+
+Steht bei yanic eine `fe80`-Adresse, die die Schnittstelle nicht mehr hat,
+startet der Wächter den Collector seit 23.10.2026 ebenfalls selbst neu (beim
+ersten Fund; ein Neustart kostet nur etwa zwei Minuten, weil yanic beim Start
+auf alle Domains wartet). Im Journal: `journalctl -t karte-en | grep
+Adresse`.
+
 **Karte lädt, bleibt aber leer.** Browserkonsole ansehen. Meist ist es
 `config.json` oder `data/meshviewer.json`, beide müssen unter dem Vhost-Namen
 200 liefern:

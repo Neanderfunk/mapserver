@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ubiquiti UniFi 6 LR (Long-Range), alle Versionen.
+
+     Eigene Zeichnung, weil es in freifunk/device-pictures keine dieses
+     Geraets gibt.
+
+     Vorlage:  Vektorzeichnung von hinten (Montageseite mit Drehverschluss,
+               PoE-Buchse und Reset-Loch in der Aussparung), von adorfer,
+               23.10.2026
+     Urheber:  adorfer, fuer Neanderfunk
+     Lizenz:   CC BY-SA 4.0  https://creativecommons.org/licenses/by-sa/4.0/
+
+     Geaendert: weisser Hintergrund und Schatten entfernt (Bild steht frei
+     auf jeder Seitenfarbe), viewBox auf das Geraet zugeschnitten, feste
+     Anzeigegroesse 320 x 145. Der Rand ist eine geschlossene Flaeche,
+     sonst schien auf dunklem Grund ein Spalt zwischen Rand und Gehaeuse
+     durch. Ein Gigabit-Port mit PoE und ein
+     Reset-Knopf passen zum OpenWrt-Wiki (toh/ubiquiti/unifi_6_lr).
+
+     ACHTUNG: In diesem Kommentar keine zwei aufeinanderfolgenden
+     Bindestriche (XML verbietet das, die Datei waere nicht wohlgeformt). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="170 188 560 254" width="320" height="145">
+    <style>
+        /* Exactly 8 distinct color palette styles */
+        .c-1 { fill: #ffffff; }
+        .c-2 { fill: #f1f5f9; }
+        .c-3 { fill: #e2e8f0; }
+        .c-4 { fill: #cbd5e1; }
+        .c-5 { fill: #94a3b8; }
+        .c-6 { fill: #475569; }
+        .c-7 { fill: #1e293b; }
+        .c-8 { fill: #0f172a; }
+    </style>
+
+    <!-- 3. Outer Rim (Bottom / Base Rim Layer) -->
+    <path d="M 180,310 C 180,410 300,435 450,435 C 600,435 720,410 720,310 Z" class="c-4"/>
+    <ellipse cx="450" cy="310" rx="270" ry="112" class="c-3"/>
+
+    <!-- 4. Main Beveled Outer Dome Body -->
+    <ellipse cx="450" cy="304" rx="260" ry="104" class="c-2"/>
+
+    <!-- Subtly Inset Flat Back Surface -->
+    <ellipse cx="450" cy="296" rx="242" ry="94" class="c-1"/>
+    <ellipse cx="450" cy="296" rx="242" ry="94" class="c-3" opacity="0.25"/>
+
+    <!-- 5. Mounting Plate Inner Groove/Ring Details -->
+    <ellipse cx="450" cy="285" rx="170" ry="60" class="c-3"/>
+    <ellipse cx="450" cy="285" rx="164" ry="57" class="c-1"/>
+
+    <!-- Inner Circular Lock Cavity -->
+    <ellipse cx="450" cy="285" rx="122" ry="40" class="c-3"/>
+    <ellipse cx="450" cy="285" rx="118" ry="38" class="c-2"/>
+
+    <!-- Twist-Lock Mounting Tabs (4 Keyways around inner ring) -->
+    <!-- Top Notch -->
+    <path d="M 436,245 L 464,245 L 468,251 L 432,251 Z" class="c-4"/>
+    <!-- Bottom Notch -->
+    <path d="M 434,320 L 466,320 L 462,325 L 438,325 Z" class="c-4"/>
+    <!-- Left Notch -->
+    <path d="M 328,280 L 332,290 L 324,291 L 322,282 Z" class="c-4"/>
+    <!-- Right Notch -->
+    <path d="M 572,280 L 578,282 L 576,291 L 568,290 Z" class="c-4"/>
+
+    <!-- Center Technical Product Text Outline Graphic Area -->
+    <ellipse cx="450" cy="282" rx="72" ry="22" class="c-1"/>
+    <ellipse cx="450" cy="282" rx="72" ry="22" class="c-4" opacity="0.3"/>
+    <!-- Faux specs lines inside center ring -->
+    <ellipse cx="450" cy="278" rx="35" ry="5" class="c-4" opacity="0.5"/>
+    <ellipse cx="450" cy="286" rx="48" ry="6" class="c-5" opacity="0.4"/>
+
+    <!-- 6. PORT CAVITY CUTOUT (Bottom Center Recess) -->
+    <!-- Cutout Outer Slope Structure -->
+    <path d="M 370,358 L 530,358 L 515,420 L 385,420 Z" class="c-3"/>
+    <path d="M 374,360 L 526,360 L 512,416 L 388,416 Z" class="c-2"/>
+    <!-- Deep Inner Cavity Back Wall -->
+    <rect x="398" y="362" width="104" height="42" rx="4" class="c-4"/>
+    <rect x="400" y="364" width="100" height="38" rx="3" class="c-3"/>
+
+    <!-- 7. RJ45 ETHERNET POE PORT (GbE) -->
+    <rect x="424" y="378" width="34" height="22" rx="2" class="c-7"/>
+    <rect x="426" y="380" width="30" height="18" rx="1" class="c-8"/>
+    <!-- Port Metallic Housing Inner Slot & Tab Cutout -->
+    <path d="M 430,380 L 452,380 L 452,389 L 454,389 L 454,396 L 428,396 L 428,389 L 430,389 Z" class="c-7"/>
+    <!-- RJ45 Gold Pin Connectors (8 Pins) -->
+    <line x1="432" y1="382" x2="432" y2="387" stroke="#cbd5e1" stroke-width="1"/>
+    <line x1="434" y1="382" x2="434" y2="387" stroke="#cbd5e1" stroke-width="1"/>
+    <line x1="436" y1="382" x2="436" y2="387" stroke="#cbd5e1" stroke-width="1"/>
+    <line x1="438" y1="382" x2="438" y2="387" stroke="#cbd5e1" stroke-width="1"/>
+    <line x1="440" y1="382" x2="440" y2="387" stroke="#cbd5e1" stroke-width="1"/>
+    <line x1="442" y1="382" x2="442" y2="387" stroke="#cbd5e1" stroke-width="1"/>
+    <line x1="444" y1="382" x2="444" y2="387" stroke="#cbd5e1" stroke-width="1"/>
+    <line x1="446" y1="382" x2="446" y2="387" stroke="#cbd5e1" stroke-width="1"/>
+
+    <!-- 8. RESET BUTTON HOLE -->
+    <circle cx="482" cy="376" r="4" class="c-6"/>
+    <circle cx="482" cy="376" r="2.5" class="c-8"/>
+
+    <!-- Subtle Bottom Edge Recess Lip Edge -->
+    <path d="M 380,422 Q 450,430 520,422 L 516,426 Q 450,434 384,426 Z" class="c-4"/>
+
+</svg>

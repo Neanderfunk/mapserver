@@ -2,9 +2,15 @@
 
 Fotos oder Zeichnungen für Modelle, die
 [freifunk/device-pictures](https://github.com/freifunk/device-pictures) nicht
-hat. `web/einrichten.sh` kopiert `*.svg` und `*.jpg` von hier nach
-`pictures-eigen/` auf der Karten-VM; nginx liefert sie unter
-`/pictures-svg/<modell>.svg` aus, wenn device-pictures kein Bild hat.
+hat oder nur mit einem unpassenden Bild. `web/einrichten.sh` kopiert `*.svg`
+und `*.jpg` von hier nach `pictures-eigen/` auf der Karten-VM; nginx liefert
+sie unter `/pictures-svg/<modell>.svg` aus, und zwar vor einem Bild aus
+device-pictures (seit 23.10.2026). Ein Bild hier ersetzt also auch eines
+von dort.
+
+Quelle der meisten Zeichnungen: firmware-selector-config, `ffnef/bilder/`.
+Dort heißen die Dateien wie im Firmware-Selector, oft ohne Revision; hier
+braucht es den Namen, den die Karte abfragt.
 
 - **Dateiname**: Modellname, wie ihn der Knoten meldet, klein, alles außer
   `a-z`, `0-9`, `.` und `-` wird zu `-`, ohne Bindestrich am Anfang und Ende

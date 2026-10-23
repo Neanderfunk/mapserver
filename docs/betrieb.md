@@ -701,13 +701,16 @@ Galaxien weiter auseinanderzudrücken.
 ### Gerätebilder
 
 Die Knoteninfo zeigt `/pictures-svg/<modell>.svg` (meshviewer
-`{MODEL_NORMALIZED}`). Seit 06.10.2026 sucht der Vhost der Reihe nach:
+`{MODEL_NORMALIZED}`). Der Vhost sucht der Reihe nach (seit 06.10.2026,
+Reihenfolge der ersten beiden seit 23.10.2026 getauscht):
 
-1. das Bild aus freifunk/device-pictures (`pictures-svg/`, von
-   `web/einrichten.sh` per rsync aktuell gehalten),
-2. ein eigenes Foto in `pictures-eigen/` (SVG oder JPG; Quelle
+1. ein eigenes Bild in `pictures-eigen/` (SVG oder JPG; Quelle
    `web/geraetebilder/`, siehe `LIESMICH.md` dort). Ein JPG kommt unter der
-   `.svg`-Adresse mit `image/jpeg`,
+   `.svg`-Adresse mit `image/jpeg`. Eigene Bilder stehen vorn, weil sie
+   bewusst angelegt werden, auch als Ersatz für ein unpassendes Bild aus
+   device-pictures (Cudy WR3000: dort weiß, das Gerät ist schwarz),
+2. das Bild aus freifunk/device-pictures (`pictures-svg/`, von
+   `web/einrichten.sh` per rsync aktuell gehalten),
 3. ein Ersatzbild aus `conf.d/karte-geraetebilder.conf`
    (`web/nginx-geraetebilder.conf`): x86-Symbole für VMs, FUTROs und Boards
    ohne Herstellerangabe, dazu Geräte, die device-pictures unter anderem

@@ -531,13 +531,16 @@ server {
 		alias %(web)s/sites/%(host)s/data/;
 		add_header Cache-Control "no-cache";
 	}
-	# Geraetebilder: device-pictures, dann eigene Fotos (SVG oder JPG), dann
+	# Geraetebilder: eigene Bilder (SVG oder JPG), dann device-pictures, dann
 	# ein Ersatzbild aus conf.d/karte-geraetebilder.conf; ein JPG kommt unter
-	# der .svg-Adresse mit seinem eigenen Content-Type
+	# der .svg-Adresse mit seinem eigenen Content-Type. Eigene zuerst, seit
+	# 23.10.2026: sie werden bewusst angelegt, auch als Ersatz fuer ein
+	# unpassendes device-pictures-Bild (Cudy WR3000 dort weiss, das Geraet ist
+	# schwarz).
 	location ~ ^/pictures-svg/(?<geraetebild>[^/]+)\\.svg$ {
 		root %(web)s;
-		try_files /pictures-svg/$geraetebild.svg /pictures-eigen/$geraetebild.svg
-			/pictures-eigen/$geraetebild.jpg /pictures-svg/$geraetebild_ersatz.svg =404;
+		try_files /pictures-eigen/$geraetebild.svg /pictures-eigen/$geraetebild.jpg
+			/pictures-svg/$geraetebild.svg /pictures-svg/$geraetebild_ersatz.svg =404;
 		expires 30d;
 	}
 	location /assets/ {

@@ -28,7 +28,17 @@ ETC=/etc/unifi_respondd
 
 echo "== Pakete =="
 export DEBIAN_FRONTEND=noninteractive
-apt-get install -y -qq python3-venv git batctl
+apt-get install -y -qq python3-venv git batctl wireguard-tools
+
+# Controller hinter NAT erreicht die VM ueber WireGuard (controller-tunnel.sh
+# legt die Peers an). Liegt die Konfiguration schon da, etwa beim Neuaufbau
+# aus der Sicherung, hier nur einschalten; ohne wireguard-tools fehlte
+# wg-quick@ ganz (Neuaufbau-Test 24.10.2026).
+if [ -f /etc/wireguard/wg-ctl.conf ]; then
+	echo "== WireGuard zu den Controllern =="
+	systemctl enable --now -q wg-quick@wg-ctl
+	systemctl is-active wg-quick@wg-ctl
+fi
 
 echo "== Benutzer und Rechte =="
 id -u unifi-respondd >/dev/null 2>&1 || useradd --system --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin unifi-respondd

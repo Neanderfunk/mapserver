@@ -6,7 +6,10 @@ als Notfallweg; sie ruft die Einrichtungsskripte dieses Repos auf, statt sie
 nachzubauen. Routinepflege bleibt bei den Skripten selbst
 ([einrichtung.md](einrichtung.md), [betrieb.md](betrieb.md)).
 
-Stand 24.10.2026. Wo Zugangsdaten liegen, steht hier nur als Pfad; die Werte
+Stand 24.10.2026, durchgespielt am selben Tag als Ansible-Rolle
+`mapserver_neuaufbau` (Betrieb und Operations) auf einer frischen VM ohne
+ausgehendes UDP: alles außer Tunneln und Controllern lief; Rücksicherung der
+Daten und Checkmk nicht getestet. Wo Zugangsdaten liegen, steht hier nur als Pfad; die Werte
 liegen nicht in diesem Repo.
 
 ## Reihenfolge
@@ -28,7 +31,8 @@ liegen nicht in diesem Repo.
 - Benutzer `ad-claude` mit sudo (Passwort) und SSH-Schlüssel; die
   Arbeitskopie liegt in dessen Home (`~ad-claude/mapserver`). SSH lauscht auf
   Port 62954.
-- Pakete vorab: `git`, `sudo`, `curl`, `rsync`. Den Rest holen die Skripte.
+- Pakete vorab: `git`, `sudo`, `curl`, `rsync`. Den Rest holen die Skripte
+  (seit 24.10.2026 auch `gnupg` und `wireguard-tools`).
 
 ### 1. Repo
 
@@ -69,8 +73,8 @@ Exit-Code ungleich 0 bei Fehlern (`set -euo pipefail`). Reihenfolge:
 | 2a | Standby-Communities wieder anhalten | erhaltene `standby.conf` | siehe unten |
 | 3 | `sudo ./web/einrichten.sh` | Schritt 2 | meshviewer-Build, Gerätebilder, alle `config.json`, nginx |
 | 4 | `sudo ./zeitreihe/einrichten.sh` | | VictoriaMetrics, Grafana (Paketquelle apt.grafana.com, Hauptversion per apt-Pin festgelegt) |
-| 5 | `sudo ./sammler/controller-tunnel.sh` | erhaltene `wg-ctl.conf` liegt schon | nur nötig, um `wg-quick@wg-ctl` zu aktivieren; mit vorhandener Konfiguration gibt es keine neuen Peers aus |
-| 6 | `sudo ./sammler/unifi-einrichten.sh` | erhaltene Controller-Zugänge liegen schon, Schritt 5 | `unifi-respondd`, Zuordnung AP zu Router |
+| 5 | entfällt | | seit 24.10.2026 in Schritt 6 |
+| 6 | `sudo ./sammler/unifi-einrichten.sh` | erhaltene Controller-Zugänge und `wg-ctl.conf` liegen schon | `wireguard-tools`, `wg-quick@wg-ctl` (wenn die Konfiguration da ist), `unifi-respondd`, Zuordnung AP zu Router |
 | 7 | `sudo ./sammler/mesh-announce-einrichten.sh` | Schritt 1 | `mesh-announce` |
 | 8 | `sudo ./service/einrichten.sh` | Schritt 2 | `karte-service` (Service-Menü) |
 | 9 | `sudo ./web/einrichten.sh` | Schritt 8 | noch einmal: nginx mit der Anmeldung für das Service-Menü |
@@ -83,12 +87,13 @@ Hinweise:
   `/etc/karte-en/standby.conf` (heute EN) die Dienste wieder anhalten, wie in
   betrieb.md, "Eine Community in den Standby nehmen", Schritt 2:
   `karte-en-tunnel@<code>` je Domain, `yanic@<community>`, bei EN auch
-  `karte-ziele.timer`, jeweils `systemctl disable --now`.
-- `controller-tunnel.sh` erwartet Argumente (Name, Tunneladresse, Ziele) und
-  ist für das Anlegen eines Peers gedacht. Im Neuaufbau mit zurückgespielter
-  `/etc/wireguard/wg-ctl.conf` genügt `systemctl enable --now
-  wg-quick@wg-ctl`; die Routen zu Zielen hinter einer Gegenstelle stehen in
-  der Konfiguration.
+  `karte-ziele.timer`, jeweils `systemctl disable --now`. Danach
+  `systemctl reset-failed`: die eben gestarteten und wieder angehaltenen
+  Tunnel stehen sonst weiter in `systemctl --failed`.
+- `controller-tunnel.sh` ist nur für das Anlegen eines neuen Peers da und
+  gehört nicht in den Neuaufbau. Die zurückgespielte
+  `/etc/wireguard/wg-ctl.conf` schaltet `unifi-einrichten.sh` ein; die Routen
+  zu Zielen hinter einer Gegenstelle stehen in der Konfiguration.
 - `sammler/unifi-einrichten.sh` bricht ab, solange `/etc/karte-en/sitecodes.conf`
   fehlt (legt Schritt 2 an).
 - Schritt 2 baut yanic aus dem Fork und lässt dessen Tests laufen; Go kommt

@@ -70,7 +70,6 @@ Exit-Code ungleich 0 bei Fehlern (`set -euo pipefail`). Reihenfolge:
 | --- | --- | --- | --- |
 | 1 | `sudo ./tunnel/einrichten.sh` | erhaltene Kennung und fastd-Schlüssel liegen schon | je Domain `karte-en-tunnel@<code>`, Wächter-Timer |
 | 2 | `sudo ./sammler/einrichten.sh` | Tunnel laufen (sonst wartet yanic beim Start bis zu 180 s) | je Community `yanic@<community>`; Adressbuch, Clientzählung, Verlauf |
-| 2a | Standby-Communities wieder anhalten | erhaltene `standby.conf` | siehe unten |
 | 3 | `sudo ./web/einrichten.sh` | Schritt 2 | meshviewer-Build, Gerätebilder, alle `config.json`, nginx |
 | 4 | `sudo ./zeitreihe/einrichten.sh` | | VictoriaMetrics, Grafana (Paketquelle apt.grafana.com, Hauptversion per apt-Pin festgelegt) |
 | 5 | entfällt | | seit 24.10.2026 in Schritt 6 |
@@ -82,14 +81,11 @@ Exit-Code ungleich 0 bei Fehlern (`set -euo pipefail`). Reihenfolge:
 
 Hinweise:
 
-- Schritte 1 und 2 schalten Tunnel und Collector **aller** Communities aus
-  `domains.conf` ein, auch der ruhenden. Danach je Community aus
-  `/etc/karte-en/standby.conf` (heute EN) die Dienste wieder anhalten, wie in
-  betrieb.md, "Eine Community in den Standby nehmen", Schritt 2:
-  `karte-en-tunnel@<code>` je Domain, `yanic@<community>`, bei EN auch
-  `karte-ziele.timer`, jeweils `systemctl disable --now`. Danach
-  `systemctl reset-failed`: die eben gestarteten und wieder angehaltenen
-  Tunnel stehen sonst weiter in `systemctl --failed`.
+- Schritte 1 und 2 lassen seit 25.10.2026 die Communities aus
+  `/etc/karte-en/standby.conf` (heute EN) aus; deshalb muss die erhaltene
+  `standby.conf` vorher zurückgespielt sein. Bis dahin liefen auch sie an und
+  mussten danach angehalten werden (`disable --now`, dann `systemctl
+  reset-failed`); eine Rolle, die das noch tut, schadet nicht.
 - `controller-tunnel.sh` ist nur für das Anlegen eines neuen Peers da und
   gehört nicht in den Neuaufbau. Die zurückgespielte
   `/etc/wireguard/wg-ctl.conf` schaltet `unifi-einrichten.sh` ein; die Routen

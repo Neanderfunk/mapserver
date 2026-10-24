@@ -63,9 +63,11 @@ weiter sieht. Diagnose von unten nach oben, Schicht für Schicht:
   Abwarten, nicht abbrechen; wer apt gestartet hat, steht in
   `/var/log/apt/history.log` (`Requested-By`).
 - **Ruhende Communities.** `tunnel/einrichten.sh` und `sammler/einrichten.sh`
-  schalten alle Communities aus `domains.conf` ein, auch die im Standby.
-  Danach wieder anhalten, samt `karte-ziele.timer` bei EN (der wurde am
-  23.09.2026 übersehen), und `systemctl reset-failed`.
+  schalteten alle Communities aus `domains.conf` ein, auch die im Standby;
+  am 25.10.2026 lief so nach einem yanic-Neubau `yanic@en` wieder an. Seither
+  überspringen beide die Communities aus `/etc/karte-en/standby.conf`. Regel:
+  **Was eine Lehre ist, gehört ins Skript, nicht nur in die Doku** (die Lehre
+  stand schon hier, und trotzdem passierte es).
 
 ## Paketquellen und Versionen
 

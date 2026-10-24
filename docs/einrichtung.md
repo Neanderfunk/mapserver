@@ -43,8 +43,10 @@ finden ihre Dateien über den eigenen Pfad.
 
 **Achtung bei laufendem Betrieb:** `tunnel/einrichten.sh` und
 `sammler/einrichten.sh` schalten Tunnel bzw. Collector **aller** Einträge in
-`domains.conf` ein, auch ruhender Communities (EN, siehe `web/standby.conf`).
-Für eine neue Domain oder Community deshalb die Einzelschritte unten nehmen.
+`domains.conf` ein. Ausgenommen sind seit 25.10.2026 die Communities aus
+`/etc/karte-en/standby.conf` (heute EN); bis dahin liefen auch sie wieder
+an. Für eine neue Domain oder Community trotzdem die Einzelschritte unten
+nehmen.
 `web/einrichten.sh` berücksichtigt `standby.conf` und lädt nginx nur nach
 bestandenem `nginx -t` neu. Die neue Site-Datei liegt dann aber schon da:
 scheitert der Test, vor dem nächsten Neustart der Maschine beheben, sonst

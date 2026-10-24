@@ -14,6 +14,16 @@ TD_COMMIT=9a9a42741837115d99dd9c398a9a3976d81727d2   # 09.11.2025, Stand 20.09.2
 BAU=/usr/local/src/tunneldigger
 
 [ "$(id -u)" = 0 ] || { echo "Bitte als root starten." >&2; exit 1; }
+# Der Kernel muss batman-adv und L2TP mitbringen. Der Kernel der
+# Debian-Cloud-Images (linux-image-cloud-amd64) hat batman-adv nicht; dann
+# hier abbrechen statt erst nach dem Bauen am modprobe (Neuaufbau-Test
+# 24.10.2026).
+for m in batman-adv l2tp_eth l2tp_netlink; do
+	modinfo "$m" >/dev/null 2>&1 || {
+		echo "Kernelmodul $m fehlt ($(uname -r)). Cloud-Kernel? linux-image-amd64 installieren, linux-image-cloud-amd64 entfernen, neu starten." >&2
+		exit 1
+	}
+done
 
 echo "== Pakete =="
 export DEBIAN_FRONTEND=noninteractive

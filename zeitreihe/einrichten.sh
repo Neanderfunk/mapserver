@@ -43,6 +43,8 @@ curl -sf -o /dev/null http://127.0.0.1:8428/health && echo "  laeuft auf 127.0.0
 echo "== Grafana =="
 # Nur die Vertiefung hinter dem Link im Knotenfenster. Die Karte selbst
 # zeichnet ihre Diagramme ohne Grafana.
+# Hauptversion festgenagelt, siehe grafana/apt-pin
+install -m 0644 "$HIER/grafana/apt-pin" /etc/apt/preferences.d/grafana
 if ! dpkg -s grafana >/dev/null 2>&1; then
 	install -d -m 0755 /etc/apt/keyrings
 	curl -fsSL https://apt.grafana.com/gpg.key | gpg --dearmor -o /etc/apt/keyrings/grafana.gpg

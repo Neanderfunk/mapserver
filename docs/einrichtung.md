@@ -8,6 +8,8 @@ Zusätze, jeweils mit eigenem Skript.
 - Debian 13 (trixie), getestet mit Kernel 6.12. Die Module `l2tp_eth`,
   `l2tp_netlink`, `batman_adv` und `tun` (für fastd) liegen dort in-tree, es
   muss nichts gebaut werden.
+  Das gilt für den Standard-Kernel `linux-image-amd64`, nicht für den der
+  Cloud-Images (`linux-image-cloud-amd64`): dem fehlt batman-adv.
 - root per `sudo`.
 - Ausgehendes UDP zu den Brokern bzw. fastd-Servern der Communities. IPv4
   genügt, auch hinter NAT: beide Tunnelarten bauen von innen auf und halten

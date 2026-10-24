@@ -13,7 +13,11 @@ liegen nicht in diesem Repo.
 
 ### 0. Maschine
 
-- Debian 13 (trixie), 2 CPUs, gut 2 GB RAM (Spitze beim `npm install`),
+- Debian 13 (trixie) mit dem **Standard-Kernel** `linux-image-amd64`. Der
+  Kernel der Cloud-Images (`linux-image-cloud-amd64`) hat batman-adv nicht;
+  dann `linux-image-amd64` installieren, den Cloud-Kernel entfernen, neu
+  starten. `tunnel/einrichten.sh` prüft das vorab und bricht sonst ab.
+- 2 CPUs, gut 2 GB RAM (Spitze beim `npm install`),
   Platte mindestens 30 GB; heute 98 GB, davon 12 GB belegt, VictoriaMetrics
   wächst (Aufbewahrung 1300 Tage).
 - Hostname `map.freifunk.space`. Die ändernden Betriebsbefehle in der
@@ -32,7 +36,14 @@ liegen nicht in diesem Repo.
 git clone https://github.com/Neanderfunk/mapserver ~ad-claude/mapserver
 ```
 
-Zweig `main`, neuester Stand. Die Skripte installieren aus dem Verzeichnis,
+Zweig `main`, neuester Stand. Auf map6 ist die Kopie kein git-Checkout,
+sondern ein ausgepacktes `git archive` (so wird sie gepflegt); die Skripte
+rufen git nur in ihren eigenen Bauverzeichnissen unter `/usr/local/src`
+auf, nie in der Arbeitskopie. Klont die Rolle mit git und läuft git dort
+als root, braucht es `git config --system safe.directory
+/home/ad-claude/mapserver`, sonst meldet git "dubious ownership".
+
+Die Skripte installieren aus dem Verzeichnis,
 in dem sie liegen; deshalb immer aus dieser Kopie und nach jedem
 Repo-Wechsel die Kopie aktualisieren (siehe betrieb.md, "Arbeitskopie auf
 der VM zuerst").

@@ -77,6 +77,7 @@ Agreement vorsieht ([docs/hintergrund.md](docs/hintergrund.md)).
 - [docs/einrichtung.md](docs/einrichtung.md) - von der leeren VM zur Karte
 - [docs/neuaufbau.md](docs/neuaufbau.md) - Neuaufbau im Notfall: Reihenfolge, was erhalten bleiben muss, Abhängigkeiten
 - [docs/betrieb.md](docs/betrieb.md) - was läuft, wie man prüft, was schiefgeht
+- [docs/lehren.md](docs/lehren.md) - Lehren aus dem Betrieb, kurz an einer Stelle
 - [docs/skripte.md](docs/skripte.md) - alle Skripte: Zweck, Name auf der VM, wer sie aufruft
 - [docs/unifi-sites.md](docs/unifi-sites.md) - UniFi-Accesspoints auf der Karte
 - [docs/neue-community.md](docs/neue-community.md) - von ihren Images zur

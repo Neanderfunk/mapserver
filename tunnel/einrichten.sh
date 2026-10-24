@@ -87,7 +87,12 @@ systemctl daemon-reload
 systemctl enable --now karte-en-waechter.timer
 
 echo "== Dienste =="
-codes=$(awk '!/^#/ && NF { print $2 }' /etc/karte-en/domains.conf)
+# Communities im Standby (/etc/karte-en/standby.conf, erste Spalte) bleiben
+# aus. Bis 25.10.2026 schaltete jeder Lauf sie wieder ein, und man musste sie
+# danach von Hand anhalten.
+ruhend=$(awk '!/^#/ && NF { print $1 }' /etc/karte-en/standby.conf 2>/dev/null | tr '\n' ' ')
+codes=$(awk -v r=" $ruhend" '!/^#/ && NF && index(r, " " $1 " ") == 0 { print $2 }' /etc/karte-en/domains.conf)
+[ -n "$ruhend" ] && echo "  im Standby, bleiben aus: $ruhend"
 for c in $codes; do
 	systemctl enable --now "karte-en-tunnel@$c.service"
 done

@@ -71,7 +71,11 @@ install -d -m 0755 -o yanic -g www-data /var/lib/karte/adressbuch /var/www/karte
 [ -f /etc/karte-en/sitecodes.conf ] || install -m 0644 "$HIER/sitecodes.conf" /etc/karte-en/sitecodes.conf
 systemctl daemon-reload
 
-communities=$(awk '!/^#/ && NF { print $1 }' /etc/karte-en/domains.conf | sort -u)
+# Communities im Standby (/etc/karte-en/standby.conf) bleiben aus; bis
+# 25.10.2026 schaltete jeder Lauf yanic@en wieder ein.
+ruhend=$(awk '!/^#/ && NF { print $1 }' /etc/karte-en/standby.conf 2>/dev/null | tr '\n' ' ')
+communities=$(awk -v r=" $ruhend" '!/^#/ && NF && index(r, " " $1 " ") == 0 { print $1 }' /etc/karte-en/domains.conf | sort -u)
+[ -n "$ruhend" ] && echo "  im Standby, bleiben aus: $ruhend"
 for g in $communities; do
 	/usr/local/sbin/karte-en-yanic-conf "$g" > "/etc/yanic-$g.conf"
 	chmod 0644 "/etc/yanic-$g.conf"

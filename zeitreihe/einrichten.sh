@@ -46,6 +46,8 @@ echo "== Grafana =="
 # Hauptversion festgenagelt, siehe grafana/apt-pin
 install -m 0644 "$HIER/grafana/apt-pin" /etc/apt/preferences.d/grafana
 if ! dpkg -s grafana >/dev/null 2>&1; then
+	# gpg fehlt auf einem frischen Debian (Neuaufbau-Test 24.10.2026)
+	apt-get install -y -qq gnupg curl
 	install -d -m 0755 /etc/apt/keyrings
 	curl -fsSL https://apt.grafana.com/gpg.key | gpg --dearmor -o /etc/apt/keyrings/grafana.gpg
 	echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" \

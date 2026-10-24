@@ -721,6 +721,24 @@ hopglass).
 - Bandgrenzen: 2400 bis unter 2500 MHz, 5150 bis unter 5925 MHz, 5925 bis
   unter 7125 MHz. 4830 kennt 6 GHz noch nicht.
 
+### Knoten mit VPN-Uplink
+
+Seit 25.10.2026 sind Knoten mit eigenem VPN-Uplink auf der Karte deutlich zu
+erkennen (Variante C, adorfer; Anregung 4830.org, dort ein hellblauer Rand):
+
+- ohne Uplink: voller Punkt, etwas kleiner als bisher (Radius 6 statt 8),
+- mit Uplink: voller Punkt, Radius 8, dunkelblauer Rand (`#0B3D66`); neue
+  Knoten mit Uplink ebenso, mit grüner Füllung,
+- im Tooltip "(VPN-Uplink)" hinter dem Namen (Fork, `uplinkTooltip`).
+
+meshviewer kannte die Unterscheidung schon (`icon["online.uplink"]`,
+`icon["new.uplink"]`): ein Ring mit hellem Kern und breitem Rand in derselben
+Farbe, der in der Fläche kaum auffiel. Die Werte stehen in
+`konfig-erzeugen.py` unter `icon`; ändern ohne Neubau. "Uplink" heißt hier
+wie in meshviewer: der Knoten hat selbst einen VPN-Link, also einen Tunnel zum
+Supernode, nicht geprüft ist der Weg ins Internet. Die Legende unter "Über"
+nimmt dieselben Stile.
+
 ### Gerätebilder
 
 Die Knoteninfo zeigt `/pictures-svg/<modell>.svg` (meshviewer

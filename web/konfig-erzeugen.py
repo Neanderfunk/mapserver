@@ -416,6 +416,21 @@ def konfig(titel, pfad, alle):
         # das Band steht ohnehin im Tooltip (adorfer 25.10.2026, Anregung
         # 4830.org)
         'linkBandStyle': True,
+        # Knoten mit eigenem VPN-Uplink hervorheben (Variante C, adorfer
+        # 25.10.2026, Anregung 4830.org): ohne Uplink etwas kleiner (Radius 6
+        # statt 8), mit Uplink voll und mit dunkelblauem Rand. Der Ring der
+        # Vorgabe (heller Kern, Rand in derselben Farbe) war kaum zu erkennen.
+        # Nur Vorschlag, andere duerfen anderer Meinung sein.
+        'icon': {
+            'online': {'radius': 6},
+            'online.uplink': {'fillColor': '#1566A9', 'fillOpacity': 0.75,
+                              'color': '#0B3D66', 'opacity': 1,
+                              'stroke': True, 'weight': 2.5, 'radius': 8},
+            'new.uplink': {'fillOpacity': 0.75, 'color': '#0B3D66',
+                           'opacity': 1, 'stroke': True, 'weight': 2.5,
+                           'radius': 8},
+        },
+        'uplinkTooltip': True,
         # Graphansicht (Fork, forceGraph.*), eingestellt mit adorfer am
         # 19.10.2026. Jede Domain eine eigene Galaxie (VPN-Zug 0.3, gewollt),
         # in sich locker (Abstossung -400, VPN-Links 150 lang), wenig Raum

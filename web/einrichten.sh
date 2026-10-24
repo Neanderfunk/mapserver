@@ -90,6 +90,11 @@ install -m 0644 "$HIER/nginx-geo.conf" /etc/nginx/conf.d/karte-geo.conf
 install -m 0644 "$HIER/nginx-gzip.conf" /etc/nginx/conf.d/karte-gzip.conf
 install -m 0644 "$HIER/nginx-geraetebilder.conf" /etc/nginx/conf.d/karte-geraetebilder.conf
 install -d -m 0700 -o www-data /var/cache/nginx/karte-geo
+# Die Vorgabe-Site des Pakets beansprucht ebenfalls default_server auf
+# Port 80; mit ihr scheitert nginx -t ("duplicate default server"). Auf
+# map6 war sie von Hand entfernt, auf einer frischen VM nicht
+# (Neuaufbau-Test 24.10.2026).
+rm -f /etc/nginx/sites-enabled/default
 ln -sf /etc/nginx/sites-available/karte-en.conf /etc/nginx/sites-enabled/karte-en.conf
 nginx -t
 systemctl reload nginx

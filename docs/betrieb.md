@@ -698,6 +698,29 @@ Galaxien weiter auseinanderzudrücken.
   (Service Worker).
 - Ein neuer Schlüssel braucht einen Fork-Commit und `web/einrichten.sh`.
 
+### Band der WLAN-Links
+
+Seit 25.10.2026 zeigt die Karte bei WLAN-Links das Band (2.4, 5 oder 6 GHz),
+sofern die Knoten die Frequenz ihrer Schnittstelle melden. Anregung war
+4830.org (HopGlass, Commits `a6d2829` im hopglass-server und `644e9ad` in
+hopglass).
+
+- **Firmware:** respondd meldet in `neighbours` je WLAN-Schnittstelle
+  `"wifi": {"<mac>": {"frequency": 5240, ...}}` in MHz (Gluon-Patch
+  `respondd-wifi-frequency`, bei Neanderfunk im Next-Zweig). Ältere Knoten
+  melden das Feld nicht; dann bleibt alles wie bisher.
+- **yanic (Fork):** liest nur die Frequenz ein, nicht die Nachbarwerte
+  darunter, und gibt sie je Link als `source_frequency`/`target_frequency`
+  aus, analog zu `source_tq`/`target_tq`. Die Frequenz gehört zur
+  empfangenden Schnittstelle der jeweiligen Seite.
+- **meshviewer (Fork):** Band im Tooltip der Linie, im Linkfenster (dazu die
+  Frequenz je Seite) und als Titel des Funk-Symbols in der Nachbarliste. Mit
+  `linkBandStyle` (in `konfig-erzeugen.py` an) sind 2.4-GHz-Links auf Karte
+  und Graph gestrichelt, 5 und 6 GHz durchgezogen; die Farbe bleibt die
+  Linkqualität.
+- Bandgrenzen: 2400 bis unter 2500 MHz, 5150 bis unter 5925 MHz, 5925 bis
+  unter 7125 MHz. 4830 kennt 6 GHz noch nicht.
+
 ### Gerätebilder
 
 Die Knoteninfo zeigt `/pictures-svg/<modell>.svg` (meshviewer

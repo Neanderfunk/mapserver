@@ -411,6 +411,11 @@ def konfig(titel, pfad, alle):
         # unter 0.9 bleibt ein Kabel-Link farbig, das ist dann ein echtes
         # Problem (adorfer 07.10.2026)
         'otherLinkMinTq': 0.9,
+        # Band der WLAN-Links (Fork, Frequenz aus dem yanic-Fork, Gluon-Patch
+        # respondd-wifi-frequency): 2.4 GHz gestrichelt auf Karte und Graph,
+        # das Band steht ohnehin im Tooltip (adorfer 25.10.2026, Anregung
+        # 4830.org)
+        'linkBandStyle': True,
         # Graphansicht (Fork, forceGraph.*), eingestellt mit adorfer am
         # 19.10.2026. Jede Domain eine eigene Galaxie (VPN-Zug 0.3, gewollt),
         # in sich locker (Abstossung -400, VPN-Links 150 lang), wenig Raum

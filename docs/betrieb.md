@@ -991,6 +991,16 @@ Startausschnitte also an die aktuellen Knotenkoordinaten angepasst.
 ändern, Skript erneut laufen lassen. Die Konfiguration wird neu erzeugt, also
 vorher prüfen, ob die neue Version dieselben Felder erwartet.
 
+**Grafana** kommt aus der Paketquelle apt.grafana.com und ist seit
+24.10.2026 auf die Hauptversion 13 festgenagelt
+(`/etc/apt/preferences.d/grafana`, Quelle `zeitreihe/grafana/apt-pin`).
+Unter "stable" liefert die Quelle auch die nächste Hauptversion, und ein
+`dist-upgrade` hätte sie ohne Rückfrage eingespielt; Hauptversionen haben
+schon Dashboards und Marker gebrochen. Eine neue Hauptversion von Hand:
+Zahl in `apt-pin` ändern, `zeitreihe/einrichten.sh` laufen lassen,
+Dashboards prüfen. `apt-cache policy grafana` zeigt, was erlaubt ist
+(500) und was gesperrt (-1).
+
 **Tunneldigger** ist auf einen Commit festgenagelt (`TD_COMMIT`). Der Client
 ändert sich selten; ein Wechsel unterbricht alle acht Tunnel für wenige
 Sekunden.

@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+# /usr/lib/check_mk_agent/local/3600/mapserver-broker
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Gleicht die Broker der Neanderfunk-Domains in /etc/karte-en/domains.conf mit
+# der Rollendatei der Supernodes ab (https://config.ffnef.de/supernode-roles.json).
+# Die Rollendatei ist seit 25.10.2026 die Quelle der Wahrheit dafuer, welcher
+# Supernode fuer welche Domain Broker ist (Entscheidung der Supernode-Seite):
+# je Domainnummer "primary", "secondary", "tertiary" mit je einem Kurznamen,
+# Broker-Host <kurzname>.ffnef.de, Port 20000 plus Domainnummer. Was dort
+# nicht steht, ist nicht in Betrieb.
+#
+# Eingetragen wird weiter von Hand (tunnel/domains.conf), weil ein neuer
+# Broker Nebenwirkungen haben kann: der Tunneldigger-Client nimmt den mit der
+# geringsten Last, und haengt ein neuer Supernode noch nicht am Backbone,
+# saehe die Karte in der Domain nur ihn. Dieser Check sagt nur, dass etwas zu
+# tun ist.
+#
+# WARN, wenn
+#   - ein Supernode aus der Rollendatei in unserer Brokerliste fehlt,
+#   - eine Domain der Rollendatei bei uns fehlt,
+#   - ein Broker aus der Rollendatei nur auf 192.0.2.1 aufloest (der
+#     Platzhalter fuer Reserve-Supernodes ohne Dienst).
+# Broker bei uns, die in der Rollendatei nicht stehen, sind kein Fehler (der
+# Client versucht sie und nimmt einen anderen), sie stehen nur im Text.
+# UNKNOWN, wenn die Rollendatei nicht zu holen oder zu lesen ist.
+import json
+import socket
+import sys
+import urllib.request
+
+QUELLE = 'https://config.ffnef.de/supernode-roles.json'
+KONF = '/etc/karte-en/domains.conf'
+COMMUNITY = 'neander'
+ROLLEN = ('primary', 'secondary', 'tertiary')
+PLATZHALTER = '192.0.2.1'
+DIENST = 'mapserver-Broker'
+
+
+def ausgabe(status, metriken, text):
+    print(f'{status} "{DIENST}" {metriken} {text}')
+    sys.exit(0)
+
+
+try:
+    with urllib.request.urlopen(QUELLE, timeout=20) as antwort:
+        rollen = json.load(antwort)
+except Exception as fehler:  # noqa: BLE001 - jeder Fehler heisst: nicht pruefbar
+    ausgabe(3, '-', f'Rollendatei nicht lesbar: {fehler}')
+
+soll = {}
+for schluessel, eintrag in rollen.items():
+    if not str(schluessel).isdigit() or not isinstance(eintrag, dict):
+        continue
+    namen = []
+    for rolle in ROLLEN:
+        liste = eintrag.get(rolle) or []
+        if liste and liste[0] not in namen:
+            namen.append(liste[0])
+    soll[int(schluessel)] = (eintrag.get('name', ''), namen)
+
+ist = {}
+with open(KONF) as datei:
+    for zeile in datei:
+        teile = zeile.split()
+        if not teile or teile[0].startswith('#') or teile[0] != COMMUNITY:
+            continue
+        nummer = int(teile[3]) - 20000
+        broker = [b.split('.')[0] for b in teile[7].split(',')]
+        ist[nummer] = (teile[1], broker)
+
+fehlend = []
+ohne_domain = []
+zusaetzlich = 0
+for nummer, (kurz, namen) in sorted(soll.items()):
+    if nummer not in ist:
+        ohne_domain.append(f'{nummer:02d} {kurz}')
+        continue
+    code, broker = ist[nummer]
+    for name in namen:
+        if name not in broker:
+            fehlend.append(f'{name} fuer {code}')
+    zusaetzlich += len([b for b in broker if b not in namen])
+
+platzhalter = []
+for name in sorted({n for _, namen in soll.values() for n in namen}):
+    try:
+        adressen = {a[4][0] for a in socket.getaddrinfo(f'{name}.ffnef.de', None)}
+    except OSError:
+        adressen = set()
+    if adressen and adressen <= {PLATZHALTER}:
+        platzhalter.append(name)
+
+probleme = []
+if fehlend:
+    probleme.append('fehlt in domains.conf: ' + ', '.join(fehlend))
+if ohne_domain:
+    probleme.append('Domain fehlt bei uns: ' + ', '.join(ohne_domain))
+if platzhalter:
+    probleme.append(f'loest nur auf {PLATZHALTER} auf: ' + ', '.join(platzhalter))
+
+metriken = f'fehlend={len(fehlend)};1|domains_fehlend={len(ohne_domain)};1|zusaetzlich={zusaetzlich}'
+if probleme:
+    ausgabe(1, metriken, '; '.join(probleme) + ' (eintragen von Hand, tunnel/domains.conf)')
+ausgabe(0, metriken, f'{len(soll)} Domains wie in der Rollendatei; {zusaetzlich} weitere Broker-Eintraege ohne Rolle')

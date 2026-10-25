@@ -59,7 +59,9 @@ for b in $BROKER; do set -- "$@" -b "$b:$PORT"; done
 # batctl o schaut, soll uns zuordnen koennen, statt zu raetseln. Die
 # Kennungsserie haengt hinten dran, damit ein Wechsel der MACs auch am Broker
 # sichtbar eine neue Kennung ist und nicht dieselbe mit anderer Adresse.
-# -g nimmt den ersten erreichbaren Broker; broker2 steht schon drin, wird also
+# -g nimmt den ersten Broker, der antwortet, und fragt die uebrigen dann
+# nicht mehr (auch nicht, wenn ihre Namensaufloesung noch laeuft). Gewollt:
+# je Domain antwortet nur ein Supernode (adorfer 25.10.2026); broker2 steht schon drin, wird also
 # automatisch genutzt, sobald dort wieder ein Tunneldigger antwortet
 # (20.09.2026: nur broker1 antwortet).
 SERIE=$(cat /etc/karte-en/kennung 2>/dev/null || echo 0)

@@ -338,9 +338,16 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
     panel(2, 'Clients dahinter', [
         ziel('sum(' + DAHINTER % 'last_over_time({__name__="node_clients.total"}[15m])' + ')',
              'laut respondd', 'A'),
-        ziel('sum(last_over_time(tt_clients[15m]) * on(sndomain) group_left()'
-             ' (label_replace(last_over_time({__name__="node_load", hostname="$sn"}[15m]),'
-             ' "sndomain", "$1", "domain", "(.*)") * 0 + 1))', 'laut Übersetzungstabelle', 'B'),
+        # Verbunden ueber die Domainnummer: die Instanz meldet als Domain
+        # ffnefdNN oder, seit der Umstellung der Supernodes, den Code der
+        # Knoten (dus-23_dusuks). max by entfernt die doppelte Reihe in den
+        # 15 Minuten nach dem Wechsel.
+        ziel('sum(label_replace(last_over_time(tt_clients[15m]),'
+             ' "dnum", "$1", "domain", "([0-9]+)_.*")'
+             ' * on(dnum) group_left() (max by (dnum) (label_replace('
+             'last_over_time({__name__="node_load", hostname="$sn"}[15m]),'
+             ' "dnum", "$1", "domain", "[^0-9]*([0-9]+).*")) * 0 + 1))',
+             'laut Übersetzungstabelle', 'B'),
     ], 12, 5, min_=0,
         beschreibung='Zwei Zählweisen. respondd summiert, was die Knoten melden, die '
                      'gerade antworten. Die Übersetzungstabelle kennt jede Station der '

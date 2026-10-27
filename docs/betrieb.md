@@ -405,7 +405,11 @@ Supernode.
 ```
 
 - `site_code` wie gemeldet (`nef-10_wlf`, `..._EOL`), `domain` normalisiert
-  über `sitecodes.conf`. Supernodes melden nur `domain_code` (`ffnefd01`).
+  über `sitecodes.conf`. Supernodes melden nur `domain_code`: bisher
+  `ffnefd01`, ab der Umstellung ihrer respondd-Rolle (ab 27.10.2026, erst
+  sinope4 und elara) den Code der Knoten (`nef-01_vel`). Grafana verbindet
+  Supernode und Domain deshalb über die Domainnummer, die Graphansicht
+  sortiert die Gateways ebenso.
 - Erzeugt von `karte-adressbuch@neander.timer` alle zwei Minuten aus
   `nodes.json`. Eigener Bestand in `/var/lib/karte/adressbuch/`: wen yanic
   vergisst, der bleibt mit altem `last_seen` und `online: false` stehen.

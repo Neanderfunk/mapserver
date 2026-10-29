@@ -883,7 +883,8 @@ ohnehin zugestellt wird (48 Abfragen kosten zusammen 0,13 Sekunden):
 
 | Metrik | Bedeutung |
 | --- | --- |
-| `tt_clients` | Stationen der Domain, ohne die Knoten selbst |
+| `tt_clients` | Stationen der Domain, ohne die Knoten selbst und ohne das, was Gateways ankündigen (seit 29.10.2026) |
+| `tt_gateway` | von Gateways angekündigte Einträge, etwa die Uplink-MAC des DHCP-Checks |
 | `tt_eintraege` | alle Einträge der Tabelle |
 | `tt_originatoren` | Originatoren im Mesh, **etwa doppelt so viele wie Knoten**, weil jede Mesh-Schnittstelle einzeln zählt |
 | `tt_im_mesh` | verschiedene Knoten dahinter |

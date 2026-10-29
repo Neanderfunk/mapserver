@@ -19,8 +19,8 @@ Geschrieben wird in die Zeitreihen, im Influx-Zeilenformat:
 
   tt,domain=01_vel,sndomain=ffnefd01 clients=123,eintraege=769,knoten=44
 
-Daraus werden tt_clients, tt_eintraege, tt_knoten, tt_originatoren,
-tt_im_mesh und tt_dunkel.
+Daraus werden tt_clients, tt_eintraege, tt_knoten, tt_gateway,
+tt_originatoren, tt_im_mesh und tt_dunkel.
 
 Dunkle Knoten sind der zweite Grund fuer dieses Skript: batman-Knoten, die im
 Mesh mitreden, deren respondd aber nicht antwortet. Sie stehen auf keiner
@@ -81,6 +81,32 @@ def knoten_macs(community):
         netz = ((n.get('nodeinfo') or {}).get('network') or {})
         if netz.get('mac'):
             macs.add(netz['mac'].lower())
+        for iface in (netz.get('mesh') or {}).values():
+            for liste in (iface.get('interfaces') or {}).values():
+                for mac in liste or []:
+                    macs.add(mac.lower())
+    return macs
+
+
+def gateway_macs(community):
+    """Mesh-MACs der Gateways (Supernodes), also ihre Originatoren.
+
+    Was ein Gateway in der Uebersetzungstabelle ankuendigt, ist kein Client:
+    etwa die Uplink-Karte, mit der der DHCP-Check von Checkmk in jeder Domain
+    eine Lease holt (29.10.2026: 48 von 3579, je Domain eine), spaeter die
+    gemeinsame MAC fuer .0.2. Erkannt am Gateway-Flag, nicht an einem
+    MAC-Praefix, damit es Umbauten der Supernodes uebersteht.
+    """
+    pfad = f'{WEB}/{community}/alle/data/nodes.json'
+    macs = set()
+    try:
+        daten = json.load(open(pfad, encoding='utf-8'))
+    except (OSError, ValueError):
+        return macs
+    for n in daten.get('nodes') or []:
+        if not (n.get('flags') or {}).get('gateway'):
+            continue
+        netz = ((n.get('nodeinfo') or {}).get('network') or {})
         for iface in (netz.get('mesh') or {}).values():
             for liste in (iface.get('interfaces') or {}).values():
                 for mac in liste or []:
@@ -204,6 +230,7 @@ def main():
     zeigen = '--zeigen' in sys.argv
 
     knoten = knoten_macs(community)
+    gateways = gateway_macs(community)
     zuordnung = mesh_macs(community)
     bekannt = bekannte()
     dunkle = {}
@@ -214,7 +241,8 @@ def main():
         eintraege = tabelle(iface, ankuendiger)
         if not eintraege:
             continue
-        clients = eintraege - knoten
+        vom_gateway = {m for g in gateways for m in ankuendiger.get(g, [])}
+        clients = eintraege - knoten - vom_gateway
         # Die Domainnummer steckt vorn im Code (05_mon) und ist zugleich die
         # Nummer, unter der die Supernodes ihre Instanz melden (ffnefd05).
         nummer = d['code'].split('_')[0]
@@ -222,7 +250,8 @@ def main():
                                                  ankuendiger, d['code'], bekannt)
         zeilen.append(f'tt,domain={d["code"]},sndomain=ffnefd{nummer} '
                       f'clients={len(clients)}i,eintraege={len(eintraege)}i,'
-                      f'knoten={len(eintraege) - len(clients)}i,'
+                      f'knoten={len(eintraege & knoten)}i,'
+                      f'gateway={len(eintraege & vom_gateway - knoten)}i,'
                       f'originatoren={orig}i,im_mesh={im_mesh}i,dunkel={dunkel}i,'
                       f'ungeklaert={ungeklaert}i')
         if zeigen:

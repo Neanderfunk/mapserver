@@ -172,6 +172,36 @@ curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: witten.en.map.freifunk.space'
 ernst: dann routet eigener Verkehr durch ihr Mesh. `ip -6 route show proto ra`
 und die sysctl-Werte auf den bat-Instanzen prüfen, siehe `hintergrund.md`.
 
+## Stammdaten der Neanderfunk-Domains
+
+Seit 29.10.2026 sind die Stammdaten der Supernodes die eine Quelle für die
+Neanderfunk-Domains (adorfer, E2): `erzeugt/stammdaten.json` im Repo
+`neanderfunk/supernode/stammdaten`. `karte-stammdaten.timer` gleicht einmal am
+Tag ab (`sammler/stammdaten-uebernehmen.py`):
+
+- `domains.conf`, Zeilen der Community neander: port, mtu, broker, prefix6
+  und name (`langname`) kommen aus den Stammdaten. id, host, ordner und
+  prefix4 bleiben bei uns.
+- `sitecodes.conf` ganz aus `site_codes`.
+- Ein Tunnel startet neu, wenn Port oder MTU sich ändern oder ein Broker
+  wegfällt. Neue Namen oder site_codes erzeugen yanic- und
+  Kartenkonfiguration neu.
+- Neue Domains legt der Abgleich nicht an, verschwundene löscht er nicht.
+  Beides meldet Checkmk (`mapserver-Stammdaten`) als offenen Punkt.
+- Unbrauchbare Stammdaten ändern nichts; die Karte läuft mit dem letzten
+  guten Stand (`/var/lib/karte/stammdaten.json`) weiter.
+
+```
+# was sich aendern wuerde
+sudo karte-stammdaten --trocken
+# sofort abgleichen
+sudo systemctl start karte-stammdaten.service; journalctl -u karte-stammdaten -n 20
+```
+
+Die Kopien von `domains.conf` und `sitecodes.conf` im Repo können hinter dem
+Abgleich zurückliegen. `tunnel/einrichten.sh` legt deshalb nach dem
+Einspielen den letzten Stand wieder darüber.
+
 ## fastd-Domains
 
 Seit 25.09.2026 kann der Tunnel-Layer außer Tunneldigger auch fastd, erste

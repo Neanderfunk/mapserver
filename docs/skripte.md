@@ -18,7 +18,7 @@ in `betrieb.md`).
 | Skript | richtet ein |
 | --- | --- |
 | `tunnel/einrichten.sh` | Tunneldigger und fastd je Domain, batman-Instanzen, Hook, Wächter. **Schaltet alle Domains ein**, auch ruhende (EN); neue Domains einzeln einspielen. |
-| `sammler/einrichten.sh` | yanic je Community, Adressbuch, Clientzählung, Verlauf, Ziele für EN. |
+| `sammler/einrichten.sh` | yanic je Community, Adressbuch, Clientzählung, Verlauf, Ziele für EN, täglicher Abgleich mit den Stammdaten (`karte-stammdaten.timer`). |
 | `sammler/mesh-announce-einrichten.sh` | mesh-announce: die VM antwortet in jedem Mesh selbst per respondd. |
 | `sammler/unifi-einrichten.sh` | unifi_respondd mit Zuordnung AP → Router; setzt `/etc/unifi_respondd/zugang` voraus. |
 | `sammler/controller-tunnel.sh` | WireGuard-Peer an `wg-ctl` für einen UniFi-Controller hinter NAT; gibt die Client-Konfiguration aus. |

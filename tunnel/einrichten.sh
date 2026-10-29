@@ -60,6 +60,12 @@ echo "batman-adv: $(cat /sys/module/batman_adv/version 2>/dev/null || echo unbek
 echo "== Dateien =="
 install -d -m 0755 /etc/karte-en
 install -m 0644 "$HIER/domains.conf"    /etc/karte-en/domains.conf
+# Die neander-Zeilen gehoeren den Stammdaten. Die Kopie im Repo kann hinter
+# dem letzten Abgleich zurueckliegen, deshalb gleich wieder darueber legen.
+if [ -x /usr/local/sbin/karte-stammdaten ] && [ -f /var/lib/karte/stammdaten.json ]; then
+	/usr/local/sbin/karte-stammdaten --offline --ohne-anwenden ||
+		echo "Stammdaten nicht uebernommen, domains.conf ist die Kopie aus dem Repo" >&2
+fi
 install -m 0644 "$HIER/fastd.conf"      /etc/karte-en/fastd.conf
 
 # Je Community mit fastd-Domains ein eigener Schluessel, einmal erzeugt und

@@ -199,6 +199,35 @@ else
 fi
 echo "$zustand mapserver-Abschottung ra_routen=$ra;1;1|standardweg_bat=$standard;1;1|forwarding_an=$weiter;1;1 $text"
 
+# --- Stammdaten --------------------------------------------------------------
+# Taeglicher Abgleich mit den Stammdaten der Supernodes (karte-stammdaten,
+# sammler/stammdaten-uebernehmen.py). Ein gescheiterter Abruf aendert nichts,
+# die Karte laeuft mit dem letzten guten Stand weiter; deshalb erst nach zwei
+# verpassten Tagen WARN. Offene Punkte (neue oder verschwundene Domain)
+# brauchen Handarbeit und melden WARN.
+STAMM=${KARTE_STAMMDATEN_STAND:-/var/lib/karte/stammdaten-stand.json}
+if [ -f "$STAMM" ]; then
+    salter=$(alter_von "$STAMM")
+    set -- $(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(len(d.get("offen", [])), int(bool(d.get("angewendet"))), d.get("quelle", "")[7:19] or "-")' "$STAMM" 2>/dev/null || echo "0 0 -")
+    soffen=$1 sok=$2 squelle=$3
+    if systemctl is-failed -q karte-stammdaten.service; then
+        zustand=1; text="letzter Lauf fehlgeschlagen, journalctl -u karte-stammdaten"
+    elif [ "$salter" -gt 345600 ]; then
+        zustand=2; text="Stand seit $((salter / 86400)) Tagen nicht erneuert"
+    elif [ "$salter" -gt 172800 ]; then
+        zustand=1; text="Stand seit $((salter / 3600)) Stunden nicht erneuert"
+    elif [ "$sok" != 1 ]; then
+        zustand=1; text="Anwenden teilweise fehlgeschlagen, journalctl -u karte-stammdaten"
+    elif [ "$soffen" -gt 0 ]; then
+        zustand=1; text="$soffen offene Punkte: $(python3 -c 'import json,sys; print("; ".join(json.load(open(sys.argv[1]))["offen"]))' "$STAMM")"
+    else
+        zustand=0; text="Stand $squelle, uebernommen"
+    fi
+    echo "$zustand mapserver-Stammdaten alter_s=$salter;172800;345600|offen=$soffen;1;1 $text"
+else
+    echo "1 mapserver-Stammdaten - noch kein Abgleich gelaufen (karte-stammdaten)"
+fi
+
 # --- Batman ------------------------------------------------------------------
 # L2TP-Schnittstellen sind die Gegenprobe zu den Diensten: eine je Domain.
 # Die Versionen von batctl und Kernelmodul stehen nur als Text da. Debian baut

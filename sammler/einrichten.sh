@@ -69,7 +69,13 @@ install -m 0755 "$HIER/verlauf.py" /usr/local/sbin/karte-verlauf
 install -m 0644 "$HIER/systemd/karte-verlauf.service" "$HIER/systemd/karte-verlauf.timer" /etc/systemd/system/
 install -d -m 0755 -o yanic -g www-data /var/lib/karte/adressbuch /var/www/karte-en/api
 [ -f /etc/karte-en/sitecodes.conf ] || install -m 0644 "$HIER/sitecodes.conf" /etc/karte-en/sitecodes.conf
+# Neanderfunk-Domains und site_codes aus den Stammdaten, taeglich (adorfer
+# 29.10.2026, E2). Ueberschreibt die neander-Zeilen in domains.conf und die
+# ganze sitecodes.conf, siehe stammdaten-uebernehmen.py.
+install -m 0755 "$HIER/stammdaten-uebernehmen.py" /usr/local/sbin/karte-stammdaten
+install -m 0644 "$HIER/systemd/karte-stammdaten.service" "$HIER/systemd/karte-stammdaten.timer" /etc/systemd/system/
 systemctl daemon-reload
+systemctl enable --now karte-stammdaten.timer
 
 # Communities im Standby (/etc/karte-en/standby.conf) bleiben aus; bis
 # 25.10.2026 schaltete jeder Lauf yanic@en wieder ein.

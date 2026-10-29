@@ -247,6 +247,11 @@ grep -v '^#' "$KONF" | grep . | while read -r community code _ _ _ host _; do
     grep -q "^$code[[:space:]]\+WARTET" "$RUHEND" 2>/dev/null && wartet=1
     if [ "$ruht" = 1 ] && [ "$wartet" = 1 ] && [ "$nachbarn" -gt 0 ]; then
         zustand=1; text="wartete, jetzt verbunden: $nachbarn Nachbarn, $orig Originatoren, $on Knoten - Zeile aus ruhend.conf nehmen"
+    elif [ "$ruht" = 1 ] && [ "$wartet" = 0 ] && [ "$on" -gt 0 ]; then
+        # Ruhend heisst "keine Knoten erwartet", etwa eine aktive Domain, deren
+        # Firmware noch aussteht (25 bis 29, adorfer 29.10.2026). Sind Knoten
+        # da, gehoert die Domain normal ueberwacht.
+        zustand=1; text="ruhende Domain hat $on Knoten online - Zeile aus ruhend.conf nehmen"
     elif [ "$ruht" = 1 ]; then
         zustand=0; text="ruhende Domain, $orig Originatoren, $on Knoten"
     elif { [ "$nachbarn" -eq 0 ] || [ "$orig" -eq 0 ]; } && [ "$tlaeuft" -lt "$SCHONFRIST" ]; then

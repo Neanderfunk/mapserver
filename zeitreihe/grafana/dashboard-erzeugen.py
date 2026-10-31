@@ -278,21 +278,26 @@ PANELS = KOPF + [
 # Ein Supernode ist kein Knoten wie die anderen: kein WLAN, keine Airtime,
 # keine Clients an ihm selbst. Interessant ist, was an ihm haengt. Je Domain
 # tritt er als eigener Knoten auf (hostname <name>_<domain>, node_id
-# f2beef00<dd><nn>), deshalb waehlt die Variable den Hostnamen.
+# f2beef00<dd><nn>). Die Variable zeigt den Hostnamen, waehlt aber die node_id:
+# der Hostname ist ein Label, eine Umbenennung ergaebe neue Reihen und einen
+# zweiten Eintrag, die node_id haelt den Verlauf zusammen. topk nimmt je
+# node_id nur den zuletzt gemeldeten Namen.
 #
 # KANTE bildet die Kanten auf die node_id der Gegenstelle ab. Damit lassen
 # sich Werte der angebundenen Knoten summieren, ohne eine Liste zu pflegen:
 # "* 0 + 1" macht aus der Kante einen Faktor 1.
-KANTE = ('label_replace(last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m]),'
+KANTE = ('label_replace(last_over_time({__name__="link_tq", "target.id"="$sn"}[15m]),'
          ' "nodeid", "$1", "source.id", "(.*)")')
 DAHINTER = '%s * on(nodeid) group_left() (' + KANTE + ' * 0 + 1)'
 
+INSTANZEN = ('query_result(topk by (nodeid) (1, max by (hostname, nodeid) ('
+             'tlast_over_time(node_load{is_gateway="true"}[$__range]))))')
+
 SUPERNODE_VARIABLEN = [
     {'name': 'sn', 'label': 'Supernode', 'type': 'query', 'datasource': QUELLE,
-     'query': {'qryType': 1,
-               'query': 'label_values(node_load{is_gateway="true"}, hostname)',
-               'refId': 'sn'},
-     'definition': 'label_values(node_load{is_gateway="true"}, hostname)',
+     'query': {'qryType': 3, 'query': INSTANZEN, 'refId': 'sn'},
+     'definition': INSTANZEN,
+     'regex': '/hostname="(?<text>[^"]+)".*nodeid="(?<value>[^"]+)"/',
      'refresh': 1, 'sort': 1, 'includeAll': False, 'multi': False,
      'current': {}, 'options': []},
 ]
@@ -301,7 +306,7 @@ SUPERNODE_KOPF = [
     {
         'id': 100, 'title': 'Supernode', 'type': 'table', 'datasource': QUELLE,
         'gridPos': {'h': 5, 'w': 17, 'x': 0, 'y': 0},
-        'targets': [dict(ziel('last_over_time({__name__="node_load", hostname="$sn"}[6h])',
+        'targets': [dict(ziel('last_over_time({__name__="node_load", nodeid="$sn"}[6h])',
                               '', 'A'), instant=True, range=False, format='table')],
         'transformations': [
             {'id': 'organize', 'options': {
@@ -319,7 +324,7 @@ SUPERNODE_KOPF = [
     {
         'id': 101, 'title': 'Knoten an dieser Instanz', 'type': 'stat', 'datasource': QUELLE,
         'gridPos': {'h': 5, 'w': 7, 'x': 17, 'y': 0},
-        'targets': [dict(ziel('count(last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m]))',
+        'targets': [dict(ziel('count(last_over_time({__name__="link_tq", "target.id"="$sn"}[15m]))',
                               'Knoten', 'A'), instant=True, range=False)],
         'fieldConfig': {'defaults': {'decimals': 0, 'thresholds': {'mode': 'absolute', 'steps': [
             {'color': 'red', 'value': None}, {'color': 'green', 'value': 1}]}}, 'overrides': []},
@@ -330,7 +335,7 @@ SUPERNODE_KOPF = [
 
 SUPERNODE_PANELS = SUPERNODE_KOPF + [
     panel(1, 'Angebundene Knoten', [
-        ziel('count(last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m]))',
+        ziel('count(last_over_time({__name__="link_tq", "target.id"="$sn"}[15m]))',
              'Knoten', 'A'),
     ], 0, 5, min_=0,
         beschreibung='Kanten zu dieser Instanz. Fällt die Zahl, hat der Supernode Knoten verloren.'),
@@ -345,7 +350,7 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
         ziel('sum(label_replace(last_over_time(tt_clients[15m]),'
              ' "dnum", "$1", "domain", "([0-9]+)_.*")'
              ' * on(dnum) group_left() (max by (dnum) (label_replace('
-             'last_over_time({__name__="node_load", hostname="$sn"}[15m]),'
+             'last_over_time({__name__="node_load", nodeid="$sn"}[15m]),'
              ' "dnum", "$1", "domain", "[^0-9]*([0-9]+).*")) * 0 + 1))',
              'laut Übersetzungstabelle', 'B'),
     ], 12, 5, min_=0,
@@ -355,15 +360,15 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
                      'Minuten nach dem Abmelden. Untergrenze und Obergrenze also.'),
 
     panel(3, 'Verkehr der Instanz', [
-        ziel('sum(rate({__name__="node_traffic.forward.bytes", hostname="$sn"}[$__rate_interval])) * 8',
+        ziel('sum(rate({__name__="node_traffic.forward.bytes", nodeid="$sn"}[$__rate_interval])) * 8',
              'weitergereicht', 'A'),
-        ziel('sum(rate({__name__="node_traffic.rx.bytes", hostname="$sn"}[$__rate_interval])) * 8',
+        ziel('sum(rate({__name__="node_traffic.rx.bytes", nodeid="$sn"}[$__rate_interval])) * 8',
              'empfangen', 'B'),
-        ziel('sum(rate({__name__="node_traffic.tx.bytes", hostname="$sn"}[$__rate_interval])) * 8',
+        ziel('sum(rate({__name__="node_traffic.tx.bytes", nodeid="$sn"}[$__rate_interval])) * 8',
              'gesendet', 'C'),
-        ziel('sum(rate({__name__="node_traffic.mgmt_rx.bytes", hostname="$sn"}[$__rate_interval])) * 8',
+        ziel('sum(rate({__name__="node_traffic.mgmt_rx.bytes", nodeid="$sn"}[$__rate_interval])) * 8',
              'Verwaltung empfangen', 'D'),
-        ziel('sum(rate({__name__="node_traffic.mgmt_tx.bytes", hostname="$sn"}[$__rate_interval])) * 8',
+        ziel('sum(rate({__name__="node_traffic.mgmt_tx.bytes", nodeid="$sn"}[$__rate_interval])) * 8',
              'Verwaltung gesendet', 'E'),
     ], 0, 13, einheit='bps', min_=0,
         beschreibung='Weitergereicht ist bei einem Supernode der eigentliche Wert.'),
@@ -382,26 +387,26 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
                      'der Instanz ist Mesh-Verkehr, der nie zum Supernode läuft.'),
 
     panel(5, 'Linkqualität zu den Knoten', [
-        ziel('min(last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m]))', 'schlechteste', 'A'),
-        ziel('avg(last_over_time({__name__="link_tq", "target.hostname"="$sn"}[15m]))', 'Mittel', 'B'),
+        ziel('min(last_over_time({__name__="link_tq", "target.id"="$sn"}[15m]))', 'schlechteste', 'A'),
+        ziel('avg(last_over_time({__name__="link_tq", "target.id"="$sn"}[15m]))', 'Mittel', 'B'),
     ], 0, 21, einheit='percent', min_=0,
         beschreibung='TQ über alle Kanten. Fällt das Minimum, hat ein Knoten eine schlechte Anbindung.'),
 
     panel(6, 'Last der Maschine', [
-        ziel('max({__name__="node_load", hostname="$sn"})', 'loadavg', 'A'),
-        ziel('max({__name__="node_proc.running", hostname="$sn"})', 'laufende Prozesse', 'B'),
+        ziel('max({__name__="node_load", nodeid="$sn"})', 'loadavg', 'A'),
+        ziel('max({__name__="node_proc.running", nodeid="$sn"})', 'laufende Prozesse', 'B'),
     ], 12, 21, min_=0,
         beschreibung='Gilt für die ganze Maschine, nicht für diese Domaininstanz: alle '
                      '48 respondd-Instanzen eines Supernodes melden dieselben Systemwerte.'),
 
     panel(7, 'Speicher der Maschine', [
-        ziel('max({__name__="node_memory.available", hostname="$sn"}) * 1024', 'verfügbar', 'A'),
-        ziel('max({__name__="node_memory.total", hostname="$sn"}) * 1024', 'gesamt', 'B'),
+        ziel('max({__name__="node_memory.available", nodeid="$sn"}) * 1024', 'verfügbar', 'A'),
+        ziel('max({__name__="node_memory.total", nodeid="$sn"}) * 1024', 'gesamt', 'B'),
     ], 0, 29, einheit='bytes', min_=0,
         beschreibung='Ebenfalls maschinenweit, siehe nebenan.'),
 
     panel(8, 'Laufzeit', [
-        ziel('max({__name__="node_time.up", hostname="$sn"})', 'Laufzeit', 'A'),
+        ziel('max({__name__="node_time.up", nodeid="$sn"})', 'Laufzeit', 'A'),
     ], 12, 29, einheit='s',
         beschreibung='Ein Sprung nach unten ist ein Neustart der Maschine, nicht nur '
                      'dieser Instanz (23.09.2026 um 22:42 alle sechs, wegen batman-adv 2026.3).'),
@@ -411,7 +416,7 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
         'description': 'Momentaufnahme mit Linkqualität, absteigend nach TQ.',
         'gridPos': {'h': 10, 'w': 24, 'x': 0, 'y': 37},
         'targets': [dict(ziel(kurzname('last_over_time({__name__="link_tq",'
-                              ' "target.hostname"="$sn"}[15m])', 'source.hostname'),
+                              ' "target.id"="$sn"}[15m])', 'source.hostname'),
                               '', 'A'), instant=True, range=False, format='table')],
         'transformations': [
             {'id': 'organize', 'options': {
@@ -625,7 +630,7 @@ def verteilung(label, filter_, leer='unbekannt'):
 
 def supernodes():
     """Supernodes selbst, nicht ihre Instanzen: je Domain läuft auf einem
-    Supernode eine Instanz, Hostname <supernode>_ffnefdNN."""
+    Supernode eine Instanz, Hostname <supernode>_<domain_code>."""
     return ('count(count by (supernode) (label_replace(%s, "supernode", "$1", '
             '"hostname", "([^_]+)_.*")))' % jetzt('node_load', GATEWAY))
 

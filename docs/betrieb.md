@@ -957,7 +957,9 @@ stehen Tagesbilanzen als Balken, freie Zeiträume und die Werte aus
   Supernode (`nf-supernode`) und Community (`nf-community`, Gesamtsicht,
   verlinkt oben im Reiter Statistik der Karte). In der Gesamtsicht zählt
   der Verkehr nur auf Seite der Gluon-Knoten; die Gateways stehen nur in der
-  Gegenprobe, zusammengezählt wäre es verdoppelt.
+  Gegenprobe, zusammengezählt wäre es verdoppelt. Das Supernode-Dashboard
+  wählt die Instanz über die `node_id` und zeigt nur den Hostnamen, damit der
+  Verlauf eine Umbenennung übersteht.
   Änderungen in der Oberfläche sind nicht möglich und wären beim nächsten Lauf
   weg.
 - nginx reicht `/grafana/` **ohne** Schrägstrich am Ende weiter

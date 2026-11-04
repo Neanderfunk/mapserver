@@ -48,7 +48,7 @@ SITE_KONF = '/etc/karte-en/sitecodes.conf'
 ZUGANG = '/etc/unifi_respondd/zugang'
 WEITERE = '/etc/unifi_respondd/controller'
 ZUORDNUNG = '/var/lib/karte/unifi-zuordnung.json'
-KARTE = 'https://neander.map.freifunk.space/data/meshviewer.json'
+KARTE = 'https://karte.neanderfunk.de/data/meshviewer.json'
 
 
 def sitecodes(pfad=SITE_KONF):

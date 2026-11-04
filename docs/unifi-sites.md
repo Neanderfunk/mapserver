@@ -456,7 +456,7 @@ Einrichtung (`<ort>-<einrichtung>`), damit die Rechte getrennt bleiben.
   beantwortet die klassischen Pfade (`/api/login`, `/api/s/<site>/...`), also
   `v5`.
 - **`nodelist`** auf unsere Karte:
-  `https://neander.map.freifunk.space/data/meshviewer.json`. Daraus erbt jeder
+  `https://karte.neanderfunk.de/data/meshviewer.json`. Daraus erbt jeder
   AP Domain und Gateway seines Offloaders.
 
 ### Ohne Koordinaten: in Liste und Graph, nicht auf der Karte

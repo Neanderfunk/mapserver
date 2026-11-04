@@ -151,14 +151,15 @@ außerhalb der VM eine Application in Authentik (idm.ffnef.de), angelegt von
 adorfer am 26.09.2026:
 
 - Proxy-Provider "Neanderfunk Map", Modus **Forward auth (single
-  application)**, External host `https://neander.map.freifunk.space`
+  application)**, External host `https://karte.neanderfunk.de` (bis 05.11.2026
+  `https://neander.map.freifunk.space`)
 - Application `neanderfunk-mapserver` mit diesem Provider, am **Embedded
   Outpost**; wer darf, regelt eine Bindung (Gruppe) an der Application
 - Probe von der VM: der Outpost antwortet für den Host mit 401 (bekannt,
   nicht angemeldet), für einen unbekannten Host mit 404:
   ```bash
   curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: idm.ffnef.de' \
-    -H 'X-Forwarded-Host: neander.map.freifunk.space' \
+    -H 'X-Forwarded-Host: karte.neanderfunk.de' \
     https://idm.ffnef.de/outpost.goauthentik.io/auth/nginx
   ```
 
@@ -171,5 +172,5 @@ Auf der VM, in dieser Reihenfolge:
    `SupplementaryGroups=yanic` und Schreibrecht auf das Verzeichnis, sonst
    bleiben Löschaufträge liegen ("Auftrag nicht loeschbar" im Journal).
 3. `sudo ./web/einrichten.sh`: meshviewer mit Zahnrad, nginx mit Anmeldung
-   nur im Vhost `neander.map.freifunk.space`.
+   nur im Vhost `karte.neanderfunk.de`.
 

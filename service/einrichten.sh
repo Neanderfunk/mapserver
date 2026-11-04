@@ -4,7 +4,7 @@
 # Richtet das Service-Menue der neander-Karte ein (service.py). Auf der
 # Karten-VM als root: sudo ./einrichten.sh
 # Die Anmeldung davor erledigt nginx per auth_request beim Authentik-Outpost
-# (web/konfig-erzeugen.py, nur der Vhost neander.map.freifunk.space).
+# (web/konfig-erzeugen.py, nur der Vhost der Gesamtkarte karte.neanderfunk.de).
 set -euo pipefail
 HIER=$(cd "$(dirname "$0")" && pwd)
 [ "$(id -u)" = 0 ] || { echo "Bitte als root starten." >&2; exit 1; }

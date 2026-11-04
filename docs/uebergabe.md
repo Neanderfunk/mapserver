@@ -39,11 +39,11 @@ Neanderfunk nicht mehr; ausgenommen sind nur LVR und die Ersatzkarten
 | Name | zeigt auf |
 | --- | --- |
 | `karte.neanderfunk.de` | Gesamtkarte der 48 Neanderfunk-Domains, kanonisch |
-| `lvr.map.ffnef.de` | Sammelkarte LVR-HPH, Domains 11 und 31 bis 36 |
+| `lvr.karte.neanderfunk.de` | Sammelkarte LVR-HPH, Domains 11 und 31 bis 36 |
 | `map.ffnef.de` (bis 04.11.2026 abends kanonisch), `map.neanderfunk.de`, `karte.ffdus.de`, `map.ffdus.de`, `karte.ffnef.de`, `map1.ffdus.de`, `map.eulenfunk.de`, `map.freifunk-siegerland.de`, `map.gl.wupper.ffrl.de`, `map.leichlingen.freifunk.net` und alle Subdomains darunter | `301` auf `karte.neanderfunk.de` |
-| `lvr.karte.neanderfunk.de`, `lvr.karte.ffnef.de`, `lvr.map.eulenfunk.de`, `nef11lvr` und `nef31lvrno` bis `nef36lvrsw` unter `karte.neanderfunk.de`, `lvr.neander.map.freifunk.space` | `301` auf `lvr.map.ffnef.de` |
+| `lvr.map.ffnef.de` (bis 05.11.2026 kanonisch), `lvr.karte.ffnef.de`, `lvr.map.eulenfunk.de`, `nef11lvr` und `nef31lvrno` bis `nef36lvrsw` unter `karte.neanderfunk.de`, `lvr.neander.map.freifunk.space` | `301` auf `lvr.karte.neanderfunk.de` |
 | `<ort>.neander.map.freifunk.space` | fruehere Ortskarten, `301` auf `karte.neanderfunk.de` |
-| `neander.map.freifunk.space` | Gesamtkarte mit `Link: rel=canonical` auf `karte.neanderfunk.de`; bleibt fuer Grafana, `/nf/` und das Service-Menue |
+| `neander.map.freifunk.space` | seit 05.11.2026 `301` auf `karte.neanderfunk.de`, fuer `/nf/` und `/grafana/` `308`; Grafana, `/nf/` und das Service-Menue liegen unter `karte.neanderfunk.de` |
 | `essen.map.freifunk.space` | Not-Karte Freifunk Essen |
 | `en.map.freifunk.space`, `<ort>.en.map.freifunk.space` | ruhend, `301` auf `map.ff-en.de` |
 | `map.freifunk.space`, `map6.freifunk.space` | Vorgabeseite mit der Kartenliste, darunter `/data/<community>/` |
@@ -131,11 +131,6 @@ Naechste Schritte, die feststehen:
   mit nennenswert vielen Aufrufen ins Zertifikat `karte.neanderfunk.de`
   (84 von 100). Die vier `www.`-Namen vom 04.11. waren Scanner und bleiben
   draussen.
-- **`neander.map.freifunk.space` abloesen.** Grafana, `/nf/` (targets.json,
-  prom, Kennzahlen, Service-Menue) und die Links darauf in der
-  Kartenkonfiguration (`ZEITREIHE_URL`, `serviceLink`, `GESAMTSICHT`) auf Pfade
-  unter `karte.neanderfunk.de` ziehen, Authentik (External host) mit. Danach leitet der
-  Name wie alle anderen um. Bis dahin genuegt `rel=canonical`.
 - **Verzeichnisse der abgeschalteten Ortskarten** (`sites/neander/<host>/`)
   liegen noch auf der VM, werden aber nicht mehr ausgeliefert. Loeschen nur
   auf Zuruf.

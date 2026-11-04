@@ -234,7 +234,10 @@ VEREINSLINKS = [{'title': titel, 'href': 'https://neanderfunk.de/' + seite + '/'
 #   - rate() wirft den Metriknamen weg, danach sind rx und tx nicht mehr
 #     unterscheidbar ("duplicate output timeseries"); keep_metric_names haelt
 #     ihn fest, das ist eine Erweiterung von VictoriaMetrics
-ZEITREIHE_URL = 'https://neander.map.freifunk.space/nf/prom'
+# Grafana, /nf/ und das Service-Menue unter dem Namen der Gesamtkarte; bis
+# 05.11.2026 hingen sie an neander.map.freifunk.space, das jetzt umleitet
+DIENSTE = 'https://karte.neanderfunk.de'
+ZEITREIHE_URL = DIENSTE + '/nf/prom'
 
 # Alle Abfragen fassen zusammen (max by / sum by): yanic haengt Labels wie die
 # Frequenz oder die Firmwareversion an jeden Punkt, und jede Aenderung daran
@@ -347,14 +350,14 @@ ZEITRAEUME = [
 VERTIEFUNG = [{
     'name': 'Grafana',
     'title': 'Ausführliche Statistik (Grafana)',
-    'href': 'https://neander.map.freifunk.space/grafana/d/nf-knoten/knoten'
+    'href': 'https://karte.neanderfunk.de/grafana/d/nf-knoten/knoten'
             '?var-node={NODE_ID}&from=now-30d&to=now',
 }]
 
 
 # Oben im Reiter Statistik: die Gesamtsicht in Grafana, auf einer Ortskarte
 # gleich mit deren Domain ausgewaehlt. Braucht den Fork (statisticsLinks).
-GESAMTSICHT = ('https://neander.map.freifunk.space/grafana/d/nf-community/community'
+GESAMTSICHT = ('https://karte.neanderfunk.de/grafana/d/nf-community/community'
                '?var-domain=%s&from=now-30d&to=now')
 
 
@@ -428,10 +431,10 @@ def konfig(titel, pfad, alle):
             # auch von den Ortskarten aus auf die Gesamtkarte, nur dort gibt es
             # das Menue
             'serviceLink': {'title': 'Service (Anmeldung)',
-                            'href': 'https://neander.map.freifunk.space/nf/service/?node={NODE_ID}'},
+                            'href': DIENSTE + '/nf/service/?node={NODE_ID}'},
             # Zahnrad gelb, wenn Name oder Ort per Override kommen (Fork,
             # serviceOverrides; adorfer 04.10.2026)
-            'serviceOverrides': 'https://neander.map.freifunk.space/nf/overrides.json',
+            'serviceOverrides': DIENSTE + '/nf/overrides.json',
             # Links oben unter den Zahlen, wie auf der Karte von Freifunk EN
             # (adorfer 01.10.2026)
             'linkList': VEREINSLINKS}
@@ -748,6 +751,12 @@ server {
 		return 301 $karte_daten_%(community)s$datei.json;
 	}
 
+	# Dienste mit 308: POST (Prometheus-API, Service-Menue) bleibt POST, ein
+	# 301 machte daraus in curl und Browsern ein GET
+	location ~ ^/(nf|grafana)/ {
+		return 308 https://%(ziel)s$request_uri;
+	}
+
 	location / {
 		return 301 https://%(ziel)s$request_uri;
 	}
@@ -809,9 +818,11 @@ DATENPFAD = """
 """
 
 
-def startseite(ziele):
+def startseite(ziele, namen=None):
     zeilen = []
-    for _pfad, titel, fqdn, _seine in ziele:
+    for pfad, titel, fqdn, _seine in ziele:
+        # Der erste weitere Name ist der kanonische, der eigene leitet dann um
+        fqdn = ((namen or {}).get(pfad) or [fqdn])[0]
         zeilen.append(f'    <li><a href="https://{fqdn}/">{titel}</a> '
                       f'<span class="n">{fqdn}</span></li>')
     return """<!doctype html>
@@ -898,16 +909,11 @@ def main():
         servername = fqdn + extra
         kanonisch = ''
         if g in ORTSKARTEN_AUS and namen.get(pfad):
-            if ort == 'alle':
-                # Bleibt erreichbar, weil Grafana, /nf/ und das Service-Menue
-                # unter diesem Namen haengen; fuer Suchmaschinen gilt der
-                # erste weitere Name (karte.neanderfunk.de)
-                kanonisch = ('\t\tadd_header Link "<https://%s/>; rel=\\"canonical\\"";\n'
-                             % namen[pfad][0])
-            else:
-                # Sammelkarte: der eigene Name leitet auf den weiteren um
-                servername = ' '.join(namen[pfad])
-                umleiten.setdefault(pfad, []).append(fqdn)
+            # Eine Karte, ein Name: der eigene Name (neander.map.freifunk.space,
+            # lvr.neander...) leitet auf den ersten weiteren um. Grafana, /nf/
+            # und das Service-Menue sind seit 05.11.2026 unter dem neuen Namen.
+            servername = ' '.join(namen[pfad])
+            umleiten.setdefault(pfad, []).append(fqdn)
         site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'namen': extra, 'host': pfad,
                              'servername': servername, 'kanonisch': kanonisch,
                              'web': WEB, 'vorgabe': '', 'api': api, 'service': service,
@@ -935,7 +941,7 @@ def main():
 
     os.makedirs(INDEX, exist_ok=True)
     with open(f'{INDEX}/index.html', 'w', encoding='utf-8') as f:
-        f.write(startseite([z for z in ziele if z[0].split('/')[0] not in ruht]))
+        f.write(startseite([z for z in ziele if z[0].split('/')[0] not in ruht], namen))
     print(f'  {INDEX}/index.html als Vorgabe-Vhost')
     return 0
 

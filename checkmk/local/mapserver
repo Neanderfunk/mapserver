@@ -315,7 +315,7 @@ else
 fi
 
 # --- Adressbuch fuer Sammler ausserhalb --------------------------------------
-# https://neander.map.freifunk.space/nf/targets.json, alle zwei Minuten neu.
+# https://karte.neanderfunk.de/nf/targets.json, alle zwei Minuten neu.
 # Die Paketfeed-Session loest damit node_id in aktuelle Adressen auf.
 for datei in "$WEB"/api/*/targets.json; do
     [ -f "$datei" ] || continue

@@ -48,7 +48,7 @@ je Domain und je Sammelkarte in `sites/neander/alle/data/<code>/` bzw.
 
 Eine Karte, ein Name (adorfer 04.11.2026): Suchmaschinen werten dieselbe Seite
 unter vielen Namen als doppelten Inhalt ab. Für Neanderfunk gibt es nur
-`karte.neanderfunk.de` (alles) und `lvr.map.ffnef.de` (LVR); Ortskarten zum Ansehen
+`karte.neanderfunk.de` (alles) und `lvr.karte.neanderfunk.de` (LVR); Ortskarten zum Ansehen
 nicht mehr. Die Tabelle aller Namen steht in `uebergabe.md`.
 
 - **`web/namen.conf`** (VM: `/etc/karte-en/namen.conf`): je Zeile ein Pfad
@@ -71,9 +71,11 @@ nicht mehr. Die Tabelle aller Namen steht in `uebergabe.md`.
   `sammler/yanic-conf.py`: Communities ohne Ortskarten (`neander`). yanic
   schreibt für deren Domains nur die Daten unter `alle/data/<code>/`, keine
   `meshviewer.json` für eine Karte.
-- `neander.map.freifunk.space` bleibt erreichbar, weil Grafana, `/nf/` und
-  das Service-Menü daran hängen, und schickt `Link: <https://karte.neanderfunk.de/>;
-  rel="canonical"`.
+- `neander.map.freifunk.space` und `lvr.neander.map.freifunk.space` leiten
+  seit 05.11.2026 ebenfalls um. Grafana, `/nf/` und das Service-Menü liegen
+  seither unter `karte.neanderfunk.de`. Für `/nf/` und `/grafana/` antworten
+  alle alten Namen mit `308` statt `301`, damit ein POST (Prometheus-API,
+  Service-Menü) ein POST bleibt.
 
 Nach einer Änderung: `karte-en-konfig`, `nginx -t`, `systemctl reload nginx`;
 bei `gruppen.conf` oder `ORTSKARTEN_AUS` zusätzlich `systemctl restart
@@ -308,7 +310,7 @@ wir für andere ein dunkler Knoten sind").
 
 Seit 26.09.2026, nur für die neander-Karte: ein kleines Zahnrad neben dem
 Knotennamen im Knotenfenster führt auf
-`https://neander.map.freifunk.space/nf/service/?node=<node_id>`, auch von
+`https://karte.neanderfunk.de/nf/service/?node=<node_id>`, auch von
 `karte.neanderfunk.de` und der LVR-Karte aus. Ohne Anmeldung geht es zu Authentik (idm.ffnef.de,
 Application `neanderfunk-mapserver`, Proxy-Provider "Neanderfunk Map",
 Forward auth single application, Embedded Outpost); wer darf, regelt die
@@ -526,7 +528,7 @@ täglich um 03:20 aus VictoriaMetrics:
 
 ### Adressbuch
 
-`https://neander.map.freifunk.space/nf/targets.json`, node_id auf aktuelle
+`https://karte.neanderfunk.de/nf/targets.json`, node_id auf aktuelle
 Adressen. Die node_id bleibt, das öffentliche Präfix wandert mit dem
 Supernode.
 
@@ -551,7 +553,7 @@ Supernode.
 
 ### Zeitreihen
 
-`https://neander.map.freifunk.space/nf/prom/api/v1/...`, Prometheus-API von
+`https://karte.neanderfunk.de/nf/prom/api/v1/...`, Prometheus-API von
 VictoriaMetrics. Freigegeben sind nur `query`, `query_range`, `series`,
 `labels`, `label/<name>/values`, `export`, `status/tsdb` und `federate`, alles
 andere unter `/nf/prom/` gibt 403.
@@ -561,7 +563,7 @@ andere unter `/nf/prom/` gibt 403.
   `<measurement>_<feld>`, etwa `node_memory.available`, `node_time.up`,
   `node_load`, `link_tq`; Labels u.a. `nodeid`, `hostname`, `site`, `domain`,
   `model`, `firmware_release`, `db` (= Community).
-- Beispiel: `curl -s 'https://neander.map.freifunk.space/nf/prom/api/v1/query' --data-urlencode 'query={__name__="node_memory.available",nodeid="bc7ec351c4a4"}'`
+- Beispiel: `curl -s 'https://karte.neanderfunk.de/nf/prom/api/v1/query' --data-urlencode 'query={__name__="node_memory.available",nodeid="bc7ec351c4a4"}'`
   (Metriknamen mit Punkt gehen nur über `__name__`).
 - **Neanderfunk-Felder** aus `statistics.neanderfunk` (Paket
   neanderfunk-respondd) liest yanic erst durch den Commit "statistics.neanderfunk" im Fork
@@ -936,7 +938,7 @@ fragte dafür aus dem Browser jeder Besucherin direkt bei
 `konfig-erzeugen.py`). Weiter gehen nur Breite und Länge auf 5
 Nachkommastellen und die Sprache, Cache 30 Tage in `/var/cache/nginx/karte-geo`,
 höchstens eine Anfrage je Sekunde an Nominatim. Probe:
-`curl -sI 'https://neander.map.freifunk.space/nf/ort/reverse?lat=51.2506&lon=6.9746'`
+`curl -sI 'https://karte.neanderfunk.de/nf/ort/reverse?lat=51.2506&lon=6.9746'`
 (zweimal: `X-Cache-Status: HIT`).
 
 ### Erstsichtung aus der alten Karte
@@ -1028,7 +1030,7 @@ Unterscheiden lassen sie sich an dem, was sie tun:
 | in vielen Domains zugleich | keine Ortsinstallation, sondern etwas Betriebliches |
 | taucht auf und verschwindet, ohne je etwas anzukündigen | Fall 4 |
 
-Die Liste steht unter `https://neander.map.freifunk.space/nf/dunkel.json`, mit
+Die Liste steht unter `https://karte.neanderfunk.de/nf/dunkel.json`, mit
 erster und letzter Sichtung, den Domains, der Zahl der Ankündigungen und dem
 nächsten Schritt dorthin. `aktuell` sagt, ob der Eintrag gerade sichtbar ist;
 die meisten sind Kurzauftritte von wenigen Stunden. Nach einem Monat ohne
@@ -1050,7 +1052,7 @@ nur darauf schlägt der Check an.
 
 ### Grafana
 
-`https://neander.map.freifunk.space/grafana/`, verlinkt aus dem Knotenfenster
+`https://karte.neanderfunk.de/grafana/`, verlinkt aus dem Knotenfenster
 (`VERTIEFUNG` in `web/konfig-erzeugen.py`, Platzhalter `{NODE_ID}`). Dort
 stehen Tagesbilanzen als Balken, freie Zeiträume und die Werte aus
 `neanderfunk-respondd`.

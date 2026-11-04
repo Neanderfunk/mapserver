@@ -45,7 +45,7 @@ import tempfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, urlparse
 
-KARTE = 'https://neander.map.freifunk.space'
+KARTE = 'https://karte.neanderfunk.de'
 BASIS = '/nf/service/'
 DATEN = '/var/www/karte-en/sites/neander/alle/data/meshviewer.json'
 ORDNER = '/var/lib/karte/service'

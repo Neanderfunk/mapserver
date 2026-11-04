@@ -148,7 +148,7 @@ Snapshot über die Verwaltungsfunktion (Schlüssel in `geheim.env`).
 | UniFi-Controller hinter NAT | Gegenstellen bauen WireGuard zu uns auf (Port 51820, IPv6 direkt, IPv4 per Portweiterleitung am Proxy) | Endpoint in jeder Gegenstelle bzw. die Weiterleitung anpassen |
 | UniFi-Haupt-Controller | direkt per HTTPS erreichbar | nichts |
 | Checkmk | Server holt per Legacy-Pull (Port 6556) | Host-Adresse im Checkmk anpassen; Freigabe vor der VM |
-| Service-Menü | Authentik (Forward auth, Name `neander.map.freifunk.space`) | nichts, solange der Name bleibt |
+| Service-Menü | Authentik (Forward auth, Name `karte.neanderfunk.de`) | nichts, solange der Name bleibt |
 | Ortsnamen in der Standortwahl | `/nf/ort/` reicht an einen Nominatim-Dienst weiter | nichts |
 | Filter vor der VM | Auf der VM selbst gibt es keine Firewall-Regeln, gefiltert wird davor | Freigaben für 80, 62954, 51820, 6556 (nur Checkmk) auf die neue Adresse |
 
@@ -159,9 +159,9 @@ systemctl --failed
 systemctl list-units 'karte-en-tunnel@*' 'yanic@*' --no-legend | grep -vc running
 for b in /sys/class/net/bat-*; do n=${b##*/}; echo "$n $(batctl meshif $n n -H | wc -l)"; done
 sudo /usr/local/sbin/karte-en-waechter && journalctl -t karte-en --since -5min | grep Waechter
-curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: neander.map.freifunk.space' http://[::1]/data/meshviewer.json
+curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: karte.neanderfunk.de' http://[::1]/data/meshviewer.json
 curl -sf http://127.0.0.1:8428/health
-curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: neander.map.freifunk.space' http://[::1]/grafana/api/health
+curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: karte.neanderfunk.de' http://[::1]/grafana/api/health
 wg show wg-ctl latest-handshakes
 systemctl is-active unifi-respondd mesh-announce karte-service nginx
 ```
@@ -170,7 +170,7 @@ systemctl is-active unifi-respondd mesh-announce karte-service nginx
 - Jede Domain außer denen in `tunnel/ruhend.conf` hat mindestens einen
   batman-Nachbarn.
 - Der Wächter meldet nichts.
-- Von außen: `https://neander.map.freifunk.space/` zeigt Knoten online, der
+- Von außen: `https://karte.neanderfunk.de/` zeigt Knoten online, der
   Zeitstempel in `data/meshviewer.json` ist jünger als zwei Minuten; dasselbe
   für die übrigen Communities.
 - Grafana und `/nf/prom/` antworten, die Diagramme im Knotenfenster zeigen

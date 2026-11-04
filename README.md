@@ -39,11 +39,12 @@ Seite unter vielen Namen als doppelten Inhalt abwerten.
 - `karte.neanderfunk.de`: alle 48 Neanderfunk-Domains in einer Karte, samt UniFi-APs
   und Diagrammen. Dorthin leiten `karte.neanderfunk.de`, `map.ffdus.de`,
   `map.eulenfunk.de`, `map.freifunk-siegerland.de` und alle alten Ortsnamen.
-- `lvr.map.ffnef.de`: nur die LVR-Domains 11 und 31 bis 36.
+- `lvr.karte.neanderfunk.de`: nur die LVR-Domains 11 und 31 bis 36.
 - Ortskarten zum Ansehen gibt es für Neanderfunk nicht mehr. Daten je Domain
   liegen ohne Karte unter `karte.neanderfunk.de/data/<code>/`.
-- `neander.map.freifunk.space` bleibt für Grafana (`/grafana/`), `/nf/` und
-  das Service-Menü; die Karte dort nennt `karte.neanderfunk.de` als kanonisch.
+- Grafana (`/grafana/`), `/nf/` und das Service-Menü liegen unter
+  `karte.neanderfunk.de`; `neander.map.freifunk.space` leitet seit 05.11.2026
+  wie alle alten Namen um.
 - Not-Karten: Freifunk Essen (`essen.map.freifunk.space`, per fastd).
   Hildesheim wartet auf die Freischaltung unseres Schlüssels, Einbeck auf
   einen antwortenden Broker. Freifunk EN ruht und leitet auf die eigene

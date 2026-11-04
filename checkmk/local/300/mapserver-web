@@ -15,6 +15,7 @@ export LANG=C.UTF-8
 KONF=${KARTE_EN_KONF:-/etc/karte-en/domains.conf}
 STANDBY=${KARTE_EN_STANDBY:-/etc/karte-en/standby.conf}
 SUFFIX=${KARTE_BASIS:-map.freifunk.space}
+NAMEN=${KARTE_EN_NAMEN:-/etc/karte-en/namen.conf}
 
 if [ ! -r "$KONF" ]; then
     echo "3 mapserver-Web - $KONF nicht lesbar"
@@ -65,6 +66,15 @@ for g in $(awk '!/^#/ && NF { print $1 }' "$KONF" | sort -u); do
         for h in $(awk -v g="$g" '!/^#/ && NF && $1 == g { print $6 }' "$KONF"); do
             pruefe_umleitung "$h.$g.$SUFFIX"
         done
+        continue
+    fi
+    # Eine Karte, ein Name (namen.conf, seit 04.11.2026 fuer neander): die
+    # kanonischen Namen liefern die Karten, der eigene Name leitet um, und
+    # Ortskarten gibt es nicht mehr
+    kanonisch=$(awk -v g="$g" '!/^#/ && NF >= 2 && $2 != "umleiten" && index($1, g "/") == 1 { print $2 }' "$NAMEN" 2>/dev/null)
+    if [ -n "$kanonisch" ]; then
+        for h in $kanonisch; do pruefe_host "$h"; done
+        pruefe_umleitung "$g.$SUFFIX"
         continue
     fi
     pruefe_host "$g.$SUFFIX"

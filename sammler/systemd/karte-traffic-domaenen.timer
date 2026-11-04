@@ -1,0 +1,10 @@
+[Unit]
+Description=Bandbreite je Neanderfunk-Domain, taeglich
+
+[Timer]
+OnCalendar=*-*-* 03:20
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

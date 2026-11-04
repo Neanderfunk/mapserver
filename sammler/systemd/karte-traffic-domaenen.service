@@ -1,0 +1,7 @@
+[Unit]
+Description=Bandbreite je Neanderfunk-Domain fuer die Supernode-Verteilung
+
+[Service]
+Type=oneshot
+User=yanic
+ExecStart=/usr/local/sbin/karte-traffic-domaenen

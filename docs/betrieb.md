@@ -494,6 +494,30 @@ aus VictoriaMetrics:
 Beides lesend, ohne Anmeldung, dual-stack über den Proxy auf twin2. Genutzt
 von der Paketfeed-Session (nfcollect, Release-Abnahme).
 
+### Bandbreite je Domain
+
+`https://map.ffnef.de/nf/traffic-domaenen.json`, für die Verteilung der
+Domains auf die Supernodes nach Last (Supernode-Session, damit dort kein
+Checkmk-Zugang nötig ist). `karte-traffic-domaenen.timer` schreibt sie
+täglich um 03:20 aus VictoriaMetrics:
+
+```
+{"erzeugt": "2026-11-04T15:30:57Z", "quelle": "...",
+ "01": {"step": 1800, "start": "2026-10-21T15:30:00Z", "mbit": [...]},
+ ...
+ "48": {...}}
+```
+
+- Quelle: `traffic.rx.bytes` + `traffic.tx.bytes` der Gateway-Instanzen
+  (Batman-Statistik aus deren respondd), summiert über alle Instanzen einer
+  Domain. Die Domain kommt aus der node_id `f2beef00<NN><SS>`, weil die Labels
+  `domain` und `hostname` ihr Format gewechselt haben.
+- Je 30 Minuten die Spitze der 5-Minuten-Werte, in Mbit/s, 14 Tage rückwärts;
+  der Punkt mit Index i gilt für (start + i·1800 s − 30 min, start + i·1800 s].
+  Fehlende Werte als `null`.
+- Ohne Werte bleibt die alte Datei stehen; ihr Alter steht in `erzeugt`.
+- Von Hand: `karte-traffic-domaenen -` schreibt nach stdout.
+
 ### Adressbuch
 
 `https://neander.map.freifunk.space/nf/targets.json`, node_id auf aktuelle

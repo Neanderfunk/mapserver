@@ -124,24 +124,32 @@ def gruppen(pfad=GRUPPEN_KONF):
     return z
 
 
-def ausgabe(pfad, sites=None, titel='', kontakt=False):
+def ausgabe(pfad, sites=None, titel='', kontakt=False, daten=None):
+    """meshviewer.json fuer die Karte unter pfad; mit daten dazu nodelist.json,
+    nodes.json und graph.json derselben Knoten in diesem Verzeichnis."""
+    filter_ = f'no_owner = {str(not kontakt).lower()}\n'
+    if sites:
+        filter_ += 'sites = ["%s"]\n' % '", "'.join(sites)
     f = f'\n# {titel}\n' if titel else '\n'
     f += '[[nodes.output.meshviewer-ffrgb]]\n'
     f += 'enable = true\n'
     f += f'path = "{pfad}/meshviewer.json"\n'
-    f += '[nodes.output.meshviewer-ffrgb.filter]\n'
-    f += f'no_owner = {str(not kontakt).lower()}\n'
-    if sites:
-        f += 'sites = ["%s"]\n' % '", "'.join(sites)
-        # Knotenliste je Orts- und Sammelkarte: die Community-Dateien der
-        # Freifunk-API zeigen je Ort auf eine nodelist.json. Ohne eigene
-        # zaehlte jeder Ort das ganze Netz (04.11.2026).
+    f += '[nodes.output.meshviewer-ffrgb.filter]\n' + filter_
+    if daten:
+        # Daten je Domain ohne eigene Karte, unter map.ffnef.de/data/<code>/:
+        # die Community-Dateien der Freifunk-API brauchen je Ort eine
+        # nodelist.json und daneben eine nodes.json (ffmuc liest Modell und
+        # Last daraus). Bis 04.11.2026 zaehlte dort jeder Ort das ganze Netz.
         f += '[[nodes.output.nodelist]]\n'
         f += 'enable = true\n'
-        f += f'path = "{pfad}/nodelist.json"\n'
-        f += '[nodes.output.nodelist.filter]\n'
-        f += f'no_owner = {str(not kontakt).lower()}\n'
-        f += 'sites = ["%s"]\n' % '", "'.join(sites)
+        f += f'path = "{daten}/nodelist.json"\n'
+        f += '[nodes.output.nodelist.filter]\n' + filter_
+        f += '[[nodes.output.meshviewer]]\n'
+        f += 'enable = true\n'
+        f += 'version = 2\n'
+        f += f'nodes_path = "{daten}/nodes.json"\n'
+        f += f'graph_path = "{daten}/graph.json"\n'
+        f += '[nodes.output.meshviewer.filter]\n' + filter_
     return f
 
 
@@ -230,7 +238,7 @@ def main():
     for x in d:
         t.append(ausgabe(f'{WEB}/{community}/{x["host"]}/data', site_codes(x),
                          f'{x["name"]}: {x["host"]}.{community}.map.freifunk.space',
-                         kontakt))
+                         kontakt, f'{WEB}/{community}/alle/data/{x["code"]}'))
     # Sammelkarten: ein Filter mit den site_codes aller Mitglieder
     for g, ort, codes, name in gruppen():
         if g != community:
@@ -239,7 +247,7 @@ def main():
         sites = [c for x in mitglieder for c in site_codes(x)]
         t.append(ausgabe(f'{WEB}/{community}/{ort}/data', sites,
                          f'{name}: {len(mitglieder)} Domains, {ort}.{community}.map.freifunk.space',
-                         kontakt))
+                         kontakt, f'{WEB}/{community}/alle/data/{ort}'))
 
     # nodes.json/graph.json und nodelist.json nur fuer die Gesamtsicht: das
     # sind die Formate, die andere Karten und Verzeichnisse einlesen.

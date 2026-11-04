@@ -732,10 +732,10 @@ server {
 	access_log /var/log/nginx/karte-en.access.log;
 
 	# Alte Ortsnamen (nef06han.karte.neanderfunk.de) stehen mit ihrer
-	# nodelist.json in den Community-Dateien der Freifunk-API. Die geht auf
-	# die Liste der Domain, nicht auf die des ganzen Netzes.
-	location = /data/nodelist.json {
-		return 301 $karte_knotenliste_%(community)s;
+	# nodelist.json in den Community-Dateien der Freifunk-API. Die Daten gehen
+	# auf die der Domain (data/<code>/), nicht auf die des ganzen Netzes.
+	location ~ ^/data/(nodelist|nodes|graph)\\.json$ {
+		return 301 $karte_daten_%(community)s$1.json;
 	}
 
 	location / {
@@ -745,11 +745,11 @@ server {
 """
 
 
-# Domainnummer im ersten Teil des alten Namens -> Knotenliste der Ortskarte
+# Domainnummer im ersten Teil des alten Namens -> Daten dieser Domain
 KNOTENLISTE = """
-# Knotenliste je alter Ortsname, an der Domainnummer erkannt (nef06han, dusuk12)
-map $host $karte_knotenliste_%(community)s {
-	default https://%(ziel)s/data/nodelist.json;
+# Daten je alter Ortsname, an der Domainnummer erkannt (nef06han, dusuk12)
+map $host $karte_daten_%(community)s {
+	default https://%(ziel)s/data/;
 %(zeilen)s}
 """
 
@@ -869,6 +869,10 @@ def main():
         with open(f'{verz}/config.json', 'w', encoding='utf-8') as f:
             json.dump(konfig(titel, pfad, seine), f, ensure_ascii=False, indent=1)
         api = API % {'web': WEB, 'community': g} if ort == 'alle' else ''
+        if ort == 'alle':
+            # Daten je Domain und Sammelkarte ohne eigene Karte (yanic-conf.py)
+            for unter in [d['code'] for d in seine] + [o for gg, o, _c, _n in gruppen() if gg == g]:
+                os.makedirs(f'{verz}/data/{unter}', exist_ok=True)
         service = SERVICE % {'resolver': resolver()} if (g, ort) == ('neander', 'alle') else ''
         site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'namen': extra, 'host': pfad,
                              'web': WEB, 'vorgabe': '', 'api': api, 'service': service,
@@ -881,8 +885,8 @@ def main():
             if g not in knotenlisten:
                 knotenlisten.add(g)
                 zeilen = ''.join(
-                    '\t"~^[a-z]*%s[a-z0-9]*\\." https://%s.%s.%s/data/nodelist.json;\n'
-                    % (d['code'].split('_')[0], d['host'], g, SUFFIX) for d in seine)
+                    '\t"~^[a-z]*%s[a-z0-9]*\\." https://%s/data/%s/;\n'
+                    % (d['code'].split('_')[0], ziel, d['code']) for d in seine)
                 site.append(KNOTENLISTE % {'community': g, 'ziel': ziel, 'zeilen': zeilen})
             site.append(NAMENSWECHSEL % {'titel': titel, 'namen': ' '.join(umleiten[pfad]),
                                          'ziel': ziel, 'community': g})

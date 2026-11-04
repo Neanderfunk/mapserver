@@ -80,6 +80,8 @@ install -m 0755 "$HIER/konfig-erzeugen.py" /usr/local/sbin/karte-en-konfig
 # Communities im Standby: nur anlegen, wenn es die Datei noch nicht gibt,
 # sonst ueberschreibt ein Lauf den Betriebszustand.
 [ -f /etc/karte-en/standby.conf ] || install -m 0644 "$HIER/standby.conf" /etc/karte-en/standby.conf
+# Weitere Namen je Karte: Stand des Repos, also immer ueberschreiben
+install -m 0644 "$HIER/namen.conf" /etc/karte-en/namen.conf
 /usr/local/sbin/karte-en-konfig
 chown -R yanic:www-data "$WEB/sites"
 find "$WEB/sites" -name config.json -exec chmod 0644 {} +

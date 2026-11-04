@@ -51,3 +51,14 @@ def test_rahmen_ohne_null_island_und_ausreisser(tmp_path):
 
 def test_rahmen_ohne_datei_gibt_vorgabe(tmp_path):
     assert konfig.rahmen(str(tmp_path / 'fehlt.json')) == [[51.52, 7.05], [51.20, 7.55]]
+
+
+def test_weitere_namen(tmp_path):
+    p = tmp_path / 'namen.conf'
+    p.write_text('# Kommentar\nneander/alle  a.example b.example  # Rest\n\n'
+                 'neander/alle *.c.example\nkaputt\n')
+    assert konfig.weitere_namen(str(p)) == {'neander/alle': ['a.example', 'b.example', '*.c.example']}
+
+
+def test_weitere_namen_ohne_datei(tmp_path):
+    assert konfig.weitere_namen(str(tmp_path / 'fehlt.conf')) == {}

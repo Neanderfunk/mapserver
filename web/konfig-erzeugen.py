@@ -64,6 +64,22 @@ def standby():
     return z
 
 
+NAMEN_KONF = '/etc/karte-en/namen.conf'
+
+
+def weitere_namen(pfad=NAMEN_KONF):
+    """Pfad unter sites/ -> weitere Namen fuer server_name (namen.conf)."""
+    z = {}
+    try:
+        for zeile in open(pfad, encoding='utf-8'):
+            t = zeile.split('#', 1)[0].split()
+            if len(t) >= 2:
+                z.setdefault(t[0], []).extend(t[1:])
+    except OSError:
+        pass
+    return z
+
+
 def kern(orte, abstand_km=25, anteil=0.10):
     """Die Knoten, die den Ausschnitt bestimmen: ohne Ausreisser.
 
@@ -533,7 +549,7 @@ VHOST = """
 server {
 	listen 80%(vorgabe)s;
 	listen [::]:80%(vorgabe)s;
-	server_name %(fqdn)s;
+	server_name %(fqdn)s%(namen)s;
 
 	root %(web)s/meshviewer;
 	index index.html;
@@ -684,7 +700,7 @@ UMLEITUNG = """
 server {
 	listen 80;
 	listen [::]:80;
-	server_name %(fqdn)s;
+	server_name %(fqdn)s%(namen)s;
 
 	access_log /var/log/nginx/karte-en.access.log;
 
@@ -765,14 +781,17 @@ def main():
                           f'{d["host"]}.{g}.{SUFFIX}', seine))
 
     ruht = standby()
+    namen = weitere_namen()
     site = ['# Erzeugt von konfig-erzeugen.py. Nicht von Hand aendern.']
     for pfad, titel, fqdn, seine in ziele:
         g, _, ort = pfad.partition('/')
+        # Weitere Namen derselben Karte (namen.conf), etwa karte.neanderfunk.de
+        extra = ''.join(' ' + n for n in namen.get(pfad, []))
         # Community im Standby: nur eine Umleitung, keine Karte. Die Daten
         # unter sites/ bleiben liegen, eine Zeile weniger in standby.conf
         # holt alles zurueck.
         if g in ruht:
-            site.append(UMLEITUNG % {'titel': titel, 'fqdn': fqdn,
+            site.append(UMLEITUNG % {'titel': titel, 'fqdn': fqdn, 'namen': extra,
                                      'ziel': ruht[g], 'grund': f'Umleitung auf {ruht[g]}'})
             print(f'  {fqdn:38} -> {ruht[g]}')
             continue
@@ -785,10 +804,10 @@ def main():
             json.dump(konfig(titel, pfad, seine), f, ensure_ascii=False, indent=1)
         api = API % {'web': WEB, 'community': g} if ort == 'alle' else ''
         service = SERVICE % {'resolver': resolver()} if (g, ort) == ('neander', 'alle') else ''
-        site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'host': pfad,
+        site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'namen': extra, 'host': pfad,
                              'web': WEB, 'vorgabe': '', 'api': api, 'service': service,
                              'resolver': resolver()})
-        print(f'  {fqdn:38} {titel}')
+        print(f'  {fqdn:38} {titel}' + (f' (+{len(namen[pfad])} Namen)' if pfad in namen else ''))
 
     site.append(VORGABE % {'eigen': EIGEN, 'index': INDEX})
     with open('/etc/nginx/sites-available/karte-en.conf', 'w', encoding='utf-8') as f:

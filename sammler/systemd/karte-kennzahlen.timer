@@ -1,0 +1,10 @@
+[Unit]
+Description=Kennzahlen der Gesamtkarte, alle fuenf Minuten
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=5min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

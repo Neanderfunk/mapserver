@@ -40,6 +40,7 @@ in `betrieb.md`).
 | `sammler/adressbuch.py` | `karte-adressbuch` | `karte-adressbuch@neander.timer`, 2 min | `targets.json` (node_id → Adressen) unter `/nf/` |
 | `sammler/clients-zaehlen.py` | `karte-clients` | `karte-clients@neander.timer`, 5 min | Clients und dunkle Knoten je Domain aus der batman-Übersetzungstabelle in die Zeitreihen, `dunkel.json` |
 | `sammler/verlauf.py` | `karte-verlauf` | `karte-verlauf.timer`, 5 min | eine Zeile je Domain in `/var/lib/karte/verlauf.csv` |
+| `sammler/kennzahlen.py` | `karte-kennzahlen` | `karte-kennzahlen.timer`, 5 min | Router und Clients jetzt und stuendlich ueber 7 Tage, `/nf/kennzahlen.json` fuer neanderfunk.de |
 | `sammler/ziele-ernten.py` | `karte-ziele-ernten` | `karte-ziele.timer`, 30 min (nur EN, ruht) | Unicast-Ziele für Domains, in denen Multicast nicht ankommt |
 | `sammler/mesh-announce-conf.py` | `karte-mesh-announce-conf` | `ExecStartPre` von `mesh-announce` | Konfiguration für mesh-announce |
 | `sammler/unifi-respondd-conf.py` | `karte-unifi-respondd-conf` | `ExecStartPre` von `unifi-respondd` | Konfiguration für unifi_respondd, weitere Controller aus `/etc/unifi_respondd/controller/` |

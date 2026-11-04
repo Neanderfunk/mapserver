@@ -69,6 +69,9 @@ install -m 0644 "$HIER/systemd/karte-adressbuch@.service" "$HIER/systemd/karte-a
 # Neuinstallation es nicht verliert.
 install -m 0755 "$HIER/verlauf.py" /usr/local/sbin/karte-verlauf
 install -m 0644 "$HIER/systemd/karte-verlauf.service" "$HIER/systemd/karte-verlauf.timer" /etc/systemd/system/
+# Kennzahlen fuer neanderfunk.de (kennzahlen.py), alle fuenf Minuten
+install -m 0755 "$HIER/kennzahlen.py" /usr/local/sbin/karte-kennzahlen
+install -m 0644 "$HIER/systemd/karte-kennzahlen.service" "$HIER/systemd/karte-kennzahlen.timer" /etc/systemd/system/
 install -d -m 0755 -o yanic -g www-data /var/lib/karte/adressbuch /var/www/karte-en/api
 [ -f /etc/karte-en/sitecodes.conf ] || install -m 0644 "$HIER/sitecodes.conf" /etc/karte-en/sitecodes.conf
 # Neanderfunk-Domains und site_codes aus den Stammdaten, taeglich (adorfer
@@ -89,7 +92,7 @@ for g in $communities; do
 	chmod 0644 "/etc/yanic-$g.conf"
 	systemctl enable --now "yanic@$g.service"
 done
-systemctl enable --now karte-adressbuch@neander.timer karte-clients@neander.timer karte-verlauf.timer
+systemctl enable --now karte-adressbuch@neander.timer karte-clients@neander.timer karte-verlauf.timer karte-kennzahlen.timer
 sleep 20
 for g in $communities; do
 	printf '  %-10s %s, %s Schnittstellen\n' "$g" \

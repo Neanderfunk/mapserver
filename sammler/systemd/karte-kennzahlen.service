@@ -1,0 +1,7 @@
+[Unit]
+Description=Kennzahlen der Gesamtkarte fuer neanderfunk.de
+
+[Service]
+Type=oneshot
+User=yanic
+ExecStart=/usr/local/sbin/karte-kennzahlen

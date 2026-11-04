@@ -790,7 +790,18 @@ server {
 	index index.html;
 	charset utf-8;
 	add_header Cache-Control "no-cache";
-}
+%(daten)s}
+"""
+
+# Daten jeder Community als Pfad auf dem Kartenhost (map.freifunk.space/data/
+# <community>/) statt unter einer eigenen Subdomain; adorfer will weg von den
+# vielen Vhosts (Mitfunken-Session, 04.11.2026). Die Karten selbst bleiben.
+DATENPFAD = """
+	location /data/%(community)s/ {
+		alias %(web)s/sites/%(community)s/alle/data/;
+		add_header Cache-Control "no-cache";
+		add_header Access-Control-Allow-Origin "*";
+	}
 """
 
 
@@ -897,7 +908,9 @@ def main():
             site.append(NAMENSWECHSEL % {'titel': titel, 'namen': ' '.join(umleiten[pfad]),
                                          'ziel': ziel, 'community': g})
 
-    site.append(VORGABE % {'eigen': EIGEN, 'index': INDEX})
+    daten = ''.join(DATENPFAD % {'community': g, 'web': WEB}
+                    for g in sorted({d['community'] for d in alle}) if g not in ruht)
+    site.append(VORGABE % {'eigen': EIGEN, 'index': INDEX, 'daten': daten})
     with open('/etc/nginx/sites-available/karte-en.conf', 'w', encoding='utf-8') as f:
         f.write('\n'.join(site) + '\n')
     print(f'\n  /etc/nginx/sites-available/karte-en.conf mit {len(ziele)} Vhosts')

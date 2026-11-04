@@ -734,8 +734,9 @@ server {
 	# Alte Ortsnamen (nef06han.karte.neanderfunk.de) stehen mit ihrer
 	# nodelist.json in den Community-Dateien der Freifunk-API. Die Daten gehen
 	# auf die der Domain (data/<code>/), nicht auf die des ganzen Netzes.
-	location ~ ^/data/(nodelist|nodes|graph)\\.json$ {
-		return 301 $karte_daten_%(community)s$1.json;
+	# Benannte Gruppe: die Regex der map ueberschreibt $1 (04.11.2026)
+	location ~ ^/data/(?<datei>nodelist|nodes|graph)\\.json$ {
+		return 301 $karte_daten_%(community)s$datei.json;
 	}
 
 	location / {

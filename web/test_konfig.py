@@ -62,3 +62,17 @@ def test_weitere_namen(tmp_path):
 
 def test_weitere_namen_ohne_datei(tmp_path):
     assert konfig.weitere_namen(str(tmp_path / 'fehlt.conf')) == {}
+
+
+def test_gruppen(tmp_path):
+    p = tmp_path / 'gruppen.conf'
+    p.write_text('# Kommentar\nneander lvr 11_lvr,31_lvrno Freifunk LVR-HPH\nkaputt zeile\n')
+    assert konfig.gruppen(str(p)) == [('neander', 'lvr', ['11_lvr', '31_lvrno'], 'Freifunk LVR-HPH')]
+
+
+def test_statistik_links_sammelkarte():
+    alle = [{'code': '11_lvr', 'host': 'lvr-hph'}, {'code': '31_lvrno', 'host': 'lvr-hph-nordost'}]
+    href = konfig.statistik_links('neander/lvr', alle)[0]['href']
+    assert 'var-domain=11_lvr&var-domain=31_lvrno' in href
+    assert '$__all' in konfig.statistik_links('neander/alle', alle)[0]['href']
+    assert 'var-domain=11_lvr' in konfig.statistik_links('neander/lvr-hph', alle)[0]['href']

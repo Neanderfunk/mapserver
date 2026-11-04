@@ -108,6 +108,22 @@ def domains(pfad):
             yield dict(zip(FELDER, t))
 
 
+GRUPPEN_KONF = '/etc/karte-en/gruppen.conf'
+
+
+def gruppen(pfad=GRUPPEN_KONF):
+    """Sammelkarten aus gruppen.conf: (Community, Ort, [Domaincodes], Name)."""
+    z = []
+    try:
+        for zeile in open(pfad, encoding='utf-8'):
+            t = zeile.split('#', 1)[0].split(None, 3)
+            if len(t) == 4:
+                z.append((t[0], t[1], [c for c in t[2].split(',') if c], t[3].strip()))
+    except OSError:
+        pass
+    return z
+
+
 def ausgabe(pfad, sites=None, titel='', kontakt=False):
     f = f'\n# {titel}\n' if titel else '\n'
     f += '[[nodes.output.meshviewer-ffrgb]]\n'
@@ -205,6 +221,15 @@ def main():
     for x in d:
         t.append(ausgabe(f'{WEB}/{community}/{x["host"]}/data', site_codes(x),
                          f'{x["name"]}: {x["host"]}.{community}.map.freifunk.space',
+                         kontakt))
+    # Sammelkarten: ein Filter mit den site_codes aller Mitglieder
+    for g, ort, codes, name in gruppen():
+        if g != community:
+            continue
+        mitglieder = [x for x in d if x['code'] in codes]
+        sites = [c for x in mitglieder for c in site_codes(x)]
+        t.append(ausgabe(f'{WEB}/{community}/{ort}/data', sites,
+                         f'{name}: {len(mitglieder)} Domains, {ort}.{community}.map.freifunk.space',
                          kontakt))
 
     # nodes.json/graph.json und nodelist.json nur fuer die Gesamtsicht: das

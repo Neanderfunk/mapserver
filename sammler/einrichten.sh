@@ -47,6 +47,8 @@ done
 
 echo "== Konfiguration und Dienste, je Community einer =="
 install -m 0755 "$HIER/yanic-conf.py" /usr/local/sbin/karte-en-yanic-conf
+# Sammelkarten: Stand des Repos, also immer ueberschreiben
+install -m 0644 "$HIER/gruppen.conf" /etc/karte-en/gruppen.conf
 install -m 0755 "$HIER/sitecodes-ermitteln.py" /usr/local/sbin/karte-en-sitecodes
 install -m 0755 "$HIER/warten.sh" /usr/local/sbin/karte-en-warten
 install -m 0644 "$HIER/systemd/yanic@.service" /etc/systemd/system/

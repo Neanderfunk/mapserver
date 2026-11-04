@@ -64,6 +64,22 @@ def standby():
     return z
 
 
+GRUPPEN_KONF = '/etc/karte-en/gruppen.conf'
+
+
+def gruppen(pfad=GRUPPEN_KONF):
+    """Sammelkarten aus gruppen.conf: (Community, Ort, [Domaincodes], Name)."""
+    z = []
+    try:
+        for zeile in open(pfad, encoding='utf-8'):
+            t = zeile.split('#', 1)[0].split(None, 3)
+            if len(t) == 4:
+                z.append((t[0], t[1], [c for c in t[2].split(',') if c], t[3].strip()))
+    except OSError:
+        pass
+    return z
+
+
 NAMEN_KONF = '/etc/karte-en/namen.conf'
 
 
@@ -331,7 +347,10 @@ GESAMTSICHT = ('https://neander.map.freifunk.space/grafana/d/nf-community/commun
 
 def statistik_links(pfad, alle):
     ort = pfad.partition('/')[2]
-    codes = [d['code'] for d in alle if d['host'] == ort] or ['$__all']
+    # Ortskarte: ihre Domain. Sammelkarte: alle Mitglieder, die hier als
+    # alle hereinkommen. Gesamtkarte: alle Domains.
+    codes = ([d['code'] for d in alle if d['host'] == ort]
+             or ([d['code'] for d in alle] if ort != 'alle' else ['$__all']))
     return [{'title': 'Verlauf und Gesamtsicht (Grafana)',
              'href': GESAMTSICHT % '&var-domain='.join(codes)}]
 
@@ -779,6 +798,12 @@ def main():
         for d in seine:
             ziele.append((f'{g}/{d["host"]}', d['name'],
                           f'{d["host"]}.{g}.{SUFFIX}', seine))
+        # Sammelkarten (gruppen.conf); seine sind hier nur die Mitglieder
+        for gg, ort, codes, name in gruppen():
+            mitglieder = [d for d in seine if d['code'] in codes]
+            if gg == g and mitglieder:
+                ziele.append((f'{g}/{ort}', f'{name}, alle {len(mitglieder)} Domains',
+                              f'{ort}.{g}.{SUFFIX}', mitglieder))
 
     ruht = standby()
     namen = weitere_namen()

@@ -24,7 +24,7 @@ Zusätze, jeweils mit eigenem Skript.
 | --- | --- | --- |
 | Tunnel und Mesh | `tunnel/einrichten.sh` | je Domain `karte-en-tunnel@<code>` (Tunneldigger oder fastd), Watchdog |
 | Collector | `sammler/einrichten.sh` | je Community `yanic@<community>`, Adressbuch, Clientzählung |
-| Web | `web/einrichten.sh` | meshviewer, nginx mit je Community einer Gesamt- und je Domain einer Ortskarte |
+| Web | `web/einrichten.sh` | meshviewer, nginx mit je Community einer Gesamtkarte, Ortskarten nur ausserhalb von `ORTSKARTEN_AUS`, weitere Namen aus `namen.conf` |
 | Zeitreihen (optional) | `zeitreihe/einrichten.sh` | VictoriaMetrics, Grafana, `/nf/prom/` |
 | UniFi (optional) | `sammler/unifi-einrichten.sh` | `unifi-respondd`, Zuordnung AP → Router |
 | Eigene Antwort | `sammler/mesh-announce-einrichten.sh` | `mesh-announce`: map6 als Knoten in jedem Mesh |
@@ -107,7 +107,8 @@ andere wird daraus erzeugt. Die Spalten erklärt der Kopf der Datei; wichtig:
   lokalen Tunnel-ID und zum letzten Byte unserer MACs, also zu unserer
   Kennung im fremden Mesh. Vergeben: EN 1-8, Neanderfunk 64 plus
   Domainnummer, Essen 129, Hildesheim 130 (reserviert).
-- `host` ist der Namensteil der Ortskarte unter `<community>.map.freifunk.space`.
+- `host` ist der Namensteil der Ortskarte unter `<community>.map.freifunk.space`
+  (nur für Communities mit Ortskarten, Neanderfunk hat keine mehr).
 
 fastd-Domains stehen zusätzlich in `tunnel/fastd.conf` (Methoden, Peers mit
 Schlüsseln), siehe `docs/betrieb.md`, Abschnitt "fastd-Domains".
@@ -139,11 +140,9 @@ Schlüsseln), siehe `docs/betrieb.md`, Abschnitt "fastd-Domains".
 
 Die VM spricht nur HTTP auf Port 80. TLS und die öffentlichen Namen liegen auf
 dem Proxy davor (bei uns `twin2.ffdus.de`, gepflegt von adorfer). Dort braucht
-es je Name einen Eintrag und ein Let's-Encrypt-Zertifikat; eingetragen sind
-`neander`, `essen`, `einbeck`, `hildesheim` und `en` unter
-`map.freifunk.space`. Die Ortskarten `<ort>.neander.map.freifunk.space` kommen
-mit dem Umzug von `map.eulenfunk.de`. Ein Name ohne Karte zeigt die
-Vorgabeseite der VM mit der Kartenliste.
+es je Name einen Eintrag und ein Let's-Encrypt-Zertifikat. Welche Namen und
+Zertifikate dort liegen, steht in `docs/uebergabe.md` unter "Namen". Ein Name
+ohne Karte zeigt die Vorgabeseite der VM mit der Kartenliste.
 
 ## Service-Menü und Authentik
 

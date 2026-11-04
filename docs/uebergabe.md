@@ -4,7 +4,8 @@ Was jemand wissen muss, der dieses Projekt uebernimmt oder fortfuehrt.
 
 ## Was es ist
 
-Der Nachfolger der Neanderfunk-Karte `map.eulenfunk.de` (HopGlass) auf einem
+Der Nachfolger der Neanderfunk-Karte `map.eulenfunk.de` (HopGlass, abgeloest
+am 04.11.2026) auf einem
 aktuellen Stack, mit UniFi-APs, zusaetzlichen respondd-Werten und
 Zeitreihen; dazu Not-Karten fuer Communities, die gerade keine
 funktionierende Karte haben (fuer mitfunken.freifunk.space). Siehe README.
@@ -30,20 +31,53 @@ sinnvoll, sobald die Ueberwachung kommt.
 
 ## Namen
 
+Eine Karte, ein Name (adorfer 04.11.2026): alles andere leitet per `301` um,
+Pfad und Parameter bleiben erhalten. Ortskarten zum Ansehen gibt es fuer
+Neanderfunk nicht mehr; ausgenommen sind nur LVR und die Ersatzkarten
+(Essen, ruhend EN).
+
 | Name | zeigt auf |
 | --- | --- |
-| `neander.map.freifunk.space` | Gesamtkarte der 48 Neanderfunk-Domains |
-| `<ort>.neander.map.freifunk.space` | Ortskarten, oeffentlich erst mit dem Umzug von `map.eulenfunk.de` |
+| `map.ffnef.de` | Gesamtkarte der 48 Neanderfunk-Domains, kanonisch |
+| `lvr.map.ffnef.de` | Sammelkarte LVR-HPH, Domains 11 und 31 bis 36 |
+| `karte.neanderfunk.de`, `map.neanderfunk.de`, `karte.ffdus.de`, `map.ffdus.de`, `karte.ffnef.de`, `map1.ffdus.de`, `map.eulenfunk.de`, `map.freifunk-siegerland.de`, `map.gl.wupper.ffrl.de`, `map.leichlingen.freifunk.net` und alle Subdomains darunter | `301` auf `map.ffnef.de` |
+| `lvr.karte.neanderfunk.de`, `lvr.karte.ffnef.de`, `lvr.map.eulenfunk.de`, `nef11lvr` und `nef31lvrno` bis `nef36lvrsw` unter `karte.neanderfunk.de`, `lvr.neander.map.freifunk.space` | `301` auf `lvr.map.ffnef.de` |
+| `<ort>.neander.map.freifunk.space` | fruehere Ortskarten, `301` auf `map.ffnef.de` |
+| `neander.map.freifunk.space` | Gesamtkarte mit `Link: rel=canonical` auf `map.ffnef.de`; bleibt fuer Grafana, `/nf/` und das Service-Menue |
+| `essen.map.freifunk.space` | Not-Karte Freifunk Essen |
 | `en.map.freifunk.space`, `<ort>.en.map.freifunk.space` | ruhend, `301` auf `map.ff-en.de` |
-| `map6.freifunk.space` | die VM selbst, Vorgabeseite mit der Liste |
-| `map.freifunk.space` | **nicht dieses Projekt**, zeigt auf `map.eulenfunk.de` |
+| `map.freifunk.space`, `map6.freifunk.space` | Vorgabeseite mit der Kartenliste, darunter `/data/<community>/` |
 
-Das Schema ist `<community>.map.freifunk.space` fuer die Gesamtsicht und
-`<ort>.<community>.map.freifunk.space` darunter, damit weitere
-Communities danebenpassen.
+Quelle der Namen und Umleitungen ist `web/namen.conf`, Sammelkarten stehen in
+`sammler/gruppen.conf` (siehe betrieb.md).
 
-Alle neun Namen stehen als SANs in einem Let's-Encrypt-Zertifikat auf twin2.
-Ein Wildcard ist dort nicht noetig und waere ueber DNS-01 umstaendlicher.
+Die alten Ortsnamen im Firmware-Bestand und in Verzeichnissen haengen an der
+Domainnummer im ersten Namensteil (`nef06han`, `dusuk12`). Fuer
+`/data/nodelist.json`, `nodes.json` und `graph.json` leiten sie deshalb auf
+die Daten ihrer Domain um (`map.ffnef.de/data/06_han/...`), nicht auf das ganze
+Netz; sonst zaehlte jeder Ort bei den Freifunk-Aggregatoren alle Knoten.
+
+**Proxy twin2** (adorfer), TLS endet dort:
+
+| Datei auf twin2 | Namen | Zertifikat |
+| --- | --- | --- |
+| `map.conf` | `map.freifunk.space` und `*.map.freifunk.space` | `tiles.eulenfunk.de` (Sammelzertifikat) |
+| `karte.conf` | die alten Namen oben, Subdomains per Wildcard | `karte.neanderfunk.de`, 84 Namen |
+| `ortskarten.conf` | die 49 frueheren `<ort>.neander.map.freifunk.space` | `ortskarten-neander` |
+
+- Zertifikate per HTTP-Pruefung (webroot `/var/www/letsencrypt`), ein
+  Wildcard-Zertifikat ginge nur ueber DNS und ist bewusst nicht eingerichtet.
+  Subdomains, die nicht im Zertifikat stehen, enden bei HTTPS im
+  Zertifikatsfehler. Hoechstens 100 Namen je Zertifikat.
+- Neue Namen findet `/var/log/nginx/karte-hosts.log` auf twin2 (Host in
+  Spalte 3, Format `karte_host`); auswerten mit
+  `awk '{print $3}' /var/log/nginx/karte-hosts.log | sort | uniq -c | sort -rn`,
+  Namen mit nennenswert vielen Aufrufen per `certbot certonly --expand` dazu.
+  Vorher pruefen, ob der Weg traegt: Probedatei unter
+  `/.well-known/acme-challenge/` und von aussen ueber IPv4 und IPv6 abrufen;
+  Staging von Let's Encrypt war am 04.11.2026 nicht erreichbar.
+- `server_names_hash_bucket_size 128` in `conf.d/server-names-hash.conf`,
+  sonst lehnt nginx die langen Ortsnamen ab.
 
 ## Aeussere Abhaengigkeiten
 
@@ -89,8 +123,32 @@ neun `config.json`) sind Ergebnis, nicht Quelle. Wer sie von Hand aendert,
 verliert die Aenderung beim naechsten Lauf. Quelle ist immer
 `tunnel/domains.conf` plus die Generatoren.
 
-## Was offen ist
+## Was offen ist (Roadmap)
 
+Naechste Schritte, die feststehen:
+
+- **Host-Log auf twin2 auswerten**, ein paar Tage nach dem 04.11.2026. Namen
+  mit nennenswert vielen Aufrufen ins Zertifikat `karte.neanderfunk.de`
+  (84 von 100). Die vier `www.`-Namen vom 04.11. waren Scanner und bleiben
+  draussen.
+- **`neander.map.freifunk.space` abloesen.** Grafana, `/nf/` (targets.json,
+  prom, Kennzahlen, Service-Menue) und die Links darauf in der
+  Kartenkonfiguration (`ZEITREIHE_URL`, `serviceLink`, `GESAMTSICHT`) auf Pfade
+  unter `map.ffnef.de` ziehen, Authentik (External host) mit. Danach leitet der
+  Name wie alle anderen um. Bis dahin genuegt `rel=canonical`.
+- **Verzeichnisse der abgeschalteten Ortskarten** (`sites/neander/<host>/`)
+  liegen noch auf der VM, werden aber nicht mehr ausgeliefert. Loeschen nur
+  auf Zuruf.
+- **Essen:** der Finder liest kuenftig `map.freifunk.space/data/essen/`
+  statt der Subdomain (Mitfunken-Session).
+- **Multidomain-Firmware:** Grafana waehlt Domains heute ueber `site`; mit
+  der Multidomain-Firmware kommen `domain_as_site` und `domainNames` nach den
+  site_codes.
+
+Bekannt und bewusst so:
+
+- **Wuppertal** (`wup.map.eulenfunk.de`, `map.freifunk-wuppertal.net`) faellt
+  weg, bis Freifunk Wuppertal sich meldet; die Namen haben kein Zertifikat.
 - **Melder.** Die Checkmk-Local-Checks stehen (siehe betrieb.md), der Host
   muss in der Checkmk-Instanz noch angelegt werden. Eine Mailbenachrichtigung
   wie bei mitfunken gibt es hier noch nicht; `nullmailer` liegt bereit.

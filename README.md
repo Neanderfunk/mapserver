@@ -2,10 +2,11 @@
 
 Kartenserver für Freifunk, betrieben von Freifunk Neanderland.
 
-**Worum es geht:** Die Karten-Infrastruktur wird erneuert. Die bisherige Karte
-der Neanderfunk-Domains (`map.eulenfunk.de`) läuft auf einem in die Jahre
-gekommenen HopGlass-Stack. Dieses Repo baut den Nachfolger mit aktuellen
-Werkzeugen und bringt Dinge mit, die der alte Stack nicht kann:
+**Worum es geht:** Die Karten-Infrastruktur ist erneuert. Die frühere Karte
+der Neanderfunk-Domains (`map.eulenfunk.de`) lief auf einem in die Jahre
+gekommenen HopGlass-Stack; seit 04.11.2026 zeigen ihre Namen hierher. Dieses
+Repo ist der Nachfolger mit aktuellen Werkzeugen und bringt Dinge mit, die der
+alte Stack nicht konnte:
 
 - UniFi-Accesspoints als eigene Knoten auf der Karte, an ihrem Freifunk-Router
   und ohne doppelt gezählte Clients ([docs/unifi-sites.md](docs/unifi-sites.md)),
@@ -31,15 +32,23 @@ wieder eine eigene Karte, ruht unsere und leitet dorthin weiter.
 
 ## Stand
 
-- `neander.map.freifunk.space`: alle 48 Neanderfunk-Domains in einer Karte,
-  samt UniFi-APs, Diagrammen und Grafana unter `/grafana/`.
-- Ortskarten `<ort>.neander.map.freifunk.space` sind gebaut und kommen mit dem
-  Umzug, wenn diese Karte `map.eulenfunk.de` ablöst.
+Seit 04.11.2026 ersetzt diese Karte `map.eulenfunk.de`. Eine Karte, ein
+Name; alle anderen Namen leiten per `301` um, weil Suchmaschinen dieselbe
+Seite unter vielen Namen als doppelten Inhalt abwerten.
+
+- `map.ffnef.de`: alle 48 Neanderfunk-Domains in einer Karte, samt UniFi-APs
+  und Diagrammen. Dorthin leiten `karte.neanderfunk.de`, `map.ffdus.de`,
+  `map.eulenfunk.de`, `map.freifunk-siegerland.de` und alle alten Ortsnamen.
+- `lvr.map.ffnef.de`: nur die LVR-Domains 11 und 31 bis 36.
+- Ortskarten zum Ansehen gibt es für Neanderfunk nicht mehr. Daten je Domain
+  liegen ohne Karte unter `map.ffnef.de/data/<code>/`.
+- `neander.map.freifunk.space` bleibt für Grafana (`/grafana/`), `/nf/` und
+  das Service-Menü; die Karte dort nennt `map.ffnef.de` als kanonisch.
 - Not-Karten: Freifunk Essen (`essen.map.freifunk.space`, per fastd).
   Hildesheim wartet auf die Freischaltung unseres Schlüssels, Einbeck auf
-  einen antwortenden Broker.
-- `map.freifunk.space` zeigt bis dahin auf `map.eulenfunk.de` und wird hier
-  nicht angefasst.
+  einen antwortenden Broker. Freifunk EN ruht und leitet auf die eigene
+  Karte um.
+- Daten jeder erfassten Community als Pfad: `map.freifunk.space/data/<community>/`.
 
 ## Stack
 

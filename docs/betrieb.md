@@ -15,6 +15,8 @@ Es gibt keinen Timer und keinen Cron. yanic sammelt im Takt von
 
 ```
 /etc/karte-en/domains.conf              Domaintabelle, einzige Quelle
+/etc/karte-en/namen.conf                weitere Namen und Umleitungen je Karte
+/etc/karte-en/gruppen.conf              Sammelkarten (LVR)
 /etc/yanic-<community>.conf             erzeugt, nicht von Hand pflegen
 /etc/modules-load.d/karte-en.conf       l2tp_eth, l2tp_netlink, batman-adv
 /etc/nginx/sites-available/karte-en.conf erzeugt
@@ -38,7 +40,45 @@ Alle Skripte mit ihrem Namen auf der VM und dem, was sie aufruft:
 
 Für die Gesamtsicht schreibt yanic zusätzlich `nodes.json` (Version 2),
 `graph.json` und `nodelist.json` in `sites/alle/data/`. Das sind die Formate,
-die andere Karten und Verzeichnisse einlesen.
+die andere Karten und Verzeichnisse einlesen. Dieselben drei Dateien gibt es
+je Domain und je Sammelkarte in `sites/neander/alle/data/<code>/` bzw.
+`.../data/lvr/`, ohne eigene Karte.
+
+## Namen, Umleitungen, Sammelkarten
+
+Eine Karte, ein Name (adorfer 04.11.2026): Suchmaschinen werten dieselbe Seite
+unter vielen Namen als doppelten Inhalt ab. Für Neanderfunk gibt es nur
+`map.ffnef.de` (alles) und `lvr.map.ffnef.de` (LVR); Ortskarten zum Ansehen
+nicht mehr. Die Tabelle aller Namen steht in `uebergabe.md`.
+
+- **`web/namen.conf`** (VM: `/etc/karte-en/namen.conf`): je Zeile ein Pfad
+  unter `sites/` und Namen. `<pfad> <name...>` liefert die Karte auch unter
+  diesen Namen, der erste ist der kanonische. `<pfad> umleiten <name...>`
+  leitet per `301` auf den kanonischen um, Pfad und Parameter bleiben. Namen
+  wie in nginx `server_name`, also auch `*.karte.neanderfunk.de`; ein genauer
+  Name geht jeder Wildcard vor.
+- **Alte Ortsnamen und ihre Daten:** `/data/nodelist.json`, `nodes.json` und
+  `graph.json` unter einem umgeleiteten Namen gehen auf die Daten der Domain,
+  deren Nummer im ersten Namensteil steht (`nef06han` → `data/06_han/`). Die
+  nginx-`map` dafür erzeugt `konfig-erzeugen.py` aus der Domaintabelle. In
+  der `location` steht eine benannte Gruppe (`?<datei>`), weil die Regex der
+  `map` die Gruppe `$1` überschreibt.
+- **`sammler/gruppen.conf`** (VM: `/etc/karte-en/gruppen.conf`):
+  Sammelkarten aus mehreren Domains, je eine yanic-Ausgabe mit den site_codes
+  aller Mitglieder und ein Vhost `<ort>.<community>.map.freifunk.space`, der
+  bei Communities ohne Ortskarten auf den Namen aus `namen.conf` umleitet.
+- **`ORTSKARTEN_AUS`** in `web/konfig-erzeugen.py` und
+  `sammler/yanic-conf.py`: Communities ohne Ortskarten (`neander`). yanic
+  schreibt für deren Domains nur die Daten unter `alle/data/<code>/`, keine
+  `meshviewer.json` für eine Karte.
+- `neander.map.freifunk.space` bleibt erreichbar, weil Grafana, `/nf/` und
+  das Service-Menü daran hängen, und schickt `Link: <https://map.ffnef.de/>;
+  rel="canonical"`.
+
+Nach einer Änderung: `karte-en-konfig`, `nginx -t`, `systemctl reload nginx`;
+bei `gruppen.conf` oder `ORTSKARTEN_AUS` zusätzlich `systemctl restart
+yanic@<community>` (die Unit erzeugt ihre Konfiguration beim Start neu). Neue
+öffentliche Namen brauchen einen Eintrag und ein Zertifikat auf twin2.
 
 ## Gesundheitsprüfung
 
@@ -268,8 +308,8 @@ wir für andere ein dunkler Knoten sind").
 
 Seit 26.09.2026, nur für die neander-Karte: ein kleines Zahnrad neben dem
 Knotennamen im Knotenfenster führt auf
-`https://neander.map.freifunk.space/nf/service/?node=<node_id>`, auch von den
-Ortskarten aus. Ohne Anmeldung geht es zu Authentik (idm.ffnef.de,
+`https://neander.map.freifunk.space/nf/service/?node=<node_id>`, auch von
+`map.ffnef.de` und der LVR-Karte aus. Ohne Anmeldung geht es zu Authentik (idm.ffnef.de,
 Application `neanderfunk-mapserver`, Proxy-Provider "Neanderfunk Map",
 Forward auth single application, Embedded Outpost); wer darf, regelt die
 Bindung an der Application.
@@ -293,7 +333,7 @@ Bindung an der Application.
   `/var/lib/karte/service/overrides.json` ({node_id: ["ort" | "ort-weg" |
   "name"]}, nur Felder, keine Werte), geschrieben von `service.py` bei jeder
   Änderung und beim Start, öffentlich unter `/nf/overrides.json` (mit CORS
-  für die Ortskarten). Die Karte lädt sie höchstens einmal je Minute
+  für `map.ffnef.de` und die LVR-Karte). Die Karte lädt sie höchstens einmal je Minute
   (Fork, `serviceOverrides`).
 - **Protokoll:** `/var/lib/karte/service/protokoll.jsonl`, je Aktion Zeit,
   Authentik-Benutzer, Knoten; die letzten zehn je Knoten stehen als Verlauf
@@ -417,6 +457,39 @@ Nicht überwacht wird von hier aus der Weg von außen, also Proxy und
 Zertifikat auf twin2. Das gehört in einen Check dort.
 
 ## Schnittstellen für andere
+
+### Kartendaten
+
+| Adresse | Inhalt |
+| --- | --- |
+| `https://map.ffnef.de/data/meshviewer.json` | Gesamtkarte, meshviewer-ffrgb |
+| `https://map.ffnef.de/data/nodes.json`, `graph.json` | Gesamtkarte, meshviewer Version 2 |
+| `https://map.ffnef.de/data/nodelist.json` | Gesamtkarte, nodelist 1.0.1 |
+| `https://map.ffnef.de/data/<code>/{nodelist,nodes,graph}.json` | eine Domain (`04_hld`), ohne Karte |
+| `https://map.ffnef.de/data/lvr/...` | Sammelkarte LVR |
+| `https://map.freifunk.space/data/<community>/` | dieselben Dateien jeder erfassten Community (`essen`, `neander`), mit `Access-Control-Allow-Origin: *` |
+
+Die Community-Dateien der Freifunk-API (Neanderfunk/communities, gepflegt von
+der Mitfunken-Session) nennen seit 04.11.2026 nur noch `map.ffnef.de`; diese
+Pfade also stabil halten.
+
+### Kennzahlen für neanderfunk.de
+
+`https://map.ffnef.de/nf/kennzahlen.json`, für den Kasten "Gerade im Netz"
+auf neanderfunk.de. `karte-kennzahlen.timer` schreibt sie alle fünf Minuten
+aus VictoriaMetrics:
+
+```
+{"timestamp": "2026-11-04T02:28:42+01:00", "nodes_online": 1632, "clients": 2287,
+ "map": "https://map.ffnef.de/", "series_step": 3600,
+ "series": [{"t": <unix>, "nodes_online": ..., "clients": ...}, ...]}
+```
+
+- Router sind alle Knoten ohne Supernodes (Gluon und UniFi-APs), je node_id
+  einmal; Clients die Summe von `clients.total` dieser Knoten.
+- `series` stündlich über sieben Tage, fehlende Werte als `null`.
+- Ohne aktuelle Werte bleibt die alte Datei stehen; die Seite erkennt das am
+  Alter von `timestamp`.
 
 Beides lesend, ohne Anmeldung, dual-stack über den Proxy auf twin2. Genutzt
 von der Paketfeed-Session (nfcollect, Release-Abnahme).

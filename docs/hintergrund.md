@@ -151,7 +151,9 @@ location /data/          ->  sites/<host>/data/
 ```
 
 Damit kostet eine weitere Ortskarte eine Konfigurationsdatei und ein
-Datenverzeichnis, nicht eine weitere Kopie des Javascript.
+Datenverzeichnis, nicht eine weitere Kopie des Javascript. Fuer Neanderfunk
+gibt es seit 04.11.2026 trotzdem keine Ortskarten mehr: eine Karte, ein Name,
+die Daten je Domain liegen ohne Karte unter `data/<code>/` der Gesamtkarte.
 
 Die Kartenausschnitte (`fixedCenter`) rechnet der Generator aus den
 tatsaechlichen Knotenkoordinaten. Bei jedem Lauf von `karte-en-konfig`
@@ -174,8 +176,10 @@ fremder Server, wer unsere Karten ansieht.
 
 Der blanke Name der VM und alles ohne eigenen Vhost landen auf einer
 Uebersichtsseite, die nur auflistet, welche Karten es gibt. Die Karte einer
-Community soll nicht zufaellig unter dem Namen der Maschine erscheinen, und
-`map.freifunk.space` bleibt fuer weitere Communities frei.
+Community soll nicht zufaellig unter dem Namen der Maschine erscheinen.
+`map.freifunk.space` zeigt seit November 2026 ebenfalls hierher; unter
+`/data/<community>/` liefert die Vorgabe die Daten jeder erfassten Community
+als Pfad statt als eigene Subdomain.
 
 ## Verhaeltnis zum Community-Finder
 

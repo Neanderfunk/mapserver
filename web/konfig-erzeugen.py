@@ -581,7 +581,7 @@ VHOST = """
 server {
 	listen 80%(vorgabe)s;
 	listen [::]:80%(vorgabe)s;
-	server_name %(fqdn)s%(namen)s;
+	server_name %(servername)s;
 
 	root %(web)s/meshviewer;
 	index index.html;
@@ -648,7 +648,7 @@ server {
 %(api)s%(service)s	location / {
 		try_files $uri $uri/ /index.html;
 		add_header Cache-Control "no-cache";
-	}
+%(kanonisch)s	}
 }
 """
 
@@ -891,7 +891,21 @@ def main():
             for unter in [d['code'] for d in seine] + [o for gg, o, _c, _n in gruppen() if gg == g]:
                 os.makedirs(f'{verz}/data/{unter}', exist_ok=True)
         service = SERVICE % {'resolver': resolver()} if (g, ort) == ('neander', 'alle') else ''
+        servername = fqdn + extra
+        kanonisch = ''
+        if g in ORTSKARTEN_AUS and namen.get(pfad):
+            if ort == 'alle':
+                # Bleibt erreichbar, weil Grafana, /nf/ und das Service-Menue
+                # unter diesem Namen haengen; fuer Suchmaschinen gilt der
+                # erste weitere Name (map.ffnef.de)
+                kanonisch = ('\t\tadd_header Link "<https://%s/>; rel=\\"canonical\\"";\n'
+                             % namen[pfad][0])
+            else:
+                # Sammelkarte: der eigene Name leitet auf den weiteren um
+                servername = ' '.join(namen[pfad])
+                umleiten.setdefault(pfad, []).append(fqdn)
         site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'namen': extra, 'host': pfad,
+                             'servername': servername, 'kanonisch': kanonisch,
                              'web': WEB, 'vorgabe': '', 'api': api, 'service': service,
                              'resolver': resolver()})
         print(f'  {fqdn:38} {titel}' + (f' (+{len(namen[pfad])} Namen)' if pfad in namen else '')

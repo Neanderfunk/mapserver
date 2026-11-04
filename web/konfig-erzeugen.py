@@ -84,16 +84,24 @@ NAMEN_KONF = '/etc/karte-en/namen.conf'
 
 
 def weitere_namen(pfad=NAMEN_KONF):
-    """Pfad unter sites/ -> weitere Namen fuer server_name (namen.conf)."""
-    z = {}
+    """(Namen, Umleitungen) aus namen.conf, beide Pfad unter sites/ -> Namen.
+
+    Namen bekommt der Vhost in server_name. Umleitungen (Zeilen mit
+    "umleiten" an zweiter Stelle) gehen per 301 auf den ersten Namen dieses
+    Pfads: dieselbe Karte unter vielen Namen wertet Google als doppelten
+    Inhalt (adorfer 04.11.2026).
+    """
+    namen, um = {}, {}
     try:
         for zeile in open(pfad, encoding='utf-8'):
             t = zeile.split('#', 1)[0].split()
-            if len(t) >= 2:
-                z.setdefault(t[0], []).extend(t[1:])
+            if len(t) >= 3 and t[1] == 'umleiten':
+                um.setdefault(t[0], []).extend(t[2:])
+            elif len(t) >= 2:
+                namen.setdefault(t[0], []).extend(t[1:])
     except OSError:
         pass
-    return z
+    return namen, um
 
 
 def kern(orte, abstand_km=25, anteil=0.10):
@@ -714,6 +722,22 @@ SERVICE = """	location /outpost.goauthentik.io {
 """
 
 
+NAMENSWECHSEL = """
+# %(titel)s: weitere Namen, dauerhaft auf %(ziel)s
+server {
+	listen 80;
+	listen [::]:80;
+	server_name %(namen)s;
+
+	access_log /var/log/nginx/karte-en.access.log;
+
+	location / {
+		return 301 https://%(ziel)s$request_uri;
+	}
+}
+"""
+
+
 UMLEITUNG = """
 # %(titel)s: Standby, %(grund)s
 server {
@@ -806,7 +830,7 @@ def main():
                               f'{ort}.{g}.{SUFFIX}', mitglieder))
 
     ruht = standby()
-    namen = weitere_namen()
+    namen, umleiten = weitere_namen()
     site = ['# Erzeugt von konfig-erzeugen.py. Nicht von Hand aendern.']
     for pfad, titel, fqdn, seine in ziele:
         g, _, ort = pfad.partition('/')
@@ -832,7 +856,12 @@ def main():
         site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'namen': extra, 'host': pfad,
                              'web': WEB, 'vorgabe': '', 'api': api, 'service': service,
                              'resolver': resolver()})
-        print(f'  {fqdn:38} {titel}' + (f' (+{len(namen[pfad])} Namen)' if pfad in namen else ''))
+        print(f'  {fqdn:38} {titel}' + (f' (+{len(namen[pfad])} Namen)' if pfad in namen else '')
+              + (f' (+{len(umleiten[pfad])} Umleitungen)' if pfad in umleiten else ''))
+        if pfad in umleiten:
+            # Ziel ist der erste weitere Name, sonst der eigene
+            site.append(NAMENSWECHSEL % {'titel': titel, 'namen': ' '.join(umleiten[pfad]),
+                                         'ziel': (namen.get(pfad) or [fqdn])[0]})
 
     site.append(VORGABE % {'eigen': EIGEN, 'index': INDEX})
     with open('/etc/nginx/sites-available/karte-en.conf', 'w', encoding='utf-8') as f:

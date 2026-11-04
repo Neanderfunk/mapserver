@@ -57,11 +57,18 @@ def test_weitere_namen(tmp_path):
     p = tmp_path / 'namen.conf'
     p.write_text('# Kommentar\nneander/alle  a.example b.example  # Rest\n\n'
                  'neander/alle *.c.example\nkaputt\n')
-    assert konfig.weitere_namen(str(p)) == {'neander/alle': ['a.example', 'b.example', '*.c.example']}
+    assert konfig.weitere_namen(str(p)) == ({'neander/alle': ['a.example', 'b.example', '*.c.example']}, {})
+
+
+def test_weitere_namen_umleiten(tmp_path):
+    p = tmp_path / 'namen.conf'
+    p.write_text('neander/alle ziel.example\nneander/alle umleiten alt.example *.alt.example\n')
+    assert konfig.weitere_namen(str(p)) == ({'neander/alle': ['ziel.example']},
+                                             {'neander/alle': ['alt.example', '*.alt.example']})
 
 
 def test_weitere_namen_ohne_datei(tmp_path):
-    assert konfig.weitere_namen(str(tmp_path / 'fehlt.conf')) == {}
+    assert konfig.weitere_namen(str(tmp_path / 'fehlt.conf')) == ({}, {})
 
 
 def test_gruppen(tmp_path):

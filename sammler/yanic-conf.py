@@ -133,6 +133,15 @@ def ausgabe(pfad, sites=None, titel='', kontakt=False):
     f += f'no_owner = {str(not kontakt).lower()}\n'
     if sites:
         f += 'sites = ["%s"]\n' % '", "'.join(sites)
+        # Knotenliste je Orts- und Sammelkarte: die Community-Dateien der
+        # Freifunk-API zeigen je Ort auf eine nodelist.json. Ohne eigene
+        # zaehlte jeder Ort das ganze Netz (04.11.2026).
+        f += '[[nodes.output.nodelist]]\n'
+        f += 'enable = true\n'
+        f += f'path = "{pfad}/nodelist.json"\n'
+        f += '[nodes.output.nodelist.filter]\n'
+        f += f'no_owner = {str(not kontakt).lower()}\n'
+        f += 'sites = ["%s"]\n' % '", "'.join(sites)
     return f
 
 

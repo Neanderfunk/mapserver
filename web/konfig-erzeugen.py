@@ -731,10 +731,26 @@ server {
 
 	access_log /var/log/nginx/karte-en.access.log;
 
+	# Alte Ortsnamen (nef06han.karte.neanderfunk.de) stehen mit ihrer
+	# nodelist.json in den Community-Dateien der Freifunk-API. Die geht auf
+	# die Liste der Domain, nicht auf die des ganzen Netzes.
+	location = /data/nodelist.json {
+		return 301 $karte_knotenliste_%(community)s;
+	}
+
 	location / {
 		return 301 https://%(ziel)s$request_uri;
 	}
 }
+"""
+
+
+# Domainnummer im ersten Teil des alten Namens -> Knotenliste der Ortskarte
+KNOTENLISTE = """
+# Knotenliste je alter Ortsname, an der Domainnummer erkannt (nef06han, dusuk12)
+map $host $karte_knotenliste_%(community)s {
+	default https://%(ziel)s/data/nodelist.json;
+%(zeilen)s}
 """
 
 
@@ -831,6 +847,7 @@ def main():
 
     ruht = standby()
     namen, umleiten = weitere_namen()
+    knotenlisten = set()
     site = ['# Erzeugt von konfig-erzeugen.py. Nicht von Hand aendern.']
     for pfad, titel, fqdn, seine in ziele:
         g, _, ort = pfad.partition('/')
@@ -860,8 +877,15 @@ def main():
               + (f' (+{len(umleiten[pfad])} Umleitungen)' if pfad in umleiten else ''))
         if pfad in umleiten:
             # Ziel ist der erste weitere Name, sonst der eigene
+            ziel = (namen.get(pfad) or [fqdn])[0]
+            if g not in knotenlisten:
+                knotenlisten.add(g)
+                zeilen = ''.join(
+                    '\t"~^[a-z]*%s[a-z0-9]*\\." https://%s.%s.%s/data/nodelist.json;\n'
+                    % (d['code'].split('_')[0], d['host'], g, SUFFIX) for d in seine)
+                site.append(KNOTENLISTE % {'community': g, 'ziel': ziel, 'zeilen': zeilen})
             site.append(NAMENSWECHSEL % {'titel': titel, 'namen': ' '.join(umleiten[pfad]),
-                                         'ziel': (namen.get(pfad) or [fqdn])[0]})
+                                         'ziel': ziel, 'community': g})
 
     site.append(VORGABE % {'eigen': EIGEN, 'index': INDEX})
     with open('/etc/nginx/sites-available/karte-en.conf', 'w', encoding='utf-8') as f:

@@ -36,14 +36,14 @@ Seit 04.11.2026 ersetzt diese Karte `map.eulenfunk.de`. Eine Karte, ein
 Name; alle anderen Namen leiten per `301` um, weil Suchmaschinen dieselbe
 Seite unter vielen Namen als doppelten Inhalt abwerten.
 
-- `map.ffnef.de`: alle 48 Neanderfunk-Domains in einer Karte, samt UniFi-APs
+- `karte.neanderfunk.de`: alle 48 Neanderfunk-Domains in einer Karte, samt UniFi-APs
   und Diagrammen. Dorthin leiten `karte.neanderfunk.de`, `map.ffdus.de`,
   `map.eulenfunk.de`, `map.freifunk-siegerland.de` und alle alten Ortsnamen.
 - `lvr.map.ffnef.de`: nur die LVR-Domains 11 und 31 bis 36.
 - Ortskarten zum Ansehen gibt es für Neanderfunk nicht mehr. Daten je Domain
-  liegen ohne Karte unter `map.ffnef.de/data/<code>/`.
+  liegen ohne Karte unter `karte.neanderfunk.de/data/<code>/`.
 - `neander.map.freifunk.space` bleibt für Grafana (`/grafana/`), `/nf/` und
-  das Service-Menü; die Karte dort nennt `map.ffnef.de` als kanonisch.
+  das Service-Menü; die Karte dort nennt `karte.neanderfunk.de` als kanonisch.
 - Not-Karten: Freifunk Essen (`essen.map.freifunk.space`, per fastd).
   Hildesheim wartet auf die Freischaltung unseres Schlüssels, Einbeck auf
   einen antwortenden Broker. Freifunk EN ruht und leitet auf die eigene

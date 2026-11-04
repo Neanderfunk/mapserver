@@ -736,6 +736,10 @@ server {
 
 	access_log /var/log/nginx/karte-en.access.log;
 
+	# Auch die Umleitung selbst mit CORS: Seiten, die Daten (/nf/, /data/)
+	# noch unter einem alten Namen per fetch holen, folgen ihr sonst nicht
+	add_header Access-Control-Allow-Origin "*" always;
+
 	# Alte Ortsnamen (nef06han.karte.neanderfunk.de) stehen mit ihrer
 	# nodelist.json in den Community-Dateien der Freifunk-API. Die Daten gehen
 	# auf die der Domain (data/<code>/), nicht auf die des ganzen Netzes.
@@ -897,7 +901,7 @@ def main():
             if ort == 'alle':
                 # Bleibt erreichbar, weil Grafana, /nf/ und das Service-Menue
                 # unter diesem Namen haengen; fuer Suchmaschinen gilt der
-                # erste weitere Name (map.ffnef.de)
+                # erste weitere Name (karte.neanderfunk.de)
                 kanonisch = ('\t\tadd_header Link "<https://%s/>; rel=\\"canonical\\"";\n'
                              % namen[pfad][0])
             else:

@@ -5,7 +5,7 @@ Kasten "Gerade im Netz" auf neanderfunk.de (Anfrage der Content-Session,
 04.11.2026). Bis dahin hingen dort zwei Grafana-Bilder vom alten
 Kartenserver.
 
-Abrufbar unter https://map.ffnef.de/nf/kennzahlen.json; der Ort /nf/ schickt
+Abrufbar unter https://karte.neanderfunk.de/nf/kennzahlen.json; der Ort /nf/ schickt
 schon Access-Control-Allow-Origin * und Cache-Control no-cache. Ein paar
 Kilobyte statt der knapp 2 MB meshviewer.json.
 
@@ -25,7 +25,7 @@ import urllib.request
 
 QUELLE = 'http://127.0.0.1:8428/api/v1/'
 ZIEL = '/var/www/karte-en/api/neander/kennzahlen.json'
-KARTE = 'https://map.ffnef.de/'
+KARTE = 'https://karte.neanderfunk.de/'
 TAGE = 7
 SCHRITT = 3600
 

@@ -48,7 +48,7 @@ je Domain und je Sammelkarte in `sites/neander/alle/data/<code>/` bzw.
 
 Eine Karte, ein Name (adorfer 04.11.2026): Suchmaschinen werten dieselbe Seite
 unter vielen Namen als doppelten Inhalt ab. Für Neanderfunk gibt es nur
-`map.ffnef.de` (alles) und `lvr.map.ffnef.de` (LVR); Ortskarten zum Ansehen
+`karte.neanderfunk.de` (alles) und `lvr.map.ffnef.de` (LVR); Ortskarten zum Ansehen
 nicht mehr. Die Tabelle aller Namen steht in `uebergabe.md`.
 
 - **`web/namen.conf`** (VM: `/etc/karte-en/namen.conf`): je Zeile ein Pfad
@@ -72,7 +72,7 @@ nicht mehr. Die Tabelle aller Namen steht in `uebergabe.md`.
   schreibt für deren Domains nur die Daten unter `alle/data/<code>/`, keine
   `meshviewer.json` für eine Karte.
 - `neander.map.freifunk.space` bleibt erreichbar, weil Grafana, `/nf/` und
-  das Service-Menü daran hängen, und schickt `Link: <https://map.ffnef.de/>;
+  das Service-Menü daran hängen, und schickt `Link: <https://karte.neanderfunk.de/>;
   rel="canonical"`.
 
 Nach einer Änderung: `karte-en-konfig`, `nginx -t`, `systemctl reload nginx`;
@@ -309,7 +309,7 @@ wir für andere ein dunkler Knoten sind").
 Seit 26.09.2026, nur für die neander-Karte: ein kleines Zahnrad neben dem
 Knotennamen im Knotenfenster führt auf
 `https://neander.map.freifunk.space/nf/service/?node=<node_id>`, auch von
-`map.ffnef.de` und der LVR-Karte aus. Ohne Anmeldung geht es zu Authentik (idm.ffnef.de,
+`karte.neanderfunk.de` und der LVR-Karte aus. Ohne Anmeldung geht es zu Authentik (idm.ffnef.de,
 Application `neanderfunk-mapserver`, Proxy-Provider "Neanderfunk Map",
 Forward auth single application, Embedded Outpost); wer darf, regelt die
 Bindung an der Application.
@@ -333,7 +333,7 @@ Bindung an der Application.
   `/var/lib/karte/service/overrides.json` ({node_id: ["ort" | "ort-weg" |
   "name"]}, nur Felder, keine Werte), geschrieben von `service.py` bei jeder
   Änderung und beim Start, öffentlich unter `/nf/overrides.json` (mit CORS
-  für `map.ffnef.de` und die LVR-Karte). Die Karte lädt sie höchstens einmal je Minute
+  für `karte.neanderfunk.de` und die LVR-Karte). Die Karte lädt sie höchstens einmal je Minute
   (Fork, `serviceOverrides`).
 - **Protokoll:** `/var/lib/karte/service/protokoll.jsonl`, je Aktion Zeit,
   Authentik-Benutzer, Knoten; die letzten zehn je Knoten stehen als Verlauf
@@ -462,26 +462,26 @@ Zertifikat auf twin2. Das gehört in einen Check dort.
 
 | Adresse | Inhalt |
 | --- | --- |
-| `https://map.ffnef.de/data/meshviewer.json` | Gesamtkarte, meshviewer-ffrgb |
-| `https://map.ffnef.de/data/nodes.json`, `graph.json` | Gesamtkarte, meshviewer Version 2 |
-| `https://map.ffnef.de/data/nodelist.json` | Gesamtkarte, nodelist 1.0.1 |
-| `https://map.ffnef.de/data/<code>/{nodelist,nodes,graph}.json` | eine Domain (`04_hld`), ohne Karte |
-| `https://map.ffnef.de/data/lvr/...` | Sammelkarte LVR |
+| `https://karte.neanderfunk.de/data/meshviewer.json` | Gesamtkarte, meshviewer-ffrgb |
+| `https://karte.neanderfunk.de/data/nodes.json`, `graph.json` | Gesamtkarte, meshviewer Version 2 |
+| `https://karte.neanderfunk.de/data/nodelist.json` | Gesamtkarte, nodelist 1.0.1 |
+| `https://karte.neanderfunk.de/data/<code>/{nodelist,nodes,graph}.json` | eine Domain (`04_hld`), ohne Karte |
+| `https://karte.neanderfunk.de/data/lvr/...` | Sammelkarte LVR |
 | `https://map.freifunk.space/data/<community>/` | dieselben Dateien jeder erfassten Community (`essen`, `neander`), mit `Access-Control-Allow-Origin: *` |
 
 Die Community-Dateien der Freifunk-API (Neanderfunk/communities, gepflegt von
-der Mitfunken-Session) nennen seit 04.11.2026 nur noch `map.ffnef.de`; diese
+der Mitfunken-Session) nennen seit 04.11.2026 nur noch `karte.neanderfunk.de`; diese
 Pfade also stabil halten.
 
 ### Kennzahlen für neanderfunk.de
 
-`https://map.ffnef.de/nf/kennzahlen.json`, für den Kasten "Gerade im Netz"
+`https://karte.neanderfunk.de/nf/kennzahlen.json`, für den Kasten "Gerade im Netz"
 auf neanderfunk.de. `karte-kennzahlen.timer` schreibt sie alle fünf Minuten
 aus VictoriaMetrics:
 
 ```
 {"timestamp": "2026-11-04T02:28:42+01:00", "nodes_online": 1632, "clients": 2287,
- "map": "https://map.ffnef.de/", "series_step": 3600,
+ "map": "https://karte.neanderfunk.de/", "series_step": 3600,
  "series": [{"t": <unix>, "nodes_online": ..., "clients": ...}, ...]}
 ```
 
@@ -496,7 +496,7 @@ von der Paketfeed-Session (nfcollect, Release-Abnahme).
 
 ### Bandbreite je Domain
 
-`https://map.ffnef.de/nf/traffic-domaenen.json`, für die Verteilung der
+`https://karte.neanderfunk.de/nf/traffic-domaenen.json`, für die Verteilung der
 Domains auf die Supernodes nach Last (Supernode-Session, damit dort kein
 Checkmk-Zugang nötig ist). `karte-traffic-domaenen.timer` schreibt sie
 täglich um 03:20 aus VictoriaMetrics:

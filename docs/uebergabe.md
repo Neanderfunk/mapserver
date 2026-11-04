@@ -38,12 +38,12 @@ Neanderfunk nicht mehr; ausgenommen sind nur LVR und die Ersatzkarten
 
 | Name | zeigt auf |
 | --- | --- |
-| `map.ffnef.de` | Gesamtkarte der 48 Neanderfunk-Domains, kanonisch |
+| `karte.neanderfunk.de` | Gesamtkarte der 48 Neanderfunk-Domains, kanonisch |
 | `lvr.map.ffnef.de` | Sammelkarte LVR-HPH, Domains 11 und 31 bis 36 |
-| `karte.neanderfunk.de`, `map.neanderfunk.de`, `karte.ffdus.de`, `map.ffdus.de`, `karte.ffnef.de`, `map1.ffdus.de`, `map.eulenfunk.de`, `map.freifunk-siegerland.de`, `map.gl.wupper.ffrl.de`, `map.leichlingen.freifunk.net` und alle Subdomains darunter | `301` auf `map.ffnef.de` |
+| `map.ffnef.de` (bis 04.11.2026 abends kanonisch), `map.neanderfunk.de`, `karte.ffdus.de`, `map.ffdus.de`, `karte.ffnef.de`, `map1.ffdus.de`, `map.eulenfunk.de`, `map.freifunk-siegerland.de`, `map.gl.wupper.ffrl.de`, `map.leichlingen.freifunk.net` und alle Subdomains darunter | `301` auf `karte.neanderfunk.de` |
 | `lvr.karte.neanderfunk.de`, `lvr.karte.ffnef.de`, `lvr.map.eulenfunk.de`, `nef11lvr` und `nef31lvrno` bis `nef36lvrsw` unter `karte.neanderfunk.de`, `lvr.neander.map.freifunk.space` | `301` auf `lvr.map.ffnef.de` |
-| `<ort>.neander.map.freifunk.space` | fruehere Ortskarten, `301` auf `map.ffnef.de` |
-| `neander.map.freifunk.space` | Gesamtkarte mit `Link: rel=canonical` auf `map.ffnef.de`; bleibt fuer Grafana, `/nf/` und das Service-Menue |
+| `<ort>.neander.map.freifunk.space` | fruehere Ortskarten, `301` auf `karte.neanderfunk.de` |
+| `neander.map.freifunk.space` | Gesamtkarte mit `Link: rel=canonical` auf `karte.neanderfunk.de`; bleibt fuer Grafana, `/nf/` und das Service-Menue |
 | `essen.map.freifunk.space` | Not-Karte Freifunk Essen |
 | `en.map.freifunk.space`, `<ort>.en.map.freifunk.space` | ruhend, `301` auf `map.ff-en.de` |
 | `map.freifunk.space`, `map6.freifunk.space` | Vorgabeseite mit der Kartenliste, darunter `/data/<community>/` |
@@ -54,7 +54,7 @@ Quelle der Namen und Umleitungen ist `web/namen.conf`, Sammelkarten stehen in
 Die alten Ortsnamen im Firmware-Bestand und in Verzeichnissen haengen an der
 Domainnummer im ersten Namensteil (`nef06han`, `dusuk12`). Fuer
 `/data/nodelist.json`, `nodes.json` und `graph.json` leiten sie deshalb auf
-die Daten ihrer Domain um (`map.ffnef.de/data/06_han/...`), nicht auf das ganze
+die Daten ihrer Domain um (`karte.neanderfunk.de/data/06_han/...`), nicht auf das ganze
 Netz; sonst zaehlte jeder Ort bei den Freifunk-Aggregatoren alle Knoten.
 
 **Proxy twin2** (adorfer), TLS endet dort:
@@ -134,7 +134,7 @@ Naechste Schritte, die feststehen:
 - **`neander.map.freifunk.space` abloesen.** Grafana, `/nf/` (targets.json,
   prom, Kennzahlen, Service-Menue) und die Links darauf in der
   Kartenkonfiguration (`ZEITREIHE_URL`, `serviceLink`, `GESAMTSICHT`) auf Pfade
-  unter `map.ffnef.de` ziehen, Authentik (External host) mit. Danach leitet der
+  unter `karte.neanderfunk.de` ziehen, Authentik (External host) mit. Danach leitet der
   Name wie alle anderen um. Bis dahin genuegt `rel=canonical`.
 - **Verzeichnisse der abgeschalteten Ortskarten** (`sites/neander/<host>/`)
   liegen noch auf der VM, werden aber nicht mehr ausgeliefert. Loeschen nur

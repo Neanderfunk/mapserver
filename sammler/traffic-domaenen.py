@@ -5,7 +5,7 @@ Skript die Domains nach Last auf die Supernodes verteilen kann, ohne Zugang
 zu Checkmk (Anfrage der Supernode-Session, 04.11.2026; adorfer gab die
 Veroeffentlichung frei, das Grafana zeigt dieselben Werte ohnehin oeffentlich).
 
-Abrufbar unter https://map.ffnef.de/nf/traffic-domaenen.json.
+Abrufbar unter https://karte.neanderfunk.de/nf/traffic-domaenen.json.
 
 Quelle sind die Batman-Zaehler traffic.rx.bytes und traffic.tx.bytes, die die
 Gateway-Instanzen der Supernodes per respondd melden (yanic sammelt sie alle

@@ -141,7 +141,7 @@ def ausgabe(pfad, sites=None, titel='', kontakt=False, daten=None):
         f += f'path = "{pfad}/meshviewer.json"\n'
         f += '[nodes.output.meshviewer-ffrgb.filter]\n' + filter_
     if daten:
-        # Daten je Domain ohne eigene Karte, unter map.ffnef.de/data/<code>/:
+        # Daten je Domain ohne eigene Karte, unter karte.neanderfunk.de/data/<code>/:
         # die Community-Dateien der Freifunk-API brauchen je Ort eine
         # nodelist.json und daneben eine nodes.json (ffmuc liest Modell und
         # Last daraus). Bis 04.11.2026 zaehlte dort jeder Ort das ganze Netz.

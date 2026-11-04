@@ -68,6 +68,10 @@ ZEITREIHE = {'neander': 'http://127.0.0.1:8428'}
 # Communities mit Service-Menue (adorfer 26.09.2026: nur neander)
 SERVICE = {'neander'}
 
+# Communities ohne Ortskarten (web/konfig-erzeugen.py): je Domain nur die
+# Daten unter alle/data/<code>/, keine meshviewer.json fuer eine Karte
+ORTSKARTEN_AUS = {'neander'}
+
 
 def gemeldete_codes():
     try:
@@ -131,10 +135,11 @@ def ausgabe(pfad, sites=None, titel='', kontakt=False, daten=None):
     if sites:
         filter_ += 'sites = ["%s"]\n' % '", "'.join(sites)
     f = f'\n# {titel}\n' if titel else '\n'
-    f += '[[nodes.output.meshviewer-ffrgb]]\n'
-    f += 'enable = true\n'
-    f += f'path = "{pfad}/meshviewer.json"\n'
-    f += '[nodes.output.meshviewer-ffrgb.filter]\n' + filter_
+    if pfad:
+        f += '[[nodes.output.meshviewer-ffrgb]]\n'
+        f += 'enable = true\n'
+        f += f'path = "{pfad}/meshviewer.json"\n'
+        f += '[nodes.output.meshviewer-ffrgb.filter]\n' + filter_
     if daten:
         # Daten je Domain ohne eigene Karte, unter map.ffnef.de/data/<code>/:
         # die Community-Dateien der Freifunk-API brauchen je Ort eine
@@ -236,8 +241,10 @@ def main():
                      f'{community}: alle {len(d)} Domains, {community}.map.freifunk.space',
                      kontakt))
     for x in d:
-        t.append(ausgabe(f'{WEB}/{community}/{x["host"]}/data', site_codes(x),
-                         f'{x["name"]}: {x["host"]}.{community}.map.freifunk.space',
+        karte = None if community in ORTSKARTEN_AUS else f'{WEB}/{community}/{x["host"]}/data'
+        t.append(ausgabe(karte, site_codes(x),
+                         f'{x["name"]}: ' + (f'{x["host"]}.{community}.map.freifunk.space'
+                                             if karte else f'nur Daten, alle/data/{x["code"]}/'),
                          kontakt, f'{WEB}/{community}/alle/data/{x["code"]}'))
     # Sammelkarten: ein Filter mit den site_codes aller Mitglieder
     for g, ort, codes, name in gruppen():

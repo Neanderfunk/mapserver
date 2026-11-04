@@ -26,6 +26,11 @@ SUFFIX = 'map.freifunk.space'
 NAMEN = {'en': 'Freifunk EN', 'neander': 'Neanderfunk', 'essen': 'Freifunk Essen',
          'hildesheim': 'Freifunk Hildesheim'}
 EIGEN = 'map6.freifunk.space'
+# Communities ohne Ortskarten: nur die Gesamtkarte und Sammelkarten, die
+# Daten je Domain liegen ohne Karte unter data/<code>/ der Gesamtkarte, die
+# Namen der Ortskarten leiten um (namen.conf). adorfer 04.11.2026: "Ich
+# moechte keine Ortskarten zum Ansehen. Alles soll auf die Hauptkarte gehen."
+ORTSKARTEN_AUS = {'neander'}
 INDEX = '/var/www/karte-index'
 KACHEL = 'https://tiles.ffdus.de'
 OSM_ATTR = ('&copy; <a href="https://www.openstreetmap.org/copyright">'
@@ -836,7 +841,7 @@ def main():
         titel = f'{kopf}, alle {len(seine)} Domains' if len(seine) > 1 else kopf
         ziele.append((f'{g}/alle', titel,
                       f'{g}.{SUFFIX}', seine))
-        for d in seine:
+        for d in seine if g not in ORTSKARTEN_AUS else []:
             ziele.append((f'{g}/{d["host"]}', d['name'],
                           f'{d["host"]}.{g}.{SUFFIX}', seine))
         # Sammelkarten (gruppen.conf); seine sind hier nur die Mitglieder

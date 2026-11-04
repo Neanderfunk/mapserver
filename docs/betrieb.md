@@ -517,6 +517,12 @@ täglich um 03:20 aus VictoriaMetrics:
   Fehlende Werte als `null`.
 - Ohne Werte bleibt die alte Datei stehen; ihr Alter steht in `erzeugt`.
 - Von Hand: `karte-traffic-domaenen -` schreibt nach stdout.
+- Abgleich gegen Checkmk (bat<NN>, 21.10. bis 04.11.2026, Supernode-Session):
+  Verlauf passt (Korrelation 0,85 bis 0,98 je Domain), wenn man beachtet,
+  dass Checkmk den Intervallanfang stempelt und diese Datei das Ende. Die
+  Spitzen liegen meist bei 0,65 bis 0,85 der Checkmk-Werte, bei kleinen,
+  sprunghaften Domains tiefer, weil hier nur 5-Minuten-Werte vorliegen.
+  Für die Verteilung reicht das, sie kam auf dasselbe Ergebnis.
 
 ### Adressbuch
 

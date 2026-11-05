@@ -299,6 +299,18 @@ KANTE = ('max by (nodeid) (label_replace(last_over_time({__name__="link_tq", %s}
          ' "nodeid", "$1", "source.id", "(.*)"))' % SN_KANTE)
 DAHINTER = '%s * on(nodeid) group_left() (' + KANTE + ' * 0 + 1)'
 
+# Alle Knoten der Domains, die der Supernode gerade traegt, ueber die
+# Domainnummer verbunden. Nicht nur die mit Kante zu ihm: die meisten Knoten
+# haengen per Mesh hinter einem anderen Knoten (am 05.11.2026 bei sinope 88
+# mit Kante von 393), ihre Clients fehlten sonst.
+SEINE_DOMAINS = ('(max by (dnum) (label_replace(last_over_time({__name__="node_load", %s}[15m]),'
+                 ' "dnum", "$1", "domain", "[^0-9]*([0-9]+).*")) * 0 + 1)' % SN)
+
+
+def in_seinen_domains(ausdruck):
+    return ('sum(max by (nodeid, dnum) (label_replace(%s, "dnum", "$1", "site", ".*?([0-9]+)_.*"))'
+            ' * on(dnum) group_left() %s)' % (ausdruck, SEINE_DOMAINS))
+
 SUPERNODES = ('query_result(topk by (ss) (1, max by (sn, ss) (label_replace(label_replace('
               'tlast_over_time(node_load{is_gateway="true"}[$__range]), '
               '"ss", "$1", "nodeid", "f2beef00[0-9]{2}([0-9]{2})"), '
@@ -320,8 +332,8 @@ def summe(metrik):
 
 
 def dahinter(metrik):
-    return ('sum(' + DAHINTER % ('rate({__name__="node_traffic.%s.bytes"}[$__rate_interval])'
-                                 % metrik) + ') * 8')
+    return in_seinen_domains('rate({__name__="node_traffic.%s.bytes", firmware_base=~"gluon.*"}'
+                             '[$__rate_interval])' % metrik) + ' * 8'
 
 
 SUPERNODE_KOPF = [
@@ -371,7 +383,8 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
                      'Domains, sind Domains umgezogen.'),
 
     panel(2, 'Clients dahinter', [
-        ziel('sum(' + DAHINTER % 'last_over_time({__name__="node_clients.total"}[15m])' + ')',
+        ziel(in_seinen_domains('last_over_time({__name__="node_clients.total", '
+                               'is_gateway="false"}[15m])'),
              'laut respondd', 'A'),
         # Verbunden ueber die Domainnummer: die Instanz meldet als Domain
         # ffnefdNN oder, seit der Umstellung der Supernodes, den Code der
@@ -384,10 +397,12 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
              ' "dnum", "$1", "domain", "[^0-9]*([0-9]+).*")) * 0 + 1))' % SN,
              'laut Übersetzungstabelle', 'B'),
     ], 12, 5, min_=0,
-        beschreibung='Zwei Zählweisen. respondd summiert, was die Knoten melden, die '
-                     'gerade antworten. Die Übersetzungstabelle kennt jede Station der '
-                     'Domains, auch hinter stummen Knoten, hält sie aber noch ein paar '
-                     'Minuten nach dem Abmelden. Untergrenze und Obergrenze also.'),
+        beschreibung='Clients in den Domains, die der Supernode gerade trägt, auf zwei '
+                     'Wegen gezählt. respondd: Summe von clients.total aller Knoten und '
+                     'UniFi-APs dieser Domains, die gerade antworten. Übersetzungstabelle: '
+                     'jede Station der Domains, auch hinter stummen Knoten, noch ein paar '
+                     'Minuten nach dem Abmelden. Bis 05.11.2026 zählte respondd nur Knoten '
+                     'mit direkter Kante zum Supernode und lag deshalb weit darunter.'),
 
     panel(3, 'Verkehr des Supernodes', [
         ziel(summe('forward'), 'weitergereicht', 'A'),
@@ -400,15 +415,15 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
                      'gesendet ist der Verkehr zwischen Mesh und Internet, weitergereicht '
                      'der zwischen Knoten über den Supernode.'),
 
-    panel(4, 'Verkehr der angebundenen Knoten', [
+    panel(4, 'Verkehr der Knoten in seinen Domains', [
         ziel(dahinter('rx'), 'empfangen', 'A'),
         ziel(dahinter('tx'), 'gesendet', 'B'),
         ziel(dahinter('mgmt_rx'), 'Verwaltung empfangen', 'C'),
         ziel(dahinter('mgmt_tx'), 'Verwaltung gesendet', 'D'),
     ], 12, 13, einheit='bps', min_=0,
-        beschreibung='Aus Sicht der Knoten, nicht des Supernodes. Ein Knoten mit Kanten '
-                     'zu mehreren Supernodes zählt bei jedem; die Differenz zum Verkehr '
-                     'des Supernodes ist auch Mesh-Verkehr, der nie zu ihm läuft.'),
+        beschreibung='Summe über die Gluon-Knoten der Domains, die der Supernode gerade '
+                     'trägt, aus deren Sicht. Empfangen der Knoten sollte etwa gesendet des '
+                     'Supernodes sein; die Differenz ist Verkehr, der im Mesh bleibt.'),
 
     panel(5, 'Linkqualität zu den Knoten', [
         ziel('min(last_over_time({__name__="link_tq", %s}[15m]))' % SN_KANTE, 'schlechteste', 'A'),

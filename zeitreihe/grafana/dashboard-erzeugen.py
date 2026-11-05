@@ -82,9 +82,13 @@ def feld(einheit='', min_=None, balken=False, stapeln=False):
 
 def panel(nr, titel, ziele, x, y, w=12, h=8, einheit='', min_=None,
           balken=False, stapeln=False, beschreibung='', sortieren=False,
-          abweichend=()):
+          abweichend=(), legende_rechts=False):
     legende = {'displayMode': 'table', 'placement': 'bottom', 'showLegend': True,
                'calcs': ['mean', 'lastNotNull', 'max']}
+    if legende_rechts:
+        # Wenige Reihen in einem breiten Panel: rechts daneben passen alle,
+        # unten verschwaende die Tabelle die Breite und schnitte Zeilen ab
+        legende.update(placement='right', width=330)
     if sortieren:
         # Verteilungen: haeufigster Stand oben, nach dem aktuellen Wert
         legende.update(sortBy='Last *', sortDesc=True)
@@ -756,7 +760,8 @@ COMMUNITY_PANELS = [
     panel(14, 'Verkehr nach Supernode', [
         ziel('%s / scalar(sum(%s)) * 100' % (je_supernode(), je_supernode()),
              '{{supernode}}', 'A'),
-    ], 0, 82, w=24, h=10, einheit='percent', min_=0, stapeln=True, sortieren=True,
+    ], 0, 82, w=24, h=9, einheit='percent', min_=0, stapeln=True, sortieren=True,
+        legende_rechts=True,
         beschreibung='Anteil jedes Supernodes am Verkehr aller Gateways (empfangen und '
                      'gesendet), zusammen 100 %. Verschiebt sich, wenn Domains umziehen. '
                      'Gilt für alle Domains, unabhängig von der Auswahl.'),

@@ -155,8 +155,12 @@ adorfer am 26.09.2026:
   `https://neander.map.freifunk.space`)
 - Application `neanderfunk-mapserver` mit diesem Provider, am **Embedded
   Outpost**; wer darf, regelt eine Bindung (Gruppe) an der Application
-- Probe von der VM: der Outpost antwortet für den Host mit 401 (bekannt,
-  nicht angemeldet), für einen unbekannten Host mit 404:
+- Probe von der VM: der Outpost antwortet für einen unbekannten Host mit 404,
+  für den bekannten ohne `X-Original-URL` mit 500 (so seit spätestens
+  05.11.2026; früher 401). Aussagekräftiger ist der Weg über nginx:
+  `/nf/service/` ohne Anmeldung leitet auf `/outpost.goauthentik.io/start`,
+  von dort auf `idm.ffnef.de/application/o/authorize/` und weiter in den
+  Anmeldeflow. Steht der External host falsch, endet es vorher mit 500.
   ```bash
   curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: idm.ffnef.de' \
     -H 'X-Forwarded-Host: karte.neanderfunk.de' \

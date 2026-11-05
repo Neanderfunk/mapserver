@@ -635,6 +635,16 @@ def supernodes():
             '"hostname", "([^_]+)_.*")))' % jetzt('node_load', GATEWAY))
 
 
+def je_supernode():
+    """rx+tx der Gateway-Instanzen, je Supernode summiert. Den Supernode
+    traegt der Hostname vorn (<supernode>_<domain_code>); rate() wirft den
+    Metriknamen weg, danach passen rx und tx Punkt fuer Punkt zusammen."""
+    return ('sum by (supernode) (label_replace('
+            'rate({__name__="node_traffic.rx.bytes", %(gw)s}[$__rate_interval]) + '
+            'rate({__name__="node_traffic.tx.bytes", %(gw)s}[$__rate_interval]), '
+            '"supernode", "$1", "hostname", "([a-z0-9]+)[_-].*"))' % {'gw': GATEWAY})
+
+
 def verkehr(richtung):
     return ('sum(rate({__name__="node_traffic.%s.bytes", %s}[$__rate_interval])) * 8'
             % (richtung, GLUON))
@@ -721,6 +731,16 @@ COMMUNITY_PANELS = [
     ], 0, 74, w=24, einheit='bps', min_=0,
         beschreibung='Je zwei Linien sollten aufeinanderliegen. Gilt für alle Domains; '
                      'die Gateways lassen sich nicht nach Domain auswählen.'),
+    # Anteil je Supernode an 100 %, gestapelt wie die Firmware (adorfer
+    # 05.11.2026). Der Anteil kommt aus der Abfrage, nicht aus Grafanas
+    # Prozent-Stapel: so stehen in Legende und Tooltip Prozente, keine bit/s.
+    panel(14, 'Verkehr nach Supernode', [
+        ziel('%s / scalar(sum(%s)) * 100' % (je_supernode(), je_supernode()),
+             '{{supernode}}', 'A'),
+    ], 0, 82, w=24, h=10, einheit='percent', min_=0, stapeln=True, sortieren=True,
+        beschreibung='Anteil jedes Supernodes am Verkehr aller Gateways (empfangen und '
+                     'gesendet), zusammen 100 %. Verschiebt sich, wenn Domains umziehen. '
+                     'Gilt für alle Domains, unabhängig von der Auswahl.'),
     panel(4, 'Datenmenge je Tag', [
         ziel('sum(increase({__name__="node_traffic.rx.bytes", %s}[1d]))' % GLUON, 'Download', 'A', '1d'),
         ziel('sum(increase({__name__="node_traffic.tx.bytes", %s}[1d]))' % GLUON, 'Upload', 'B', '1d'),

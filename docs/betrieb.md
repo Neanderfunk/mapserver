@@ -591,7 +591,9 @@ andere unter `/nf/prom/` gibt 403.
   `max by (domain)`; es gilt total = free + ours + claiming + foreign.
   `leases` zählt nur die eigenen Blöcke, `leases.away` sind eigene vergebene
   Leases, deren Client gerade an einem anderen Knoten hängt. Antwortet der
-  Daemon nicht, kommt nur `running` = 0. `clients_ipv4` stammt aus der
+  Daemon nicht, kommt nur `running` = 0. In der Lernphase (`learning` = 1)
+  fehlen `blocks.free`, `.claiming` und `.foreign`, die Summe ist dann nicht
+  prüfbar; `leases` steht dann echt auf 0. `clients_ipv4` stammt aus der
   ARP-Tabelle und weicht deshalb von `clients.total` ab; `ddhcpd` sind die
   Adressen aus `ddhcpd.range`, der Rest kommt vom Kea des Supernodes.
 

@@ -773,6 +773,21 @@ Mallorca, in Lille oder Zürich den Ausschnitt über halb Europa.
   `NEANDERFUNK.md`, "Startausschnitt neben der Seitenleiste"). Nimmt die
   Leiste mehr als die halbe Breite ein oder liegt sie unter der Karte (Handy),
   gilt das ganze Kartenfeld.
+
+**Links mit eigenem Ausschnitt** (meshviewer-Router, Zoom ganzzahlig, Breite
+und Länge in Dezimalgrad mit Punkt):
+
+```
+https://karte.neanderfunk.de/#/de/map/<zoom>/<lat>/<lng>
+https://karte.neanderfunk.de/#/de/map/13/51.2528/6.9778?standort=0
+```
+
+Ohne Parameter öffnet links die Leiste "Standort" (Adresse, uci-Befehle zum
+Setzen der Koordinaten). `?standort=0` (Fork, seit 06.11.2026, Commit
+f64921b) setzt nur Ausschnitt und Zoom und zeigt die normale Seitenleiste;
+gedacht für Links von Stadtseiten. Der Parameter bleibt beim Filtern stehen
+und fällt weg, sobald jemand selbst einen Punkt wählt. Statt Koordinaten geht
+auch eine Knoten-ID: `#/de/map/<nodeid>`.
 - Den Unterschied zeigt ein Vergleich der `fixedCenter` aller
   `config.json` vor und nach dem Lauf (`/var/www/karte-en/sites/*/*/config.json`).
 

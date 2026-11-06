@@ -579,20 +579,27 @@ andere unter `/nf/prom/` gibt 403.
   | `nf_temperature_celsius` | °C | `sensor` |
   | `nf_wireless_txpower`, `nf_wireless_channel`, `nf_wireless_mesh` (0/1) | Konfiguration | `radio`, `ssid`, `htmode`, `country` |
   | `node_nf.ddhcpd.running`, `.learning` | 0/1 | |
-  | `node_nf.ddhcpd.blocks.{total,free,ours,claiming,foreign}` | Momentaufnahme | |
+  | `node_nf.ddhcpd.blocks.{total,free,ours,claiming,foreign,releasing}` | Momentaufnahme | |
   | `node_nf.ddhcpd.leases.{total,leased,offered,free,away}` | Momentaufnahme | |
   | `node_nf.ddhcpd.roaming.{in,out,ack_sent,ack_received,nak_sent,nak_received}` | Zähler seit Start des Daemons | |
   | `node_nf.ddhcpd.dhcp.{discover,offer,request,ack,nak,release,inform}` | Zähler seit Start des Daemons | |
+  | `node_nf.ddhcpd.conflicts.{won,lost,handover_ack,handover_nak}` | Zähler seit Start des Daemons | |
   | `node_nf.clients_ipv4.total`, `.ddhcpd` | Momentaufnahme | |
 
   ddhcpd (verteilter DHCP) kommt nur mit 2025.1-next-Images (Fork-Commit
   "statistics.neanderfunk.ddhcpd und clients_ipv4 lesen"). Die Blocktabelle
   ist auf allen Knoten einer Domain gleich, für den Domainwert genügt
-  `max by (domain)`; es gilt total = free + ours + claiming + foreign.
+  `max by (domain)`; es gilt total = free + ours + claiming + foreign +
+  releasing. `releasing` sind Blöcke, die der Knoten nach Inselbetrieb in
+  einem Konflikt verloren hat und deren Leases er noch übergibt;
+  `conflicts.handover_nak` zählt Leases, die auf beiden Inseln vergeben
+  waren. yanic nimmt jede Gruppe und jede Zahl, wie sie kommt
+  (`nf.ddhcpd.<gruppe>.<schlüssel>`), neue Gruppen brauchen keinen neuen
+  yanic.
   `leases` zählt nur die eigenen Blöcke, `leases.away` sind eigene vergebene
   Leases, deren Client gerade an einem anderen Knoten hängt. Antwortet der
   Daemon nicht, kommt nur `running` = 0. In der Lernphase (`learning` = 1)
-  fehlen `blocks.free`, `.claiming` und `.foreign`, die Summe ist dann nicht
+  fehlen `blocks.free`, `.claiming`, `.foreign` und `.releasing`, die Summe ist dann nicht
   prüfbar; `leases` steht dann echt auf 0. `clients_ipv4` stammt aus der
   ARP-Tabelle und weicht deshalb von `clients.total` ab; `ddhcpd` sind die
   Adressen aus `ddhcpd.range`, der Rest kommt vom Kea des Supernodes.

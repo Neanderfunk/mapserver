@@ -593,7 +593,12 @@ andere unter `/nf/prom/` gibt 403.
   releasing. `releasing` sind Blöcke, die der Knoten nach Inselbetrieb in
   einem Konflikt verloren hat und deren Leases er noch übergibt;
   `conflicts.handover_nak` zählt Leases, die auf beiden Inseln vergeben
-  waren. yanic nimmt jede Gruppe und jede Zahl, wie sie kommt
+  waren. Für die Zahl der Konflikte nur `conflicts.lost` summieren (einmal
+  je Block und Konflikt, beim abgebenden Knoten); `won` ist nur eine
+  Untergrenze, weil der Gewinner nichts erfährt, wenn der andere zuerst
+  nachgibt. won == lost gilt nicht. `handover_ack`/`_nak` sind exakt (eine
+  Antwort je Lease). `blocks.releasing` hält nur eine Übergaberunde und ist
+  im 5-Minuten-Raster fast immer 0, daraus keinen Konfliktalarm bauen. yanic nimmt jede Gruppe und jede Zahl, wie sie kommt
   (`nf.ddhcpd.<gruppe>.<schlüssel>`), neue Gruppen brauchen keinen neuen
   yanic.
   `leases` zählt nur die eigenen Blöcke, `leases.away` sind eigene vergebene

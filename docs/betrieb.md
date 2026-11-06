@@ -600,9 +600,15 @@ andere unter `/nf/prom/` gibt 403.
   Leases, deren Client gerade an einem anderen Knoten hängt. Antwortet der
   Daemon nicht, kommt nur `running` = 0. In der Lernphase (`learning` = 1)
   fehlen `blocks.free`, `.claiming`, `.foreign` und `.releasing`, die Summe ist dann nicht
-  prüfbar; `leases` steht dann echt auf 0. `clients_ipv4` stammt aus der
-  ARP-Tabelle und weicht deshalb von `clients.total` ab; `ddhcpd` sind die
-  Adressen aus `ddhcpd.range`, der Rest kommt vom Kea des Supernodes.
+  prüfbar; `leases` steht dann echt auf 0. `clients_ipv4` zählt die lokalen
+  Clients an br-client (ohne bat0) mit IPv4 aus DAT-Cache, ARP oder eigener
+  ddhcpd-Lease, `ddhcpd` davon die mit Adresse aus `ddhcpd.range` oder
+  eigener Lease, der Rest kommt vom Kea des Supernodes. Erwartet: `total`
+  knapp unter `clients.total` (Clients ohne IPv4 fehlen), `ddhcpd` <=
+  `total`. Images bis einschließlich 26110603sta zählten nur ARP an
+  local-node, diese Werte sind nicht belastbar (G1: 0 bei zwei Clients).
+  Neue Zählung ab Feed 9e0fb17, verlässlich erst nach Rückmeldung der
+  Packages-Session.
 
   Der Zähler `node_nf.ssid_changer.offline` beantwortet eine Frage, die sonst
   niemand beantworten kann: **wie oft war dieser Knoten weg, ohne neu zu

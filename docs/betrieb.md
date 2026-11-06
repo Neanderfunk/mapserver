@@ -614,8 +614,10 @@ andere unter `/nf/prom/` gibt 403.
   local-node, diese Werte sind nicht belastbar (G1: 0 bei zwei Clients).
   Neue Zählung ab Feed 9e0fb17, verlässlich erst nach Rückmeldung der
   Packages-Session. Ab Feed 40b48a8 nur Clients, die in den letzten 60 s
-  aktiv waren, wie `clients.total`; kleine Abweichungen bleiben (Gluon
-  zählt aus der batman-Tabelle, respondd aus der Bridge).
+  aktiv waren, wie `clients.total`. Ab Feed 68c5946 kommen die lokalen
+  Clients aus derselben batman-Abfrage wie bei Gluon (lokale TT, 60 s),
+  nicht mehr aus der Bridge; damit gilt `clients_ipv4.ddhcpd` <=
+  `clients_ipv4.total` <= `clients.total`, bis auf den Abfragezeitpunkt.
 
   Der Zähler `node_nf.ssid_changer.offline` beantwortet eine Frage, die sonst
   niemand beantworten kann: **wie oft war dieser Knoten weg, ohne neu zu

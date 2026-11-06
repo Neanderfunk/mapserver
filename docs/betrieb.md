@@ -578,6 +578,22 @@ andere unter `/nf/prom/` gibt 403.
   | `nf_ethernet_carrier` (0/1), `nf_ethernet_speed`, `nf_ethernet_possible` | Mbit/s, `possible` 0 = unbekannt | `port`, `duplex` |
   | `nf_temperature_celsius` | °C | `sensor` |
   | `nf_wireless_txpower`, `nf_wireless_channel`, `nf_wireless_mesh` (0/1) | Konfiguration | `radio`, `ssid`, `htmode`, `country` |
+  | `node_nf.ddhcpd.running`, `.learning` | 0/1 | |
+  | `node_nf.ddhcpd.blocks.{total,free,ours,claiming,foreign}` | Momentaufnahme | |
+  | `node_nf.ddhcpd.leases.{total,leased,offered,free,away}` | Momentaufnahme | |
+  | `node_nf.ddhcpd.roaming.{in,out,ack_sent,ack_received,nak_sent,nak_received}` | Zähler seit Start des Daemons | |
+  | `node_nf.ddhcpd.dhcp.{discover,offer,request,ack,nak,release,inform}` | Zähler seit Start des Daemons | |
+  | `node_nf.clients_ipv4.total`, `.ddhcpd` | Momentaufnahme | |
+
+  ddhcpd (verteilter DHCP) kommt nur mit 2025.1-next-Images (Fork-Commit
+  "statistics.neanderfunk.ddhcpd und clients_ipv4 lesen"). Die Blocktabelle
+  ist auf allen Knoten einer Domain gleich, für den Domainwert genügt
+  `max by (domain)`; es gilt total = free + ours + claiming + foreign.
+  `leases` zählt nur die eigenen Blöcke, `leases.away` sind eigene vergebene
+  Leases, deren Client gerade an einem anderen Knoten hängt. Antwortet der
+  Daemon nicht, kommt nur `running` = 0. `clients_ipv4` stammt aus der
+  ARP-Tabelle und weicht deshalb von `clients.total` ab; `ddhcpd` sind die
+  Adressen aus `ddhcpd.range`, der Rest kommt vom Kea des Supernodes.
 
   Der Zähler `node_nf.ssid_changer.offline` beantwortet eine Frage, die sonst
   niemand beantworten kann: **wie oft war dieser Knoten weg, ohne neu zu

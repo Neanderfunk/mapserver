@@ -613,7 +613,9 @@ andere unter `/nf/prom/` gibt 403.
   `total`. Images bis einschließlich 26110603sta zählten nur ARP an
   local-node, diese Werte sind nicht belastbar (G1: 0 bei zwei Clients).
   Neue Zählung ab Feed 9e0fb17, verlässlich erst nach Rückmeldung der
-  Packages-Session.
+  Packages-Session. Ab Feed 40b48a8 nur Clients, die in den letzten 60 s
+  aktiv waren, wie `clients.total`; kleine Abweichungen bleiben (Gluon
+  zählt aus der batman-Tabelle, respondd aus der Bridge).
 
   Der Zähler `node_nf.ssid_changer.offline` beantwortet eine Frage, die sonst
   niemand beantworten kann: **wie oft war dieser Knoten weg, ohne neu zu

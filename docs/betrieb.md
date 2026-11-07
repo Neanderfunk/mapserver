@@ -749,6 +749,19 @@ Zeilentitel.
   höchstens alle 30 Sekunden. UniFi-APs zeigen die Werte aus dem Controller,
   also einige Minuten alt (siehe `docs/unifi-sites.md`).
 
+### Linkvorschau
+
+Mastodon und Messenger lesen nur das ausgelieferte HTML, kein Javascript.
+`karte-en-konfig` schreibt deshalb je Karte eine eigene `index.html` und ein
+eigenes `manifest.webmanifest` nach `sites/<pfad>/`, nginx liefert sie je
+Vhost aus (auch beim Rückfall von `try_files`). Titel und Text stehen in
+`VORSCHAU` in `web/konfig-erzeugen.py` (`neander/alle`: "Neanderfunk-Karte",
+seit 07.11.2026), sonst "Karte <Titel>". Ein Vorschaubild kommt aus
+`web/vorschau/` (siehe `LIESMICH.md` dort), dann auch `og:image` und
+`summary_large_image`. Prüfen:
+`curl -s https://karte.neanderfunk.de/ | grep -iE 'og:|<title'`. Mastodon
+behält alte Vorschauen im Cache, neue Toots zeigen die neue sofort.
+
 ### Startausschnitt
 
 Mit welchem Ausschnitt eine Karte öffnet (`fixedCenter`), rechnet

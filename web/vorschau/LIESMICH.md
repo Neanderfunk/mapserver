@@ -12,7 +12,7 @@ Alt-Text (`og:image:alt`) in einer Textdatei gleichen Namens daneben, etwa
 
 `neander.png`: Content-Session, freigegeben von adorfer 07.11.2026. Quelle
 mit Bauskript und SVG in router-werkstatt,
-`werbematerial/2026_vorschaubild_karte/` (Commit 1857762). Gilt mangels
+`werbematerial/2026_vorschaubild_karte/` (Commit e03f93d, mit optipng verkleinert). Gilt mangels
 eigenem Bild auch für die LVR-Karte, obwohl darauf karte.neanderfunk.de
 steht.
 

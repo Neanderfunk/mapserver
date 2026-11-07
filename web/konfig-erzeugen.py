@@ -959,19 +959,26 @@ def vorschau(verz, pfad, titel, kanonisch):
                                      'gerade im Netz sind.'))
     url = f'https://{kanonisch}/'
     bild = None
+    bild_alt = ''
     quelle = vorschaubild(pfad)
     ziel = f'{verz}/vorschau.png'
     if quelle:
         shutil.copyfile(quelle, ziel)
         breite, hoehe = png_groesse(quelle)
         bild = (url + 'vorschau.png', breite, hoehe)
+        # Alt-Text neben dem Bild (<name>.txt), sonst allgemein
+        try:
+            with open(quelle[:-4] + '.txt', encoding='utf-8') as f:
+                bild_alt = ' '.join(f.read().split())
+        except OSError:
+            bild_alt = 
     elif os.path.exists(ziel):
         os.remove(ziel)
     with open(f'{WEB}/meshviewer/index.html', encoding='utf-8') as f:
         html = f.read()
     with open(f'{verz}/index.html', 'w', encoding='utf-8') as f:
         f.write(kopf_ersetzen(html, name, kopf, text, url, bild,
-                              f'Karte der Freifunk-Router von {kopf}'))
+                              bild_alt or f'Karte der Freifunk-Router von {kopf}'))
     with open(f'{WEB}/meshviewer/manifest.webmanifest', encoding='utf-8') as f:
         manifest = f.read()
     with open(f'{verz}/manifest.webmanifest', 'w', encoding='utf-8') as f:

@@ -971,7 +971,7 @@ def vorschau(verz, pfad, titel, kanonisch):
             with open(quelle[:-4] + '.txt', encoding='utf-8') as f:
                 bild_alt = ' '.join(f.read().split())
         except OSError:
-            bild_alt = 
+            bild_alt = ''
     elif os.path.exists(ziel):
         os.remove(ziel)
     with open(f'{WEB}/meshviewer/index.html', encoding='utf-8') as f:

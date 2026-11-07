@@ -12,6 +12,9 @@ sonst erfuehre ein fremder Server die Adresse jeder Besucherin. Geraetebilder
 liefern wir ebenfalls selbst aus statt von github.io.
 """
 import json
+import re
+import shutil
+from html import escape as html_escape
 import math
 import os
 import sys
@@ -32,6 +35,23 @@ EIGEN = 'map6.freifunk.space'
 # moechte keine Ortskarten zum Ansehen. Alles soll auf die Hauptkarte gehen."
 ORTSKARTEN_AUS = {'neander'}
 INDEX = '/var/www/karte-index'
+# Linkvorschau (Mastodon, Messenger): die lesen kein Javascript, also stehen
+# Titel und og:-Angaben je Karte schon in der ausgelieferten index.html
+# (Bitte adorfer ueber die Content-Session, 07.11.2026). Schluessel ist der
+# Pfad unter sites/; ohne Eintrag "Karte <Titel>" und ein allgemeiner Text.
+VORSCHAU = {
+    'neander/alle': ('Neanderfunk-Karte',
+                     'Live-Karte der Freifunk-Router im Neanderland: wo sie stehen, '
+                     'wie sie verbunden sind, wie viele Geräte gerade im Netz sind.'),
+    'neander/lvr': ('Freifunk-Karte LVR-HPH',
+                    'Live-Karte der Freifunk-Router in den Einrichtungen der '
+                    'LVR-HPH: wo sie stehen, wie sie verbunden sind, wie viele '
+                    'Geräte gerade im Netz sind.'),
+}
+# Vorschaubild je Karte: <community>-<ort>.png, sonst <community>.png, sonst
+# keins. Quelle web/vorschau/ im Repo, einrichten.sh legt sie hierher.
+# Querformat, 1200x630 passt ueberall; kein SVG, Mastodon nimmt es nicht.
+VORSCHAU_BILDER = '/etc/karte-en/vorschau'
 KACHEL = 'https://tiles.ffdus.de'
 OSM_ATTR = ('&copy; <a href="https://www.openstreetmap.org/copyright">'
             'OpenStreetMap</a>-Mitwirkende')
@@ -565,6 +585,72 @@ def konfig(titel, pfad, alle):
     }
 
 
+def png_groesse(datei):
+    """Breite und Hoehe aus dem IHDR-Kopf einer PNG-Datei, sonst None"""
+    try:
+        with open(datei, 'rb') as f:
+            kopf = f.read(24)
+    except OSError:
+        return None
+    if len(kopf) < 24 or kopf[:8] != b'\x89PNG\r\n\x1a\n' or kopf[12:16] != b'IHDR':
+        return None
+    return int.from_bytes(kopf[16:20], 'big'), int.from_bytes(kopf[20:24], 'big')
+
+
+def vorschaubild(pfad, bilder=VORSCHAU_BILDER):
+    g, _, ort = pfad.partition('/')
+    for name in (f'{g}-{ort}.png', f'{g}.png'):
+        datei = os.path.join(bilder, name)
+        if png_groesse(datei):
+            return datei
+    return None
+
+
+def kopf_ersetzen(html, titel, site_name, text, url, bild=None, bild_alt=''):
+    """Titel und Linkvorschau in der index.html des meshviewer-Builds.
+
+    Ersetzt <title>, name/description, itemprop name und die og:/twitter:
+    Zeilen des Builds (dort mit name= statt property=) durch eigene mit
+    property=. bild = (url, breite, hoehe) oder None. Was im Build fehlt,
+    wird vor </head> gesetzt."""
+    e = html_escape
+    zeilen = [
+        f'<title>{e(titel)}</title>',
+        f'<meta name="description" content="{e(text)}" />',
+        f'<meta itemprop="name" content="{e(titel)}" />',
+        f'<meta property="og:type" content="website" />',
+        f'<meta property="og:title" content="{e(titel)}" />',
+        f'<meta property="og:site_name" content="{e(site_name)}" />',
+        f'<meta property="og:description" content="{e(text)}" />',
+        f'<meta property="og:url" content="{e(url)}" />',
+        f'<meta property="og:locale" content="de_DE" />',
+    ]
+    if bild:
+        b_url, breite, hoehe = bild
+        zeilen += [
+            f'<meta property="og:image" content="{e(b_url)}" />',
+            f'<meta property="og:image:width" content="{breite}" />',
+            f'<meta property="og:image:height" content="{hoehe}" />',
+            f'<meta property="og:image:alt" content="{e(bild_alt or titel)}" />',
+            '<meta name="twitter:card" content="summary_large_image" />',
+        ]
+    else:
+        zeilen.append('<meta name="twitter:card" content="summary" />')
+    # Alte Zeilen raus: auch mehrzeilige <meta ...> des Builds
+    weg = re.compile(r'\s*<meta\b[^>]*?(?:name|property|itemprop)="(?:og:[^"]*|twitter:[^"]*|'
+                     r'description|name)"[^>]*>', re.S)
+    html = weg.sub('', html)
+    html = re.sub(r'\s*<title>.*?</title>', '', html, flags=re.S)
+    block = '\n    ' + '\n    '.join(zeilen) + '<!-- mapserver:vorschau -->\n'
+    return html.replace('</head>', block + '  </head>', 1)
+
+
+def manifest_ersetzen(manifest, titel, kurz, text):
+    m = json.loads(manifest)
+    m.update({'name': titel, 'short_name': kurz, 'description': text, 'lang': 'de'})
+    return json.dumps(m, ensure_ascii=False)
+
+
 def resolver(pfad='/etc/resolv.conf'):
     """Die Nameserver des Systems fuer nginx, IPv6 in eckigen Klammern."""
     ns = []
@@ -597,6 +683,21 @@ server {
 	location = /config.json {
 		alias %(web)s/sites/%(host)s/config.json;
 		add_header Cache-Control "no-cache";
+	}
+	# Titel und Linkvorschau je Karte (kopf_ersetzen), auch fuer den
+	# Rueckfall von try_files auf /index.html
+	location = /index.html {
+		alias %(web)s/sites/%(host)s/index.html;
+		add_header Cache-Control "no-cache";
+%(kanonisch)s	}
+	location = /manifest.webmanifest {
+		alias %(web)s/sites/%(host)s/manifest.webmanifest;
+		default_type application/manifest+json;
+		add_header Cache-Control "no-cache";
+	}
+	location = /vorschau.png {
+		alias %(web)s/sites/%(host)s/vorschau.png;
+		expires 1d;
 	}
 	location /data/ {
 		alias %(web)s/sites/%(host)s/data/;
@@ -848,6 +949,35 @@ def startseite(ziele, namen=None):
 """
 
 
+def vorschau(verz, pfad, titel, kanonisch):
+    """index.html, Manifest und Vorschaubild dieser Karte unter sites/"""
+    g = pfad.split('/')[0]
+    kopf = NAMEN.get(g, g)
+    name, text = VORSCHAU.get(pfad, (f'Karte {titel}',
+                                     f'Live-Karte der Freifunk-Router von {kopf}: wo sie '
+                                     'stehen, wie sie verbunden sind, wie viele Geräte '
+                                     'gerade im Netz sind.'))
+    url = f'https://{kanonisch}/'
+    bild = None
+    quelle = vorschaubild(pfad)
+    ziel = f'{verz}/vorschau.png'
+    if quelle:
+        shutil.copyfile(quelle, ziel)
+        breite, hoehe = png_groesse(quelle)
+        bild = (url + 'vorschau.png', breite, hoehe)
+    elif os.path.exists(ziel):
+        os.remove(ziel)
+    with open(f'{WEB}/meshviewer/index.html', encoding='utf-8') as f:
+        html = f.read()
+    with open(f'{verz}/index.html', 'w', encoding='utf-8') as f:
+        f.write(kopf_ersetzen(html, name, kopf, text, url, bild,
+                              f'Karte der Freifunk-Router von {kopf}'))
+    with open(f'{WEB}/meshviewer/manifest.webmanifest', encoding='utf-8') as f:
+        manifest = f.read()
+    with open(f'{verz}/manifest.webmanifest', 'w', encoding='utf-8') as f:
+        f.write(manifest_ersetzen(manifest, name, 'Karte', text))
+
+
 def main():
     alle = list(domains())
     if not alle:
@@ -914,6 +1044,7 @@ def main():
             # und das Service-Menue sind seit 05.11.2026 unter dem neuen Namen.
             servername = ' '.join(namen[pfad])
             umleiten.setdefault(pfad, []).append(fqdn)
+        vorschau(verz, pfad, titel, (namen.get(pfad) or [fqdn])[0])
         site.append(VHOST % {'titel': titel, 'fqdn': fqdn, 'namen': extra, 'host': pfad,
                              'servername': servername, 'kanonisch': kanonisch,
                              'web': WEB, 'vorgabe': '', 'api': api, 'service': service,

@@ -83,3 +83,70 @@ def test_statistik_links_sammelkarte():
     assert 'var-domain=11_lvr&var-domain=31_lvrno' in href
     assert '$__all' in konfig.statistik_links('neander/alle', alle)[0]['href']
     assert 'var-domain=11_lvr' in konfig.statistik_links('neander/lvr-hph', alle)[0]['href']
+
+
+# Kopf aus dem meshviewer-Build (Stand 13.2.0), gekuerzt
+BUILD_KOPF = '''<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage">
+  <head>
+    <meta charset="utf-8" />
+    <meta itemprop="name" content="Meshviewer" />
+    <meta
+      name="description"
+      itemprop="description"
+      content="Knotenkarte - Zeigt alle Knoten"
+    />
+    <meta name="twitter:card" content="summary" />
+    <meta name="og:title" content="Meshviewer" />
+    <meta
+      name="og:description"
+      content="Meshviewer Knotenkarte - Zeigt alle Knoten"
+    />
+    <meta name="og:site_name" content="Meshviewer" />
+    <meta name="og:type" content="website" />
+    <title>Meshviewer - loading...</title>
+    <link rel="manifest" href="./manifest.webmanifest">
+  </head>
+<body></body></html>'''
+
+
+def test_kopf_ersetzen_ohne_bild():
+    html = konfig.kopf_ersetzen(BUILD_KOPF, 'Neanderfunk-Karte', 'Neanderfunk', 'Text & mehr',
+                                'https://karte.neanderfunk.de/')
+    assert 'Meshviewer' not in html
+    assert html.count('<title>') == 1 and '<title>Neanderfunk-Karte</title>' in html
+    assert '<meta property="og:title" content="Neanderfunk-Karte" />' in html
+    assert '<meta property="og:url" content="https://karte.neanderfunk.de/" />' in html
+    assert 'content="Text &amp; mehr"' in html
+    assert html.count('twitter:card') == 1 and 'content="summary"' in html
+    assert 'og:image' not in html
+    assert '<meta charset="utf-8" />' in html and 'rel="manifest"' in html
+    assert html.index('mapserver:vorschau') < html.index('</head>')
+
+
+def test_kopf_ersetzen_mit_bild():
+    html = konfig.kopf_ersetzen(BUILD_KOPF, 'K', 'N', 'T', 'https://k/',
+                                ('https://k/vorschau.png', 1200, 630), 'Alt')
+    assert '<meta property="og:image" content="https://k/vorschau.png" />' in html
+    assert 'og:image:width" content="1200"' in html
+    assert 'content="summary_large_image"' in html
+
+
+def test_png_groesse_und_vorschaubild(tmp_path):
+    png = (b'\x89PNG\r\n\x1a\n' + b'\x00\x00\x00\x0dIHDR' + (1200).to_bytes(4, 'big')
+           + (630).to_bytes(4, 'big') + b'\x08\x06\x00\x00\x00')
+    (tmp_path / 'neander.png').write_bytes(png)
+    (tmp_path / 'kaputt.png').write_bytes(b'kein png')
+    assert konfig.png_groesse(tmp_path / 'neander.png') == (1200, 630)
+    assert konfig.png_groesse(tmp_path / 'kaputt.png') is None
+    assert konfig.vorschaubild('neander/lvr', tmp_path).endswith('neander.png')
+    (tmp_path / 'neander-lvr.png').write_bytes(png)
+    assert konfig.vorschaubild('neander/lvr', tmp_path).endswith('neander-lvr.png')
+    assert konfig.vorschaubild('essen/alle', tmp_path) is None
+
+
+def test_manifest_ersetzen():
+    m = json.loads(konfig.manifest_ersetzen('{"name":"Meshviewer","lang":"en","icons":[1]}',
+                                            'Neanderfunk-Karte', 'Karte', 'T'))
+    assert m['name'] == 'Neanderfunk-Karte' and m['short_name'] == 'Karte'
+    assert m['lang'] == 'de' and m['icons'] == [1]

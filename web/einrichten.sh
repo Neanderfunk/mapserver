@@ -82,9 +82,13 @@ install -m 0755 "$HIER/konfig-erzeugen.py" /usr/local/sbin/karte-en-konfig
 [ -f /etc/karte-en/standby.conf ] || install -m 0644 "$HIER/standby.conf" /etc/karte-en/standby.conf
 # Weitere Namen je Karte: Stand des Repos, also immer ueberschreiben
 install -m 0644 "$HIER/namen.conf" /etc/karte-en/namen.conf
+# Vorschaubilder fuer die Linkvorschau (Mastodon), Stand des Repos
+install -d -m 0755 /etc/karte-en/vorschau
+rsync -rlt --delete --include='*.png' --exclude='*' "$HIER/vorschau/" /etc/karte-en/vorschau/
 /usr/local/sbin/karte-en-konfig
 chown -R yanic:www-data "$WEB/sites"
-find "$WEB/sites" -name config.json -exec chmod 0644 {} +
+find "$WEB/sites" \( -name config.json -o -name index.html -o -name manifest.webmanifest \
+	-o -name vorschau.png \) -exec chmod 0644 {} +
 
 echo "== nginx =="
 install -m 0644 "$HIER/nginx-hash.conf" /etc/nginx/conf.d/karte-hash.conf

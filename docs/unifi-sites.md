@@ -486,3 +486,26 @@ verlangte deshalb Zahlen (`51.2506, 6.9746`).
 
 Überholt am 25.09.2026: Der Fork fragt Nominatim nicht mehr und liest
 gängige Schreibweisen selbst, siehe "Koordinaten" oben.
+
+## Auszug fürs IT-Inventar
+
+`werkzeug/unifi-auszug.py` liest einen Controller mit UniFi OS nur lesend aus.
+Es legt Geräte, Switchports (VLANs, PoE, LLDP, was dran hängt), Netze, WLANs
+und Clients als CSV ab, dazu die gesäuberten Rohdaten als JSON. Erstmals am
+09.11.2026 für das Inventar des WIR-Hauses gebraucht. adorfer gab dafür
+alles frei außer Passwörtern; SSID-Namen dürfen drin bleiben.
+
+```
+SSH_OPTS="-i SCHLUESSEL" werkzeug/unifi-auszug.py LOGINDATEI ZIEL --url https://172.31.253.2
+```
+
+- Lokal starten: Es schickt sich selbst per ssh auf die Karten-VM, fragt dort
+  den Controller ab und bekommt nur das gesäuberte JSON zurück. Auf der VM
+  bleibt nichts liegen, root braucht es nicht.
+- Die Login-Datei hat drei Zeilen: Benutzer, Passwort, URL. Steht dort die
+  LAN-Adresse des Controllers, kommt die VM nicht hin (Timeouts); `--url`
+  setzt die Tunneladresse.
+- Felder mit Passwort, PSK, Secret, Token, Zertifikat, privatem Schlüssel
+  oder `x_` im Namen werden zu `<entfernt>`, bevor sie die VM verlassen.
+- Das Ziel wird mit 700 angelegt, die Dateien mit 600; `LIESMICH` im Kopf
+  des Skripts.

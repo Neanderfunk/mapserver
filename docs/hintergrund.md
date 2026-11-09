@@ -172,6 +172,15 @@ von OSM oder CARTO. Die Geraetebilder liefern wir selbst aus, statt sie wie
 die Beispielkonfiguration von `github.io` zu holen. Sonst erfuehre ein
 fremder Server, wer unsere Karten ansieht.
 
+## Rasterkacheln statt Vektorkarte
+
+meshviewer koennte Vektorkarten (MapLibre, mapLayers `"type": "vector"`).
+Am 28.09.2026 vorerst verworfen (adorfer): ein eigener Vektor-Tileserver
+(etwa Martin) ist zu gross, ein Proxy vor OpenFreeMap oder VersaTiles muesste
+Stil und TileJSON umschreiben. Die Karte bleibt bei Rasterkacheln ueber
+`tiles.ffdus.de`. Langfristig denkbar ist MapProxy fuer WMS/Luftbilder
+(mehrere Bundeslaender zu einer Ebene).
+
 ## Vorgabe-Vhost
 
 Der blanke Name der VM und alles ohne eigenen Vhost landen auf einer

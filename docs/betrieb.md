@@ -278,6 +278,12 @@ meldet dann OK, solange nichts verbunden ist, und WARN, sobald der Tunnel
 einen Nachbarn hat. Dann: Zeile aus `ruhend.conf` nehmen, Abfragegruppe
 messen (vorläufig `ff02::2:1001`), Erstsichtung der map6-Knoten nachziehen.
 
+**Einbeck (blockiert seit 25.09.2026):** Tunneldigger, eine Domain, Port
+20001. Keiner der vier Broker antwortet (COOKIE-Probe zuletzt 27.09.2026), eine
+Nachricht an die Community blieb ohne Antwort. Der Name
+`einbeck.map.freifunk.space` steht im Zertifikat, eine Karte gibt es dort
+nicht. Antwortet ein Broker, wie jede neue Domain einzeln einspielen.
+
 Achtung: `tunnel/einrichten.sh` schaltet am Ende die Tunnel **aller**
 Domains ein, auch ruhender Communities (EN). Neue Domains deshalb einzeln
 einspielen (Dateien installieren, `systemctl enable --now karte-en-tunnel@<code>`).

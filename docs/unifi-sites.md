@@ -507,5 +507,5 @@ SSH_OPTS="-i SCHLUESSEL" werkzeug/unifi-auszug.py LOGINDATEI ZIEL --url https://
   setzt die Tunneladresse.
 - Felder mit Passwort, PSK, Secret, Token, Zertifikat, privatem Schlüssel
   oder `x_` im Namen werden zu `<entfernt>`, bevor sie die VM verlassen.
-- Das Ziel wird mit 700 angelegt, die Dateien mit 600; `LIESMICH` im Kopf
-  des Skripts.
+- Das Ziel wird mit 700 angelegt, die Dateien mit 600; der Kopf
+  des Skripts erklärt alle Optionen.

@@ -57,27 +57,44 @@ Domainnummer im ersten Namensteil (`nef06han`, `dusuk12`). Fuer
 die Daten ihrer Domain um (`karte.neanderfunk.de/data/06_han/...`), nicht auf das ganze
 Netz; sonst zaehlte jeder Ort bei den Freifunk-Aggregatoren alle Knoten.
 
-**Proxy twin2** (adorfer), TLS endet dort:
+**Proxy twin2**, TLS endet dort. Seit 09.11.2026 kommen die vhosts des PVE
+aus der Ansible-Rolle `pve_vorbau` (Betrieb und Operations); die der Karte
+stehen in `vorbau/vms/spacemap.yml` im Ansible-Repo. Aufteilung, abgestimmt
+mit der Operations-Session:
 
-| Datei auf twin2 | Namen | Zertifikat |
+- **Diese Session pflegt `spacemap.yml`** (vhosts, Namen, `nginx_http`) und
+  committet im Ansible-Repo nur diese Datei, nach `git pull`. Laeufe,
+  Dry-Run und Abgleich macht Operations; einen Lauf fordern wir per
+  Nachricht mit Commit-ID, Tags und vhost an. Ein vhost mit
+  `gesperrt: true` fasst die Rolle nicht an.
+- **Die Namen fuehrt `web/namen.conf`.** `web/test_proxy_namen.py` prueft
+  sie gegen `spacemap.yml` (Ansible-Repo aus `ANSIBLE_REPO` oder
+  `../ansible`): jeder Name muss den Proxy erreichen, jeder genaue Name im
+  Zertifikat stehen. Neuer Name: in beide Dateien, dann Lauf `nginx` und
+  `zert` fuer den vhost anfordern.
+
+| vhost | Namen | Zertifikat (bis zum Umstieg) |
 | --- | --- | --- |
-| `map.conf` | `map.freifunk.space` und `*.map.freifunk.space` | `tiles.eulenfunk.de` (Sammelzertifikat) |
-| `karte.conf` | die alten Namen oben, Subdomains per Wildcard | `karte.neanderfunk.de`, 84 Namen |
-| `ortskarten.conf` | die 49 frueheren `<ort>.neander.map.freifunk.space` | `ortskarten-neander` |
+| `ortskarten` | die 49 frueheren `<ort>.neander.map.freifunk.space` | `ortskarten-neander` |
+| `map` | `map.freifunk.space`, `*.map.freifunk.space`, 13 Namen im Zertifikat | `tiles.eulenfunk.de` (Sammelzertifikat) |
+| `karte` | die alten Namen oben, Subdomains per Wildcard, Host-Log | `karte.neanderfunk.de`, 84 Namen |
+
+Umstieg vhost fuer vhost in dieser Reihenfolge; danach heissen die
+Zertifikate wie die vhosts. Stand 09.11.2026: alle drei eingetragen und
+gesperrt, die Rolle lernt noch `nginx_http` (conf.d).
 
 - Zertifikate per HTTP-Pruefung (webroot `/var/www/letsencrypt`), ein
   Wildcard-Zertifikat ginge nur ueber DNS und ist bewusst nicht eingerichtet.
   Subdomains, die nicht im Zertifikat stehen, enden bei HTTPS im
-  Zertifikatsfehler. Hoechstens 100 Namen je Zertifikat.
+  Zertifikatsfehler. Hoechstens 100 Namen je Zertifikat, darueber teilt die
+  Rolle auf.
 - Neue Namen findet `/var/log/nginx/karte-hosts.log` auf twin2 (Host in
-  Spalte 3, Format `karte_host`); auswerten mit
-  `awk '{print $3}' /var/log/nginx/karte-hosts.log | sort | uniq -c | sort -rn`,
-  Namen mit nennenswert vielen Aufrufen per `certbot certonly --expand` dazu.
-  Vorher pruefen, ob der Weg traegt: Probedatei unter
-  `/.well-known/acme-challenge/` und von aussen ueber IPv4 und IPv6 abrufen;
-  Staging von Let's Encrypt war am 04.11.2026 nicht erreichbar.
-- `server_names_hash_bucket_size 128` in `conf.d/server-names-hash.conf`,
-  sonst lehnt nginx die langen Ortsnamen ab.
+  Spalte 3, Format `karte_host`, nur vhost `karte`); auswerten mit
+  `awk '{print $3}' /var/log/nginx/karte-hosts.log | sort | uniq -c | sort -rn`.
+  Namen mit nennenswert vielen Aufrufen in `zert_namen_extra` von `karte`.
+- `server_names_hash_bucket_size 128` (Host, `pve_vorbau.nginx_http`), sonst
+  lehnt nginx die langen Ortsnamen ab; `log_format karte_host` steht als
+  `nginx_http` in `spacemap.yml`.
 
 ## Aeussere Abhaengigkeiten
 
@@ -128,8 +145,8 @@ verliert die Aenderung beim naechsten Lauf. Quelle ist immer
 Naechste Schritte, die feststehen:
 
 - **Host-Log auf twin2 auswerten**, ein paar Tage nach dem 04.11.2026. Namen
-  mit nennenswert vielen Aufrufen ins Zertifikat `karte.neanderfunk.de`
-  (84 von 100). Die vier `www.`-Namen vom 04.11. waren Scanner und bleiben
+  mit nennenswert vielen Aufrufen in `zert_namen_extra` des vhosts `karte`
+  in `spacemap.yml` (84 von 100), Lauf bei Operations anfordern. Die vier `www.`-Namen vom 04.11. waren Scanner und bleiben
   draussen.
 - **Verzeichnisse der abgeschalteten Ortskarten** (`sites/neander/<host>/`)
   liegen noch auf der VM, werden aber nicht mehr ausgeliefert. Loeschen nur

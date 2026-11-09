@@ -150,3 +150,15 @@ def test_manifest_ersetzen():
                                             'Neanderfunk-Karte', 'Karte', 'T'))
     assert m['name'] == 'Neanderfunk-Karte' and m['short_name'] == 'Karte'
     assert m['lang'] == 'de' and m['icons'] == [1]
+
+
+def test_alte_namen_bauen_service_worker_ab():
+    # Ohne eigenes /sw.js haelt der alte Service Worker die Karte unter dem
+    # alten Namen fest, der 301 kommt nie an (09.11.2026)
+    for vorlage in (konfig.NAMENSWECHSEL, konfig.UMLEITUNG):
+        conf = vorlage % {'swabbau': konfig.SW_ABBAU, 'titel': 't', 'namen': 'alt.example',
+                          'fqdn': 'alt.example', 'ziel': 'neu.example', 'grund': 'g',
+                          'community': 'neander'}
+        assert 'location = /sw.js' in conf
+        assert conf.index('location = /sw.js') < conf.index('location / {')
+    assert os.path.exists(os.path.join(os.path.dirname(__file__), 'sw-abbau.js'))

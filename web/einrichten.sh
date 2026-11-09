@@ -77,6 +77,8 @@ echo "  $(find "$WEB/pictures-eigen" -type f | wc -l) eigene Bilder"
 
 echo "== Konfigurationen =="
 install -m 0755 "$HIER/konfig-erzeugen.py" /usr/local/sbin/karte-en-konfig
+# /sw.js unter alten Namen: baut den Service Worker der Karte ab
+install -m 0644 "$HIER/sw-abbau.js" "$WEB/sw-abbau.js"
 # Communities im Standby: nur anlegen, wenn es die Datei noch nicht gibt,
 # sonst ueberschreibt ein Lauf den Betriebszustand.
 [ -f /etc/karte-en/standby.conf ] || install -m 0644 "$HIER/standby.conf" /etc/karte-en/standby.conf

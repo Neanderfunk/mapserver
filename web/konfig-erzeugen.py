@@ -839,7 +839,7 @@ server {
 	server_name %(namen)s;
 
 	access_log /var/log/nginx/karte-en.access.log;
-
+%(swabbau)s
 	# Auch die Umleitung selbst mit CORS: Seiten, die Daten (/nf/, /data/)
 	# noch unter einem alten Namen per fetch holen, folgen ihr sonst nicht
 	add_header Access-Control-Allow-Origin "*" always;
@@ -874,6 +874,17 @@ map $host $karte_daten_%(community)s {
 """
 
 
+SW_ABBAU = '''
+	# Alter Service Worker der Karte: ohne dieses /sw.js liefert er die Karte
+	# weiter aus dem Cache und der 301 kommt nie an (web/sw-abbau.js)
+	location = /sw.js {
+		alias %s/sw-abbau.js;
+		default_type application/javascript;
+		add_header Cache-Control "no-cache" always;
+	}
+''' % WEB
+
+
 UMLEITUNG = """
 # %(titel)s: Standby, %(grund)s
 server {
@@ -883,6 +894,7 @@ server {
 
 	access_log /var/log/nginx/karte-en.access.log;
 
+%(swabbau)s
 	# Dauerhaft, nicht nur fuer diesen Aufruf: wir messen dieses Netz nicht
 	# mehr. Wer die Karte verlinkt hat, soll bei der Community landen.
 	location / {
@@ -1026,7 +1038,7 @@ def main():
         # unter sites/ bleiben liegen, eine Zeile weniger in standby.conf
         # holt alles zurueck.
         if g in ruht:
-            site.append(UMLEITUNG % {'titel': titel, 'fqdn': fqdn, 'namen': extra,
+            site.append(UMLEITUNG % {'swabbau': SW_ABBAU, 'titel': titel, 'fqdn': fqdn, 'namen': extra,
                                      'ziel': ruht[g], 'grund': f'Umleitung auf {ruht[g]}'})
             print(f'  {fqdn:38} -> {ruht[g]}')
             continue
@@ -1067,7 +1079,7 @@ def main():
                     '\t"~^[a-z]*%s[a-z0-9]*\\." https://%s/data/%s/;\n'
                     % (d['code'].split('_')[0], ziel, d['code']) for d in seine)
                 site.append(KNOTENLISTE % {'community': g, 'ziel': ziel, 'zeilen': zeilen})
-            site.append(NAMENSWECHSEL % {'titel': titel, 'namen': ' '.join(umleiten[pfad]),
+            site.append(NAMENSWECHSEL % {'swabbau': SW_ABBAU, 'titel': titel, 'namen': ' '.join(umleiten[pfad]),
                                          'ziel': ziel, 'community': g})
 
     daten = ''.join(DATENPFAD % {'community': g, 'web': WEB}

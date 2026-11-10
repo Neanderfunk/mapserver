@@ -73,15 +73,16 @@ mit der Operations-Session:
   Zertifikat stehen. Neuer Name: in beide Dateien, dann Lauf `nginx` und
   `zert` fuer den vhost anfordern.
 
-| vhost | Namen | Zertifikat (bis zum Umstieg) |
+| vhost | Namen | Zertifikat |
 | --- | --- | --- |
-| `ortskarten` | die 49 frueheren `<ort>.neander.map.freifunk.space` | `ortskarten-neander` |
-| `map` | `map.freifunk.space`, `*.map.freifunk.space`, 13 Namen im Zertifikat | `tiles.eulenfunk.de` (Sammelzertifikat) |
-| `karte` | die alten Namen oben, Subdomains per Wildcard, Host-Log | `karte.neanderfunk.de`, 84 Namen |
+| `ortskarten` | die 49 frueheren `<ort>.neander.map.freifunk.space` | `ortskarten`, 49 Namen |
+| `map` | `map.freifunk.space`, `*.map.freifunk.space`, 13 Namen im Zertifikat | `map`, 14 Namen |
+| `karte` | die alten Namen oben, Subdomains per Wildcard, Host-Log | `karte`, 84 Namen |
 
-Umstieg vhost fuer vhost in dieser Reihenfolge; danach heissen die
-Zertifikate wie die vhosts. Stand 09.11.2026: alle drei eingetragen und
-gesperrt, die Rolle lernt noch `nginx_http` (conf.d).
+Eingespielt am 10.11.2026, vhost fuer vhost in dieser Reihenfolge, jeweils
+von aussen geprueft. Die Zertifikate heissen wie die vhosts; die frueheren
+(`ortskarten-neander`, das Sammelzertifikat `tiles.eulenfunk.de`,
+`karte.neanderfunk.de`) sind abgeloest.
 
 - Zertifikate per HTTP-Pruefung (webroot `/var/www/letsencrypt`), ein
   Wildcard-Zertifikat ginge nur ueber DNS und ist bewusst nicht eingerichtet.

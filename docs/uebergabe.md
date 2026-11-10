@@ -66,7 +66,8 @@ mit der Operations-Session:
   committet im Ansible-Repo nur diese Datei, nach `git pull`. Laeufe,
   Dry-Run und Abgleich macht Operations; einen Lauf fordern wir per
   Nachricht mit Commit-ID, Tags und vhost an. Ein vhost mit
-  `gesperrt: true` fasst die Rolle nicht an.
+  `gesperrt: true` fasst die Rolle nicht an. Ein aus `spacemap.yml`
+  gestrichener vhost verschwindet beim naechsten Lauf `nginx` von twin2.
 - **Die Namen fuehrt `web/namen.conf`.** `web/test_proxy_namen.py` prueft
   sie gegen `spacemap.yml` (Ansible-Repo aus `ANSIBLE_REPO` oder
   `../ansible`): jeder Name muss den Proxy erreichen, jeder genaue Name im

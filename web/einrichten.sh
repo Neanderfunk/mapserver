@@ -22,8 +22,35 @@ WEB=/var/www/karte-en
 
 echo "== Pakete =="
 export DEBIAN_FRONTEND=noninteractive
+# Node 24 von NodeSource: Upstream-meshviewer baut seit November 2026 mit
+# Node 24, vitest und vite-plugin-checker brauchen mindestens 22.22; trixie
+# hat nur 20. Das nodejs von NodeSource bringt npm mit und ersetzt das
+# Debian-Paket npm, deshalb steht npm unten nicht mehr in der Liste.
+NODESOURCE_FPR=6F71F525282841EEDAF851B42F59B5F99B1BE0B4
+if [ ! -f /etc/apt/keyrings/nodesource.gpg ]; then
+	apt-get install -y -qq gnupg curl
+	install -d -m 0755 /etc/apt/keyrings
+	curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg.neu
+	gpg --show-keys --with-colons /etc/apt/keyrings/nodesource.gpg.neu | grep -q "^fpr:::::::::$NODESOURCE_FPR:" \
+		|| { echo "NodeSource-Schluessel hat einen unerwarteten Fingerabdruck." >&2; exit 1; }
+	mv /etc/apt/keyrings/nodesource.gpg.neu /etc/apt/keyrings/nodesource.gpg
+	chmod 0644 /etc/apt/keyrings/nodesource.gpg
+fi
+cat > /etc/apt/sources.list.d/nodesource.sources <<'X'
+# Node 24 fuer den meshviewer-Bau (mapserver web/einrichten.sh)
+Types: deb
+URIs: https://deb.nodesource.com/node_24.x
+Suites: nodistro
+Components: main
+Signed-By: /etc/apt/keyrings/nodesource.gpg
+X
+cat > /etc/apt/preferences.d/nodesource.pref <<'X'
+Package: nodejs
+Pin: origin deb.nodesource.com
+Pin-Priority: 600
+X
 apt-get update -qq
-apt-get install -y -qq nodejs npm git nginx
+apt-get install -y -qq nodejs git nginx
 node --version
 
 echo "== meshviewer bauen =="

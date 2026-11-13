@@ -1208,7 +1208,7 @@ Upstream-Stand plus unsere Änderungen, **je Funktion ein Commit**, erklärt in
 
 | Fork | Upstream | Basis |
 | --- | --- | --- |
-| [Neanderfunk/meshviewer](https://github.com/Neanderfunk/meshviewer) | freifunk/meshviewer | `6c68e3d` (18.09.2026), per Merge nachgezogen bis `df76ed7` (26.09.2026) |
+| [Neanderfunk/meshviewer](https://github.com/Neanderfunk/meshviewer) | freifunk/meshviewer | `6c68e3d` (18.09.2026), per Merge nachgezogen bis `744cd2a` (12.11.2026) |
 | [Neanderfunk/unifi_respondd](https://github.com/Neanderfunk/unifi_respondd) | freifunkMUC/unifi_respondd | `6976651` (18.09.2026), am 28.09.2026 aktueller Upstream-Stand |
 | [Neanderfunk/yanic](https://github.com/Neanderfunk/yanic) | FreifunkBremen/yanic (Codeberg) | `v1.9.0`, per Merge nachgezogen bis `89bd94c` (04.05.2026) |
 
@@ -1218,6 +1218,12 @@ Frontend-Code dazukommt, ein eigenes Repo. Beides war erreicht. Die Forks
 behalten die Lizenz des Originals (AGPL-3.0 bzw. GPL-3.0); beim meshviewer
 erfüllt der öffentliche Fork zugleich die AGPL-Pflicht, den Quelltext der
 ausgelieferten Fassung zugänglich zu machen.
+
+**Node 24 für den Bau (seit 14.11.2026).** Upstream-meshviewer baut mit Node
+24, vitest und vite-plugin-checker verlangen mindestens Node 22.22. Debian
+trixie hat nur Node 20, daher kommt `nodejs` auf map6 aus dem Repo von
+NodeSource (`node_24.x`, per Pin vor dem Debian-Paket); dessen npm ersetzt das
+Debian-Paket `npm`.
 
 Upstream nachziehen: im Fork `git fetch upstream`, dann **per Merge**, nicht
 per Rebase: auf die Commits der Forks verweisen veröffentlichte Links

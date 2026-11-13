@@ -117,8 +117,8 @@ Debian 13 (trixie), Kernel 6.12.107
 batman-adv 2024.2 (compat 15), batctl 2025.0
 tunneldigger  Commit 9a9a427
 yanic         v1.9.0 (codeberg.org/FreifunkBremen/yanic)
-meshviewer    freifunk/meshviewer, Zweig main
-node 20.19, nginx 1.26.3
+meshviewer    Neanderfunk/meshviewer (Fork), Zweig neanderfunk
+node 24 (NodeSource, seit 14.11.2026), nginx 1.26.3
 ```
 
 `ffrgb/meshviewer` ist seit August 2023 archiviert und darf nicht mehr als

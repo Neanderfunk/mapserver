@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# HVB-Manifest fuer den nodeplacer neu erzeugen und signieren (manifest.py).
+# Als root: der Signierschluessel ist nur fuer root lesbar (adorfer 20.11.2026).
+[Unit]
+Description=HVB-Ortung: nodeplacer-Manifest erzeugen und signieren
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/locator/manifest.py
+ProtectSystem=strict
+ReadWritePaths=/var/www/locator/hvb/nodeplacer
+PrivateTmp=true
+ProtectHome=true
+NoNewPrivileges=true

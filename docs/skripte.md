@@ -47,7 +47,8 @@ in `betrieb.md`).
 | `werkzeug/unifi-offloader.py` | `karte-unifi-offloader` | `karte-unifi-zuordnung.timer`, 5 min | Router je UniFi-AP aus der Übersetzungstabelle |
 | `web/konfig-erzeugen.py` | `karte-en-konfig` | `web/einrichten.sh` | `config.json` je Vhost und die nginx-Site |
 | `locator/annahme.py` | `/usr/local/lib/locator/annahme.py` | `locator.service` | HVB-Ortung (Prototyp): POST auf `locator.ffnef.de/hvb/locate`, legt Meldungen roh unter `/var/lib/locator/eingang/` ab (0600, 14 Tage, `locator-aufraeumen.timer`) |
-| `locator/auswertung.py` | `locator-auswertung` | von Hand (root) | je node_id letzte Meldung, Mesh-Partner, Trockenlauf der Regel E11 bei -75/-80 dBm |
+| `locator/auswertung.py` | `locator-auswertung` | von Hand (root) | je node_id letzte Meldung, Mesh-Partner, LAN-Mesh, Regeln E11 (-75 dBm) und E12 |
+| `locator/manifest.py` | `locator-manifest [--trocken]` | `locator-manifest.timer`, alle 10 min (root) | `/hvb/nodeplacer/nodeplacer.manifest`: Knoten aus 25_hvb mit E11-Ziel und E12 ja, signiert mit dem HVB-Schlüssel (`/etc/locator`) |
 | `locator/meshids-erzeugen.py` | – | von Hand, lokal | `locator/meshids.conf` (Mesh-ID → Domain) aus den Domain-Dateien in FirmwareConfigs |
 | `service/service.py` | `/usr/local/lib/karte-service/service.py` | `karte-service.service` | Service-Menü, schreibt Aliase, Entfernen-Aufträge und `overrides.json` |
 | `checkmk/local/mapserver`, `local/60/mapserver-domains`, `local/300/mapserver-web` | `/usr/lib/check_mk_agent/local/…` | Checkmk-Agent | Tunnel, Daten, Zeitreihen, UniFi, Controller-Tunnel, Webseiten |

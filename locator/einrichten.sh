@@ -26,13 +26,23 @@ id locator >/dev/null 2>&1 || useradd --system --no-create-home --home-dir /none
 
 install -d -m 0755 "$LIB"
 install -m 0644 "$HIER/ortung.py" "$HIER/meshids.conf" "$LIB/"
-install -m 0755 "$HIER/annahme.py" "$HIER/auswertung.py" "$LIB/"
+install -m 0755 "$HIER/annahme.py" "$HIER/auswertung.py" "$HIER/manifest.py" "$LIB/"
 printf '#!/bin/sh\nexec /usr/bin/python3 %s/auswertung.py "$@"\n' "$LIB" > /usr/local/sbin/locator-auswertung
 chmod 0755 /usr/local/sbin/locator-auswertung
+printf '#!/bin/sh\nexec /usr/bin/python3 %s/manifest.py "$@"\n' "$LIB" > /usr/local/sbin/locator-manifest
+chmod 0755 /usr/local/sbin/locator-manifest
+# Ausgeliefertes nodeplacer-Manifest (http, Konzept 4.5)
+install -d -m 0755 /var/www/locator /var/www/locator/hvb /var/www/locator/hvb/nodeplacer
 
-install -m 0644 "$HIER/locator.service" "$HIER/locator-aufraeumen.service" "$HIER/locator-aufraeumen.timer" /etc/systemd/system/
+install -m 0644 "$HIER/locator.service" "$HIER/locator-aufraeumen.service" "$HIER/locator-aufraeumen.timer" \
+	"$HIER/locator-manifest.service" "$HIER/locator-manifest.timer" /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now locator-aufraeumen.timer
+# Manifest: ohne Schluessel kein Timer (Schluessel entsteht von Hand, s. o.)
+if [ -f /etc/locator/nodeplacer.secret ]; then
+	systemctl start locator-manifest.service
+	systemctl enable --now locator-manifest.timer
+fi
 systemctl enable locator.service
 systemctl restart locator.service
 install -d -m 0700 -o locator -g locator /var/lib/locator/eingang
@@ -47,3 +57,5 @@ sleep 1
 systemctl is-active locator.service
 printf 'Probe GET /hvb/locate: '
 curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: locator.ffnef.de' http://[::1]/hvb/locate
+printf 'Probe GET /hvb/nodeplacer/nodeplacer.manifest: '
+curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: locator.ffnef.de' http://[::1]/hvb/nodeplacer/nodeplacer.manifest

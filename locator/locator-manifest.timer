@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: BSD-3-Clause
+[Unit]
+Description=HVB-Ortung: nodeplacer-Manifest alle 10 Minuten
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=10min
+
+[Install]
+WantedBy=timers.target

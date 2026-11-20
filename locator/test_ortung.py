@@ -213,3 +213,38 @@ def test_lan_mesh_schweigt_im_text(capsys):
     t = capsys.readouterr().out
     assert '02:00:00:00:00:01 schweigt' in t
     assert '02:00:00:00:00:02 aabbccddeeff 21_dias' in t
+
+
+def _a(nid, domain='25_hvb', ziel='21_dias', darf=(True, ''), letzte='2026-11-20T10:00:00+00:00'):
+    return {'node_id': nid, 'domain': domain, 'wuerde_verschieben': ziel,
+            'darf_gehen': darf, 'letzte': letzte}
+
+
+def test_manifest_auswahl():
+    import datetime
+    import manifest
+    jetzt = datetime.datetime(2026, 11, 20, 12, tzinfo=datetime.timezone.utc)
+    aus = [_a('aaaaaaaaaaa1'),                                  # rein
+           _a('aaaaaaaaaaa2', domain='21_dias'),                # nicht in 25_hvb
+           _a('aaaaaaaaaaa3', ziel=None),                       # kein E11-Ziel
+           _a('aaaaaaaaaaa4', ziel='25_hvb'),                   # eigene Domain
+           _a('aaaaaaaaaaa5', darf=(False, 'x')),               # E12 nein
+           _a('aaaaaaaaaaa6', darf=(None, 'x')),                # E12 unklar
+           _a('aaaaaaaaaaa7', darf=None),                       # lan_switch
+           _a('aaaaaaaaaaa8', letzte='2026-11-16T10:00:00+00:00'),  # zu alt
+           _a('aaaaaaaaaaa9', ziel='31_lvrno')]                 # LVR per Mesh erlaubt
+    assert manifest.auswahl(aus, jetzt) == [('aaaaaaaaaaa1', '21_dias'), ('aaaaaaaaaaa9', '31_lvrno')]
+
+
+def test_manifest_koerper():
+    import datetime
+    import manifest
+    jetzt = datetime.datetime(2026, 11, 20, 18, 5, 0, tzinfo=datetime.timezone(datetime.timedelta(hours=1)))
+    t = manifest.koerper([('aaaaaaaaaaa1', '21_dias')], jetzt)
+    z = t.split('\n')
+    assert z[0] == 'FORMAT=1'
+    assert z[1] == 'DATE=2026-11-20 18:05:00+01:00'
+    assert z[2] == 'EXPIRES=2026-11-23 18:05:00+01:00'
+    assert z[3].startswith('COMMENT=')
+    assert z[4] == 'aaaaaaaaaaa1 domain target=21_dias'
+    assert t.endswith('\n') and '---' not in t

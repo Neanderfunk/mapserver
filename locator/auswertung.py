@@ -11,6 +11,10 @@ Regel E11 verschieben wuerde (-75 dBm, adorfer 20.11.2026), und ob er nach
 Regel E12 gehen darf (aus den Meldungen, ohne Kartendaten). Trockenlauf:
 nichts wird verschoben, nichts geht nach aussen.
 
+Meldet ein Knoten lan_switch, schaltet er selbst per LAN-Mesh um (adorfer
+20.11.2026): dann keine E11/E12-Auswertung, nur der Hinweis. Taucht seine
+letzte Meldung danach aus der Zieldomain auf, gilt er als umgeschaltet.
+
 Der Absender ist oft nicht die Exit-IP: Ein Knoten schickt eigenen Verkehr
 per IPv6 ueber das Mesh (Freifunk-Prefix am Supernode), die exit_ip meldet
 dagegen den WAN-Uplink. Verglichen wird deshalb nur bei gleicher
@@ -37,8 +41,11 @@ def lesen(ablage):
         except (OSError, ValueError):
             continue
         nid = e['meldung']['node_id']
-        k = je_knoten.setdefault(nid, {'meldungen': 0, 'letzte': None})
+        k = je_knoten.setdefault(nid, {'meldungen': 0, 'letzte': None, 'lan_switch': None})
         k['meldungen'] += 1
+        if e['meldung'].get('lan_switch') and (
+                k['lan_switch'] is None or e['empfangen'] >= k['lan_switch']['zeit']):
+            k['lan_switch'] = {'ziel': e['meldung']['lan_switch'], 'zeit': e['empfangen']}
         if k['letzte'] is None or e['empfangen'] >= k['letzte']['empfangen']:
             k['letzte'] = e
     return je_knoten
@@ -62,23 +69,29 @@ def auswerten(je_knoten, meshids):
         m = e['meldung']
         exit_ip = m.get('exit_ip') or {}
         xff = (e.get('x_forwarded_for') or '').split(',')[0].strip()
-        partner = ortung.mesh_partner(m.get('wifi', []), meshids)
+        wifi = m.get('wifi') if isinstance(m.get('wifi'), list) else []
+        partner = ortung.mesh_partner(wifi, meshids)
+        ls = k.get('lan_switch')
+        selbst = bool(m.get('lan_switch'))
         aus.append({
             'node_id': nid,
             'meldungen': k['meldungen'],
             'letzte': e['empfangen'],
             'domain': m.get('domain'),
             'release': m.get('release'),
-            'netze': len(m.get('wifi', [])),
+            'netze': len(wifi),
             'scan': m.get('scan'),
             'koordinaten': bool(m.get('coordinates')),
             'exit_ip': exit_ip,
             'absender': xff,
             'absender_passt': absender_passt(xff, exit_ip),
             'mesh': {mid: p for mid, p in sorted(partner.items(), key=lambda x: -x[1]['staerkster'])},
-            'wuerde_verschieben': ortung.zieldomain(partner, SCHWELLE),
+            'lan_mesh': ortung.lan_mesh(m),
+            'lan_switch': ls,
+            'lan_umgeschaltet': bool(ls) and m.get('domain') == ls['ziel'],
+            'wuerde_verschieben': None if selbst else ortung.zieldomain(partner, SCHWELLE),
             'uplink': m.get('uplink'),
-            'darf_gehen': ortung.darf_gehen(m, letzte),
+            'darf_gehen': None if selbst else ortung.darf_gehen(m, letzte),
         })
     return aus
 
@@ -94,9 +107,20 @@ def text(aus):
         for mid, p in a['mesh'].items():
             print('  Mesh %-12s %-10s staerkster %4s dBm, %d BSSID(s)' % (
                 mid, p['domain'] or 'unbekannt', p['staerkster'], p['bssids']))
-        print('  wuerde verschieben nach (E11, %d dBm): %s' % (SCHWELLE, a['wuerde_verschieben'] or '-'))
-        ok, grund = a['darf_gehen']
-        print('  darf gehen (E12): %s (%s)' % ({True: 'ja', False: 'nein', None: 'unklar'}[ok], grund))
+        for n in a['lan_mesh']:
+            print('  LAN-Mesh %-14s %s %s' % (
+                n.get('iface', '?'), n.get('node_id', '?'), n.get('domain') or 'Domain unbekannt'))
+        ls = a['lan_switch']
+        if ls:
+            print('  schaltet selbst um nach %s (LAN-Mesh, gemeldet %s): %s' % (
+                ls['ziel'], ls['zeit'],
+                'umgeschaltet, meldet aus der Zieldomain' if a['lan_umgeschaltet'] else 'noch nicht aus der Zieldomain gemeldet'))
+        if a['darf_gehen'] is None:
+            print('  E11/E12: entfaellt, Umschaltung per LAN-Mesh')
+        else:
+            print('  wuerde verschieben nach (E11, %d dBm): %s' % (SCHWELLE, a['wuerde_verschieben'] or '-'))
+            ok, grund = a['darf_gehen']
+            print('  darf gehen (E12): %s (%s)' % ({True: 'ja', False: 'nein', None: 'unklar'}[ok], grund))
         print()
 
 

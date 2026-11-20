@@ -4,6 +4,9 @@
 Format der Meldung: Version 1, abgestimmt mit der Packages-Session
 (20.11.2026), Konzept Neanderfunk/packages docs/konzept-hvb-ortung.md 4.3.
 Regel fuer Mesh-Partner: Entscheidung E11 im Konzept (4.4).
+lan_mesh/lan_switch: Knoten in 25_hvb mit LAN-Mesh-Nachbarn genau einer
+anderen Domain schalten selbst um (adorfer 20.11.2026, Konzept 4.3/4.4);
+dafuer keine Auswertung, kein Manifest, E12 gilt nicht.
 """
 import re
 
@@ -31,6 +34,8 @@ def pruefen(m):
     if not isinstance(m.get('node_id'), str) or not NODE_ID.match(m['node_id']):
         raise Ungueltig('node_id: 12 Hexziffern, klein')
     wifi = m.get('wifi', [])
+    if wifi == {}:  # jsonc: leeres Array als {}
+        wifi = []
     if not isinstance(wifi, list) or len(wifi) > MAX_NETZE:
         raise Ungueltig('wifi: Liste mit hoechstens %d Eintraegen' % MAX_NETZE)
     for w in wifi:
@@ -38,7 +43,21 @@ def pruefen(m):
             raise Ungueltig('wifi: Eintraege brauchen bssid')
         if not isinstance(w.get('signal'), (int, float)):
             raise Ungueltig('wifi: Eintraege brauchen signal')
+    lm = m.get('lan_mesh', [])
+    if not (lm == {} or isinstance(lm, list) and len(lm) <= MAX_NETZE):
+        raise Ungueltig('lan_mesh: Liste (leer auch als {})')
+    for n in lan_mesh(m):
+        if not isinstance(n, dict):
+            raise Ungueltig('lan_mesh: Eintraege muessen Objekte sein')
+    if 'lan_switch' in m and not isinstance(m['lan_switch'], str):
+        raise Ungueltig('lan_switch: Domain als Zeichenkette')
     return len(wifi)
+
+
+def lan_mesh(m):
+    """LAN-Mesh-Nachbarn als Liste. jsonc schreibt ein leeres Array als {}."""
+    lm = m.get('lan_mesh')
+    return lm if isinstance(lm, list) else []
 
 
 def meshids_lesen(pfad):

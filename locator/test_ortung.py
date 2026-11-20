@@ -163,3 +163,41 @@ def test_e12_unklar():
     assert ortung.darf_gehen(meldung(), [])[0] is None
     assert ortung.darf_gehen(knoten('dddddddddddd', True, None, ['dd:00:00:00:00:01']), [])[0] is None
     assert ortung.darf_gehen(knoten('dddddddddddd', True, '02:ca:ff:ee:21:00'), [])[0] is None
+
+
+LM = [{'iface': 'br-mesh_other', 'node_id': 'aabbccddeeff', 'domain': '21_dias'}]
+
+
+@pytest.mark.parametrize('m', [
+    meldung(lan_mesh=LM), meldung(lan_mesh={}), meldung(lan_mesh=[]), meldung(wifi={}),
+    meldung(lan_mesh=[{'iface': 'br-mesh_other', 'node_id': 'aabbccddeeff'}], lan_switch='21_dias'),
+])
+def test_lan_mesh_gut(m):
+    ortung.pruefen(m)
+
+
+@pytest.mark.parametrize('m', [
+    meldung(lan_mesh='x'), meldung(lan_mesh={'a': 1}), meldung(lan_mesh=['x']), meldung(lan_switch=21),
+])
+def test_lan_mesh_schlecht(m):
+    with pytest.raises(ortung.Ungueltig):
+        ortung.pruefen(m)
+
+
+def test_lan_mesh_leer_als_objekt():
+    assert ortung.lan_mesh(meldung(lan_mesh={})) == []
+    assert ortung.lan_mesh(meldung()) == []
+    assert ortung.lan_mesh(meldung(lan_mesh=LM)) == LM
+
+
+def test_lan_switch_ohne_e11_e12_und_umgeschaltet():
+    import auswertung
+    vorher = {'empfangen': '2026-11-20T10:00:00', 'meldung': meldung(lan_mesh=LM, lan_switch='21_dias', wifi={})}
+    k = {'meldungen': 1, 'letzte': vorher, 'lan_switch': {'ziel': '21_dias', 'zeit': vorher['empfangen']}}
+    a = auswertung.auswerten({'0123456789ab': k}, MESHIDS)[0]
+    assert a['darf_gehen'] is None and a['wuerde_verschieben'] is None
+    assert not a['lan_umgeschaltet'] and a['lan_mesh'] == LM
+    k['letzte'] = {'empfangen': '2026-11-20T11:00:00', 'meldung': meldung(domain='21_dias')}
+    k['meldungen'] = 2
+    a = auswertung.auswerten({'0123456789ab': k}, MESHIDS)[0]
+    assert a['lan_umgeschaltet'] and a['darf_gehen'] is not None

@@ -7,8 +7,13 @@
 Je Knoten die letzte Meldung: Zeit, Domain, Release, Zahl der Netze,
 exit_ip neben der Absenderadresse am Proxy (X-Forwarded-For), je gesehener
 Mesh-ID staerkster Pegel und Zahl der BSSIDs, dazu die Domain, in die die
-Regel E11 verschieben wuerde, fuer -75 und -80 dBm. Trockenlauf: nichts wird
-verschoben, nichts geht nach aussen.
+Regel E11 verschieben wuerde (-75 dBm, adorfer 20.11.2026). Trockenlauf:
+nichts wird verschoben, nichts geht nach aussen.
+
+Der Absender ist oft nicht die Exit-IP: Ein Knoten schickt eigenen Verkehr
+per IPv6 ueber das Mesh (Freifunk-Prefix am Supernode), die exit_ip meldet
+dagegen den WAN-Uplink. Verglichen wird deshalb nur bei gleicher
+Adressfamilie.
 """
 import glob
 import json
@@ -20,7 +25,7 @@ import ortung  # noqa: E402
 
 ABLAGE = os.environ.get('LOCATOR_ABLAGE', '/var/lib/locator/eingang')
 MESHIDS = os.environ.get('LOCATOR_MESHIDS', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'meshids.conf'))
-SCHWELLEN = (-75, -80)
+SCHWELLE = -75  # E11, adorfer 20.11.2026
 
 
 def lesen(ablage):
@@ -36,6 +41,16 @@ def lesen(ablage):
         if k['letzte'] is None or e['empfangen'] >= k['letzte']['empfangen']:
             k['letzte'] = e
     return je_knoten
+
+
+def absender_passt(xff, exit_ip):
+    """True/False bei gleicher Adressfamilie, sonst None."""
+    if not xff:
+        return None
+    familie = 'ipv6' if ':' in xff else 'ipv4'
+    if familie not in exit_ip:
+        return None
+    return exit_ip[familie] == xff
 
 
 def auswerten(je_knoten, meshids):
@@ -57,9 +72,9 @@ def auswerten(je_knoten, meshids):
             'koordinaten': bool(m.get('coordinates')),
             'exit_ip': exit_ip,
             'absender': xff,
-            'absender_passt': xff in exit_ip.values() if xff else None,
+            'absender_passt': absender_passt(xff, exit_ip),
             'mesh': {mid: p for mid, p in sorted(partner.items(), key=lambda x: -x[1]['staerkster'])},
-            'wuerde_verschieben': {str(s): ortung.zieldomain(partner, s) for s in SCHWELLEN},
+            'wuerde_verschieben': ortung.zieldomain(partner, SCHWELLE),
         })
     return aus
 
@@ -71,12 +86,11 @@ def text(aus):
             a['domain'], a['release'], a['netze'], 'ja' if a['koordinaten'] else 'nein'))
         print('  exit_ip %s, Absender %s (%s)' % (
             a['exit_ip'] or '-', a['absender'] or '-',
-            {True: 'passt', False: 'passt NICHT', None: '?'}[a['absender_passt']]))
+            {True: 'passt', False: 'passt NICHT', None: 'nicht vergleichbar'}[a['absender_passt']]))
         for mid, p in a['mesh'].items():
             print('  Mesh %-12s %-10s staerkster %4s dBm, %d BSSID(s)' % (
                 mid, p['domain'] or 'unbekannt', p['staerkster'], p['bssids']))
-        print('  wuerde verschieben nach: ' + ', '.join(
-            '%s dBm: %s' % (s, d or '-') for s, d in a['wuerde_verschieben'].items()))
+        print('  wuerde verschieben nach (E11, %d dBm): %s' % (SCHWELLE, a['wuerde_verschieben'] or '-'))
         print()
 
 

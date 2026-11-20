@@ -114,3 +114,11 @@ def test_annahme_verwirft_unsinn(server):
     assert post(url + '/hvb/locate', json.dumps(meldung(v=9)).encode())[0] == 400
     assert post(url + '/anderswo', b'{}')[0] == 404
     assert not list(ablage.glob('*/*.json'))
+
+
+def test_absender_nur_gleiche_familie():
+    import auswertung
+    assert auswertung.absender_passt('192.0.2.10', {'ipv4': '192.0.2.10'}) is True
+    assert auswertung.absender_passt('192.0.2.11', {'ipv4': '192.0.2.10'}) is False
+    assert auswertung.absender_passt('2001:db8::1', {'ipv4': '192.0.2.10'}) is None
+    assert auswertung.absender_passt('', {}) is None

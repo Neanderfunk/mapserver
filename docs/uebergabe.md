@@ -79,6 +79,7 @@ mit der Operations-Session:
 | `ortskarten` | die 49 frueheren `<ort>.neander.map.freifunk.space` | `ortskarten`, 49 Namen |
 | `map` | `map.freifunk.space`, `*.map.freifunk.space`, 13 Namen im Zertifikat | `map`, 14 Namen |
 | `karte` | die alten Namen oben, Subdomains per Wildcard, Host-Log | `karte`, 84 Namen |
+| `locator` | `locator.ffnef.de`, HVB-Ortung fuer Gluon-Knoten; auch per HTTP ohne 301 (`http_ohne_umleitung`), weil Knoten ohne TLS einen POST schicken | `locator`, 1 Name |
 
 Eingespielt am 10.11.2026, vhost fuer vhost in dieser Reihenfolge, jeweils
 von aussen geprueft. Die Zertifikate heissen wie die vhosts; die frueheren

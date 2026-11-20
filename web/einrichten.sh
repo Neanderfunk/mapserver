@@ -124,6 +124,7 @@ install -m 0644 "$HIER/nginx-hash.conf" /etc/nginx/conf.d/karte-hash.conf
 install -m 0644 "$HIER/nginx-geo.conf" /etc/nginx/conf.d/karte-geo.conf
 install -m 0644 "$HIER/nginx-gzip.conf" /etc/nginx/conf.d/karte-gzip.conf
 install -m 0644 "$HIER/nginx-geraetebilder.conf" /etc/nginx/conf.d/karte-geraetebilder.conf
+install -m 0644 "$HIER/nginx-locator-log.conf" /etc/nginx/conf.d/karte-locator-log.conf
 install -d -m 0700 -o www-data /var/cache/nginx/karte-geo
 # Die Vorgabe-Site des Pakets beansprucht ebenfalls default_server auf
 # Port 80; mit ihr scheitert nginx -t ("duplicate default server"). Auf
@@ -131,6 +132,9 @@ install -d -m 0700 -o www-data /var/cache/nginx/karte-geo
 # (Neuaufbau-Test 24.10.2026).
 rm -f /etc/nginx/sites-enabled/default
 ln -sf /etc/nginx/sites-available/karte-en.conf /etc/nginx/sites-enabled/karte-en.conf
+# HVB-Ortung (locator.ffnef.de), eigener Name fuer Geraete
+install -m 0644 "$HIER/nginx-locator.conf" /etc/nginx/sites-available/locator.conf
+ln -sf /etc/nginx/sites-available/locator.conf /etc/nginx/sites-enabled/locator.conf
 nginx -t
 systemctl reload nginx
 echo

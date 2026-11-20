@@ -5,7 +5,7 @@
 Legt jede gueltige Meldung roh ab, eine Datei je Meldung unter
 <ablage>/<JJJJ-MM-TT>/, nur fuer den Dienstnutzer lesbar (0600). Nach 14
 Tagen raeumt locator-aufraeumen.timer sie weg. Nichts wird ausgewertet oder
-weitergegeben. Antwort 202 mit {"angenommen": true, "netze": n}; der Knoten
+weitergegeben. Antwort 200 mit {"angenommen": true, "netze": n}; der Knoten
 wertet sie nicht aus.
 
 Hinter nginx (web/nginx-locator.conf), nur an der Loopback-Adresse.
@@ -64,7 +64,9 @@ class Annahme(BaseHTTPRequestHandler):
         except (ValueError, ortung.Ungueltig) as e:
             return self.antwort(400, {'fehler': str(e)[:200]})
         ablegen(meldung, self.headers.get('X-Forwarded-For', ''), self.headers.get('User-Agent', ''))
-        self.antwort(202, {'angenommen': True, 'netze': netze})
+        # 200, nicht 202: uclient-fetch und busybox-wget zaehlen nur 200 als
+        # Erfolg (Packages-Session 20.11.2026)
+        self.antwort(200, {'angenommen': True, 'netze': netze})
 
     def log_message(self, *a):
         # nginx loggt schon (ohne Inhalt); hier nichts doppelt

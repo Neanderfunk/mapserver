@@ -101,7 +101,7 @@ def post(url, daten):
 def test_annahme_legt_ab(server):
     url, ablage = server
     st, a = post(url + '/hvb/locate', json.dumps(meldung(wifi=[w('1')])).encode())
-    assert (st, a) == (202, {'angenommen': True, 'netze': 1})
+    assert (st, a) == (200, {'angenommen': True, 'netze': 1})
     dateien = list(ablage.glob('*/*.json'))
     assert len(dateien) == 1 and oct(dateien[0].stat().st_mode & 0o777) == '0o600'
     e = json.load(open(dateien[0]))

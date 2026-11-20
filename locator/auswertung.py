@@ -108,8 +108,11 @@ def text(aus):
             print('  Mesh %-12s %-10s staerkster %4s dBm, %d BSSID(s)' % (
                 mid, p['domain'] or 'unbekannt', p['staerkster'], p['bssids']))
         for n in a['lan_mesh']:
-            print('  LAN-Mesh %-14s %s %s' % (
-                n.get('iface', '?'), n.get('node_id', '?'), n.get('domain') or 'Domain unbekannt'))
+            if n.get('node_id'):
+                wer = '%s %s' % (n['node_id'], n.get('domain') or 'Domain unbekannt')
+            else:
+                wer = 'schweigt (keine respondd-Antwort in 60 s)'
+            print('  LAN-Mesh %-14s %-17s %s' % (n.get('iface', '?'), n.get('mac', '?'), wer))
         ls = a['lan_switch']
         if ls:
             print('  schaltet selbst um nach %s (LAN-Mesh, gemeldet %s): %s' % (

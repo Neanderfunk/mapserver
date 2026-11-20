@@ -171,6 +171,7 @@ LM = [{'iface': 'br-mesh_other', 'node_id': 'aabbccddeeff', 'domain': '21_dias'}
 @pytest.mark.parametrize('m', [
     meldung(lan_mesh=LM), meldung(lan_mesh={}), meldung(lan_mesh=[]), meldung(wifi={}),
     meldung(lan_mesh=[{'iface': 'br-mesh_other', 'node_id': 'aabbccddeeff'}], lan_switch='21_dias'),
+    meldung(lan_mesh=[{'iface': 'br-mesh_other', 'mac': '02:00:00:00:00:01'}]),
 ])
 def test_lan_mesh_gut(m):
     ortung.pruefen(m)
@@ -201,3 +202,14 @@ def test_lan_switch_ohne_e11_e12_und_umgeschaltet():
     k['meldungen'] = 2
     a = auswertung.auswerten({'0123456789ab': k}, MESHIDS)[0]
     assert a['lan_umgeschaltet'] and a['darf_gehen'] is not None
+
+
+def test_lan_mesh_schweigt_im_text(capsys):
+    import auswertung
+    e = {'empfangen': '2026-11-20T12:00:00', 'meldung': meldung(lan_mesh=[
+        {'iface': 'br-mesh_other', 'mac': '02:00:00:00:00:01'},
+        dict(LM[0], mac='02:00:00:00:00:02')])}
+    auswertung.text(auswertung.auswerten({'0123456789ab': {'meldungen': 1, 'letzte': e, 'lan_switch': None}}, MESHIDS))
+    t = capsys.readouterr().out
+    assert '02:00:00:00:00:01 schweigt' in t
+    assert '02:00:00:00:00:02 aabbccddeeff 21_dias' in t

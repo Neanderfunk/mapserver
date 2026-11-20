@@ -18,7 +18,7 @@ LIB=/usr/local/lib/locator
 # Schluessel /etc/locator/nodeplacer.secret (root, 0600) entsteht nicht
 # hier, sondern einmal von Hand (ecdsakeygen -s); er liegt nur auf der VM.
 # Pubkey f7eb4b7d27de7c6ebe36978ef6df9f6865ce00df1cea046991e975bdbb33027d
-# (20.11.2026), steht in der Domain-Datei von 25_hvb.
+# (20.11.2026), kommt in die Domain-Datei von 25_hvb.
 DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ecdsautils >/dev/null
 install -d -m 0700 -o root -g root /etc/locator
 

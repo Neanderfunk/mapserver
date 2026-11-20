@@ -141,19 +141,18 @@ Snapshot über die Verwaltungsfunktion (Schlüssel in `geheim.env`).
 
 ## Sicherung ins Vault
 
-Liste für die Sicherungsrolle von Operations (Ansible-Vault, Aufbau wie bei
-`wg5-sicherung.yml`): alles, was sich nicht aus dem Repo, den Stammdaten oder
+Liste für `vault-sicherung.yml` im Ansible-Repo (Operations, eingetragen in
+`host_vars/map6.freifunk.space.yml`): alles, was sich nicht aus dem Repo, den Stammdaten oder
 dem Netz neu erzeugen lässt und klein genug ist. Stand 20.11.2026.
 
 ```yaml
-# Host map.freifunk.space (Hostname-Pruefung: map.freifunk.space)
+# host_vars/map6.freifunk.space.yml, vault_sicherung (vault_id map6, hostname map.freifunk.space)
 verzeichnisse:                         # rekursiv
   - /etc/karte-en/fastd                # fastd-Schluessel je Community; neue fastd-Domains landen hier mit
   - /etc/wireguard                     # wg-ctl.conf, WireGuard zu den UniFi-Controllern
   - /etc/unifi_respondd/controller     # Zugaenge weiterer Controller
   - /etc/locator                       # nodeplacer.secret (HVB-Signierschluessel)
   - /var/lib/karte/service             # Service-Menue: Overrides, Aliase, Protokoll, Loeschauftraege
-  - /var/lib/karte/adressbuch          # letzte bekannte Adressen (456 KB)
 dateien:
   - /etc/karte-en/kennung              # Kennungsserie (MACs, Name am Broker)
   - /etc/karte-en/standby.conf         # Communities im Standby
@@ -169,7 +168,6 @@ dateien:
   - /var/lib/yanic/neander.json        # erste/letzte Sichtung je Knoten, 3.8 MB
   - /var/lib/yanic/essen.json
   - /var/lib/yanic/hildesheim.json
-  - /var/lib/yanic/en.json             # Standby, Stand 25.10.2026
   - /var/lib/grafana/grafana.db        # Benutzer, Admin-Passwort, 2.2 MB
 ohne: ['*~', '*.swp', '*.log', '*.neu', '*.alt', '*.vor-*']
 ```
@@ -183,6 +181,7 @@ Bewusst nicht im Vault:
 - `/var/lib/victoria-metrics` (3.1 GB) und `/var/lib/karte/verlauf.csv`
   (34 MB): zu groß, bleiben beim Backup des Hypervisors.
 - `/var/lib/locator/eingang`: Rohmeldungen, ohnehin nach 14 Tagen weg.
+- `/var/lib/karte/adressbuch`: füllt sich neu.
 - Abgeleitet: `/etc/yanic-*.conf`, `/etc/unifi_respondd/unifi_respondd.yaml`,
   `/etc/karte-en/domains.conf` und `sitecodes.conf` (Repo plus Stammdaten),
   `namen.conf`, `gruppen.conf`, `ruhend.conf`, `fastd.conf`, `vorschau/`

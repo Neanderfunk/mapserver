@@ -142,49 +142,25 @@ Snapshot über die Verwaltungsfunktion (Schlüssel in `geheim.env`).
 ## Sicherung ins Vault
 
 Liste für `vault-sicherung.yml` im Ansible-Repo (Operations, eingetragen in
-`host_vars/map6.freifunk.space.yml`): alles, was sich nicht aus dem Repo, den Stammdaten oder
-dem Netz neu erzeugen lässt und klein genug ist. Stand 20.11.2026.
+`host_vars/map6.freifunk.space.yml`). Nur Zugangsdaten und Schlüssel, ohne
+die ein Wiederanlauf zum Problem wird, weil eine Gegenstelle sie kennt
+(adorfer 20.11.2026). Alles andere kommt aus dem Repo, den Stammdaten oder
+dem Backup des Hypervisors.
 
 ```yaml
-# host_vars/map6.freifunk.space.yml, vault_sicherung (vault_id map6, hostname map.freifunk.space)
 verzeichnisse:                         # rekursiv
   - /etc/karte-en/fastd                # fastd-Schluessel je Community; neue fastd-Domains landen hier mit
   - /etc/wireguard                     # wg-ctl.conf, WireGuard zu den UniFi-Controllern
-  - /etc/unifi_respondd/controller     # Zugaenge weiterer Controller
-  - /etc/locator                       # nodeplacer.secret (HVB-Signierschluessel)
-  - /var/lib/karte/service             # Service-Menue: Overrides, Aliase, Protokoll, Loeschauftraege
+  - /etc/unifi_respondd/controller     # Zugaenge weiterer UniFi-Controller
+  - /etc/locator                       # nodeplacer.secret, Pubkey steckt in der Firmware 25_hvb
 dateien:
-  - /etc/karte-en/kennung              # Kennungsserie (MACs, Name am Broker)
-  - /etc/karte-en/standby.conf         # Communities im Standby
-  - /etc/karte-en/bekannte-macs.conf   # nur beim ersten Einrichten aus dem Repo, danach lokal gepflegt
-  - /etc/unifi_respondd/zugang         # Haupt-Controller
-  - /etc/victoria-metrics/geheim.env   # darf neu entstehen, klein, bequemer mitzunehmen
-  - /etc/ssh/ssh_host_ed25519_key
-  - /etc/ssh/ssh_host_ed25519_key.pub
-  - /etc/ssh/ssh_host_ecdsa_key
-  - /etc/ssh/ssh_host_ecdsa_key.pub
-  - /etc/ssh/ssh_host_rsa_key
-  - /etc/ssh/ssh_host_rsa_key.pub
-  - /var/lib/grafana/grafana.db        # Benutzer, Admin-Passwort, 2.2 MB
-ohne: ['*~', '*.swp', '*.log', '*.neu', '*.alt', '*.vor-*']
+  - /etc/unifi_respondd/zugang         # Zugang Haupt-Controller
 ```
 
-`grafana.db` steht einzeln in `dateien`, weil es sonst unter `*.db` fiele.
-Datenbestände und Datenreihen kommen nicht ins Vault (adorfer 20.11.2026).
-
-Bewusst nicht im Vault:
-
-- Datenreihen und Zustände: `/var/lib/victoria-metrics`,
-  `/var/lib/karte/verlauf.csv`, `/var/lib/yanic/`; bleiben beim Backup des
-  Hypervisors.
-- `/var/lib/locator/eingang`: Rohmeldungen, ohnehin nach 14 Tagen weg.
-- `/var/lib/karte/adressbuch`: füllt sich neu.
-- Abgeleitet: `/etc/yanic-*.conf`, `/etc/unifi_respondd/unifi_respondd.yaml`,
-  `/etc/karte-en/domains.conf` und `sitecodes.conf` (Repo plus Stammdaten),
-  `namen.conf`, `gruppen.conf`, `ruhend.conf`, `fastd.conf`, `vorschau/`
-  (Repo), `ziele-en.txt`, `/var/lib/karte/stammdaten*.json`,
-  `unifi-zuordnung.json`, nginx und systemd (Einrichtungsskripte).
-- Alte Stände (`*.vor-stammdaten`, `*.vor-erstsichtung`, `state.json`).
+Nicht im Vault, weil sie neu entstehen dürfen oder nur Bequemlichkeit sind:
+SSH-Hostschlüssel (Warnung beim ersten Login), `geheim.env` von
+VictoriaMetrics, `grafana.db`, `/etc/karte-en/kennung` (neue Serie heißt neue
+MACs am Broker, die Broker nehmen sie trotzdem), Konfiguration und alle Daten.
 
 ## Abhängigkeiten außerhalb der VM
 

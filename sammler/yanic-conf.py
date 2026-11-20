@@ -14,6 +14,8 @@ Je Community laeuft eine eigene Instanz. Das hat zwei Gruende:
 2. Eine Community kann die andere nicht mehr mitreissen.
 
 Die Ortskarten behalten ihren Filter, dort gehoert der Supernode nicht hin.
+Er prueft site_code oder domain_code (Filter site_or_domain im Fork), damit
+alte Single- und neue Multi-Domain-Knoten in derselben Ortsausgabe landen.
 
 Die Kontaktangabe (no_owner) zeigen wir im eigenen Netz. Das Pico Peering
 Agreement, auf dem Freifunk fusst, sieht genau das vor: wer sein Netz oeffnet,
@@ -133,7 +135,11 @@ def ausgabe(pfad, sites=None, titel='', kontakt=False, daten=None):
     nodes.json und graph.json derselben Knoten in diesem Verzeichnis."""
     filter_ = f'no_owner = {str(not kontakt).lower()}\n'
     if sites:
-        filter_ += 'sites = ["%s"]\n' % '", "'.join(sites)
+        # site_or_domain (Fork Neanderfunk/yanic): alte Knoten per site_code
+        # (nef-10_wlf), Multi-Domain-Knoten per domain_code (site_code ffnef,
+        # domain_code 10_wlf; der blanke Code steht immer in der Liste).
+        # Supernodes melden keinen site_code und bleiben draussen (20.11.2026).
+        filter_ += 'site_or_domain = ["%s"]\n' % '", "'.join(sites)
     f = f'\n# {titel}\n' if titel else '\n'
     if pfad:
         f += '[[nodes.output.meshviewer-ffrgb]]\n'

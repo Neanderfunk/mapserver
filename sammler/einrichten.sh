@@ -33,7 +33,7 @@ git -C "$BAU" fetch -q origin "+refs/heads/$YANIC_ZWEIG:refs/remotes/origin/$YAN
 git -C "$BAU" checkout -q --force "origin/$YANIC_ZWEIG"
 # Reste der frueheren Patchdateien (unversionierte neue Dateien) entfernen.
 git -C "$BAU" clean -fdq
-( cd "$BAU" && GOFLAGS=-mod=mod go test ./data/ ./database/influxdb/ ./runtime/ ./output/meshviewer-ffrgb/ )
+( cd "$BAU" && GOFLAGS=-mod=mod go test ./data/ ./database/influxdb/ ./runtime/ ./output/meshviewer-ffrgb/ ./output/filter/siteordomain/ )
 ( cd "$BAU" && GOFLAGS=-mod=mod go build -o /usr/local/bin/yanic . )
 /usr/local/bin/yanic --version 2>&1 | head -2 || true
 

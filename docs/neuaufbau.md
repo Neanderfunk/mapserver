@@ -113,6 +113,7 @@ Bei gestoppten Diensten (`victoria-metrics`, `yanic@*`, `karte-service`,
 | `/etc/unifi_respondd/controller/<name>` | root, 0600 | je weiterer Controller ein Zugang | erhalten, wie oben |
 | `/etc/victoria-metrics/geheim.env` | root, 0600 | Schlüssel für die Verwaltungsfunktionen von VictoriaMetrics | darf neu entstehen (erzeugt `zeitreihe/einrichten.sh`); niemand außerhalb kennt ihn |
 | `/etc/ssh/ssh_host_*_key` | root, 0600 | Hostschlüssel | besser erhalten, sonst warnt jeder SSH-Client |
+| `/etc/locator/nodeplacer.secret` | root, 0600 (Verzeichnis 0700) | ecdsa-Schlüssel, signiert das HVB-nodeplacer-Manifest (seit 20.11.2026) | **erhalten**: der öffentliche Teil steckt in der Firmware (Domain 25_hvb); ein neuer braucht eine neue Firmware |
 | Grafana-Admin | in `/var/lib/grafana/grafana.db` | Anmeldung an Grafana | kommt mit der Datenbank (siehe Daten); ohne sie neu setzen |
 | Checkmk-Agent | `/var/lib/cmk-agent/` | Agent im Legacy-Pull-Modus, keine Registrierung | neu installieren genügt |
 
@@ -137,6 +138,57 @@ Der Rest von `/var/lib/grafana` (rund 960 MB) sind Plugins aus dem Paket.
 Gesichert wird heute nur die ganze VM über das Backup des Hypervisors; eine
 eigene Sicherung dieser Pfade gibt es nicht. Für VictoriaMetrics ginge ein
 Snapshot über die Verwaltungsfunktion (Schlüssel in `geheim.env`).
+
+## Sicherung ins Vault
+
+Liste für die Sicherungsrolle von Operations (Ansible-Vault, Aufbau wie bei
+`wg5-sicherung.yml`): alles, was sich nicht aus dem Repo, den Stammdaten oder
+dem Netz neu erzeugen lässt und klein genug ist. Stand 20.11.2026.
+
+```yaml
+# Host map.freifunk.space (Hostname-Pruefung: map.freifunk.space)
+verzeichnisse:                         # rekursiv
+  - /etc/karte-en/fastd                # fastd-Schluessel je Community; neue fastd-Domains landen hier mit
+  - /etc/wireguard                     # wg-ctl.conf, WireGuard zu den UniFi-Controllern
+  - /etc/unifi_respondd/controller     # Zugaenge weiterer Controller
+  - /etc/locator                       # nodeplacer.secret (HVB-Signierschluessel)
+  - /var/lib/karte/service             # Service-Menue: Overrides, Aliase, Protokoll, Loeschauftraege
+  - /var/lib/karte/adressbuch          # letzte bekannte Adressen (456 KB)
+dateien:
+  - /etc/karte-en/kennung              # Kennungsserie (MACs, Name am Broker)
+  - /etc/karte-en/standby.conf         # Communities im Standby
+  - /etc/karte-en/bekannte-macs.conf   # nur beim ersten Einrichten aus dem Repo, danach lokal gepflegt
+  - /etc/unifi_respondd/zugang         # Haupt-Controller
+  - /etc/victoria-metrics/geheim.env   # darf neu entstehen, klein, bequemer mitzunehmen
+  - /etc/ssh/ssh_host_ed25519_key
+  - /etc/ssh/ssh_host_ed25519_key.pub
+  - /etc/ssh/ssh_host_ecdsa_key
+  - /etc/ssh/ssh_host_ecdsa_key.pub
+  - /etc/ssh/ssh_host_rsa_key
+  - /etc/ssh/ssh_host_rsa_key.pub
+  - /var/lib/yanic/neander.json        # erste/letzte Sichtung je Knoten, 3.8 MB
+  - /var/lib/yanic/essen.json
+  - /var/lib/yanic/hildesheim.json
+  - /var/lib/yanic/en.json             # Standby, Stand 25.10.2026
+  - /var/lib/grafana/grafana.db        # Benutzer, Admin-Passwort, 2.2 MB
+ohne: ['*~', '*.swp', '*.log', '*.neu', '*.alt', '*.vor-*']
+```
+
+Einzelne Dateien stehen in `dateien`, weil sie über den 2 MB von
+`wg5-sicherung.yml` liegen (`neander.json`, `grafana.db`) oder dort unter
+`*.db` fielen.
+
+Bewusst nicht im Vault:
+
+- `/var/lib/victoria-metrics` (3.1 GB) und `/var/lib/karte/verlauf.csv`
+  (34 MB): zu groß, bleiben beim Backup des Hypervisors.
+- `/var/lib/locator/eingang`: Rohmeldungen, ohnehin nach 14 Tagen weg.
+- Abgeleitet: `/etc/yanic-*.conf`, `/etc/unifi_respondd/unifi_respondd.yaml`,
+  `/etc/karte-en/domains.conf` und `sitecodes.conf` (Repo plus Stammdaten),
+  `namen.conf`, `gruppen.conf`, `ruhend.conf`, `fastd.conf`, `vorschau/`
+  (Repo), `ziele-en.txt`, `/var/lib/karte/stammdaten*.json`,
+  `unifi-zuordnung.json`, nginx und systemd (Einrichtungsskripte).
+- Alte Stände (`*.vor-stammdaten`, `*.vor-erstsichtung`, `state.json`).
 
 ## Abhängigkeiten außerhalb der VM
 

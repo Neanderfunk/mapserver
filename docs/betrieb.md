@@ -44,6 +44,12 @@ die andere Karten und Verzeichnisse einlesen. Dieselben drei Dateien gibt es
 je Domain und je Sammelkarte in `sites/neander/alle/data/<code>/` bzw.
 `.../data/lvr/`, ohne eigene Karte.
 
+Ausgaben je Domain und Sammelkarten filtern mit `site_or_domain` (Fork
+Neanderfunk/yanic): Ein Knoten gehört dazu, wenn sein `site_code` in der Liste
+steht (alte Firmware, z. B. `nef-10_wlf`) oder wenn er einen `site_code` hat
+und sein `domain_code` darin steht (Multi-Domain-Firmware: `ffnef` plus
+`10_wlf`). Supernodes melden nur einen `domain_code` und bleiben draußen.
+
 ## Namen, Umleitungen, Sammelkarten
 
 Eine Karte, ein Name (adorfer 04.11.2026): Suchmaschinen werten dieselbe Seite

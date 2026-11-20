@@ -165,21 +165,18 @@ dateien:
   - /etc/ssh/ssh_host_ecdsa_key.pub
   - /etc/ssh/ssh_host_rsa_key
   - /etc/ssh/ssh_host_rsa_key.pub
-  - /var/lib/yanic/neander.json        # erste/letzte Sichtung je Knoten, 3.8 MB
-  - /var/lib/yanic/essen.json
-  - /var/lib/yanic/hildesheim.json
   - /var/lib/grafana/grafana.db        # Benutzer, Admin-Passwort, 2.2 MB
 ohne: ['*~', '*.swp', '*.log', '*.neu', '*.alt', '*.vor-*']
 ```
 
-Einzelne Dateien stehen in `dateien`, weil sie über den 2 MB von
-`wg5-sicherung.yml` liegen (`neander.json`, `grafana.db`) oder dort unter
-`*.db` fielen.
+`grafana.db` steht einzeln in `dateien`, weil es sonst unter `*.db` fiele.
+Datenbestände und Datenreihen kommen nicht ins Vault (adorfer 20.11.2026).
 
 Bewusst nicht im Vault:
 
-- `/var/lib/victoria-metrics` (3.1 GB) und `/var/lib/karte/verlauf.csv`
-  (34 MB): zu groß, bleiben beim Backup des Hypervisors.
+- Datenreihen und Zustände: `/var/lib/victoria-metrics`,
+  `/var/lib/karte/verlauf.csv`, `/var/lib/yanic/`; bleiben beim Backup des
+  Hypervisors.
 - `/var/lib/locator/eingang`: Rohmeldungen, ohnehin nach 14 Tagen weg.
 - `/var/lib/karte/adressbuch`: füllt sich neu.
 - Abgeleitet: `/etc/yanic-*.conf`, `/etc/unifi_respondd/unifi_respondd.yaml`,

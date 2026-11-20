@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: BSD-3-Clause
+[Unit]
+Description=HVB-Ortung: taeglich alte Meldungen loeschen
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target

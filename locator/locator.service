@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# HVB-Ortung, Annahme (Prototyp): locator/annahme.py hinter nginx
+[Unit]
+Description=HVB-Ortung: Annahme der Meldungen (locator.ffnef.de)
+After=network.target
+
+[Service]
+User=locator
+Group=locator
+ExecStart=/usr/bin/python3 /usr/local/lib/locator/annahme.py
+StateDirectory=locator
+StateDirectoryMode=0700
+UMask=0077
+Restart=on-failure
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ReadWritePaths=/var/lib/locator
+
+[Install]
+WantedBy=multi-user.target

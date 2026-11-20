@@ -83,3 +83,26 @@ def zieldomain(partner, schwelle):
     kandidaten = [(d['staerkster'], dom) for dom, d in je_domain.items()
                   if d['staerkster'] >= schwelle or d['bssids'] >= 2]
     return max(kandidaten)[1] if kandidaten else None
+
+
+def darf_gehen(m):
+    """Regel E12 (adorfer 20.11.2026, Konzept 4.4 "Wer darf gehen?") als
+    Trockenlauf, nur aus dem Feld uplink der Meldung. Gibt (ja/nein/None,
+    Grund) zurueck; None heisst: aus der Meldung allein nicht zu sagen.
+
+    Ohne eigenen VPN-Uplink nie. Mit VPN nur, wenn kein anderer HVB-Knoten
+    ueber ihn ins Netz geht. Das zeigt erst der Abgleich der Mesh-Wolke mit
+    den Kartendaten; bis dahin gilt ein VPN-Knoten mit Mesh-Nachbarn als
+    unklar."""
+    u = m.get('uplink')
+    if not isinstance(u, dict) or 'vpn' not in u:
+        return None, 'kein Feld uplink in der Meldung'
+    if not u['vpn']:
+        return False, 'kein eigener VPN-Uplink (gw_via %s)' % u.get('gw_via', '?')
+    n = u.get('neighbours') or {}
+    mesh = (n.get('wifi') or 0) + (n.get('lan') or 0)
+    if mesh == 0:
+        return True, 'eigener VPN-Uplink, keine Mesh-Nachbarn'
+    return None, ('eigener VPN-Uplink, aber %d Mesh-Nachbarn (WLAN %d, LAN %d); '
+                  'ob einer nur ueber ihn ins Netz geht, zeigt erst der Abgleich mit den Kartendaten'
+                  % (mesh, n.get('wifi') or 0, n.get('lan') or 0))

@@ -122,3 +122,14 @@ def test_absender_nur_gleiche_familie():
     assert auswertung.absender_passt('192.0.2.11', {'ipv4': '192.0.2.10'}) is False
     assert auswertung.absender_passt('2001:db8::1', {'ipv4': '192.0.2.10'}) is None
     assert auswertung.absender_passt('', {}) is None
+
+
+@pytest.mark.parametrize('uplink, erwartet', [
+    (None, None),
+    ({'vpn': False, 'gw_via': 'mesh1', 'neighbours': {'wifi': 12}}, False),
+    ({'vpn': True, 'gw_via': 'mesh-vpn', 'neighbours': {'vpn': 1, 'wifi': 0, 'lan': 0}}, True),
+    ({'vpn': True, 'gw_via': 'mesh-vpn', 'neighbours': {'vpn': 1, 'wifi': 2, 'lan': 0}}, None),
+])
+def test_darf_gehen(uplink, erwartet):
+    m = meldung() if uplink is None else meldung(uplink=uplink)
+    assert ortung.darf_gehen(m)[0] is erwartet

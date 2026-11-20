@@ -8,7 +8,7 @@ Je Knoten die letzte Meldung: Zeit, Domain, Release, Zahl der Netze,
 exit_ip neben der Absenderadresse am Proxy (X-Forwarded-For), je gesehener
 Mesh-ID staerkster Pegel und Zahl der BSSIDs, dazu die Domain, in die die
 Regel E11 verschieben wuerde (-75 dBm, adorfer 20.11.2026), und ob er nach
-Regel E12 gehen darf (nur aus dem Feld uplink, ohne Kartenabgleich). Trockenlauf:
+Regel E12 gehen darf (aus den Meldungen, ohne Kartendaten). Trockenlauf:
 nichts wird verschoben, nichts geht nach aussen.
 
 Der Absender ist oft nicht die Exit-IP: Ein Knoten schickt eigenen Verkehr
@@ -56,6 +56,7 @@ def absender_passt(xff, exit_ip):
 
 def auswerten(je_knoten, meshids):
     aus = []
+    letzte = [k['letzte']['meldung'] for k in je_knoten.values()]
     for nid, k in sorted(je_knoten.items()):
         e = k['letzte']
         m = e['meldung']
@@ -77,7 +78,7 @@ def auswerten(je_knoten, meshids):
             'mesh': {mid: p for mid, p in sorted(partner.items(), key=lambda x: -x[1]['staerkster'])},
             'wuerde_verschieben': ortung.zieldomain(partner, SCHWELLE),
             'uplink': m.get('uplink'),
-            'darf_gehen': ortung.darf_gehen(m),
+            'darf_gehen': ortung.darf_gehen(m, letzte),
         })
     return aus
 

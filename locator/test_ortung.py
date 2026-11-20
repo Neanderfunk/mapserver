@@ -124,12 +124,42 @@ def test_absender_nur_gleiche_familie():
     assert auswertung.absender_passt('', {}) is None
 
 
-@pytest.mark.parametrize('uplink, erwartet', [
-    (None, None),
-    ({'vpn': False, 'gw_via': 'mesh1', 'neighbours': {'wifi': 12}}, False),
-    ({'vpn': True, 'gw_via': 'mesh-vpn', 'neighbours': {'vpn': 1, 'wifi': 0, 'lan': 0}}, True),
-    ({'vpn': True, 'gw_via': 'mesh-vpn', 'neighbours': {'vpn': 1, 'wifi': 2, 'lan': 0}}, None),
-])
-def test_darf_gehen(uplink, erwartet):
-    m = meldung() if uplink is None else meldung(uplink=uplink)
-    assert ortung.darf_gehen(m)[0] is erwartet
+
+def knoten(nid, vpn, nexthop=None, macs=(), domain='25_hvb'):
+    u = {'vpn': vpn, 'gw_via': 'mesh-vpn' if vpn else 'mesh1', 'mesh_macs': list(macs)}
+    if nexthop:
+        u['gw_nexthop'] = nexthop
+    return meldung(node_id=nid, domain=domain, uplink=u)
+
+
+A = knoten('aaaaaaaaaaaa', True, '02:ca:ff:ee:21:00', ['aa:00:00:00:00:01', 'aa:00:00:00:00:02'])
+
+
+def test_e12_ohne_vpn_nein():
+    assert ortung.darf_gehen(knoten('bbbbbbbbbbbb', False, 'a6:f7:ba:13:fd:09'), [])[0] is False
+
+
+def test_e12_vpn_allein_ja():
+    assert ortung.darf_gehen(A, [A])[0] is True
+
+
+def test_e12_haengt_jemand_dran_nein():
+    b = knoten('bbbbbbbbbbbb', False, 'AA:00:00:00:00:02')
+    ok, grund = ortung.darf_gehen(A, [A, b])
+    assert ok is False and 'bbbbbbbbbbbb' in grund
+
+
+def test_e12_andere_domain_zaehlt_nicht():
+    b = knoten('bbbbbbbbbbbb', False, 'aa:00:00:00:00:02', domain='21_dias')
+    assert ortung.darf_gehen(A, [A, b])[0] is True
+
+
+def test_e12_zwei_vpn_blockieren_sich_nicht():
+    c = knoten('cccccccccccc', True, '02:ca:ff:ee:21:00', ['cc:00:00:00:00:01'])
+    assert ortung.darf_gehen(A, [A, c])[0] is True
+
+
+def test_e12_unklar():
+    assert ortung.darf_gehen(meldung(), [])[0] is None
+    assert ortung.darf_gehen(knoten('dddddddddddd', True, None, ['dd:00:00:00:00:01']), [])[0] is None
+    assert ortung.darf_gehen(knoten('dddddddddddd', True, '02:ca:ff:ee:21:00'), [])[0] is None

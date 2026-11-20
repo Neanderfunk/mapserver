@@ -85,24 +85,39 @@ def zieldomain(partner, schwelle):
     return max(kandidaten)[1] if kandidaten else None
 
 
-def darf_gehen(m):
-    """Regel E12 (adorfer 20.11.2026, Konzept 4.4 "Wer darf gehen?") als
-    Trockenlauf, nur aus dem Feld uplink der Meldung. Gibt (ja/nein/None,
-    Grund) zurueck; None heisst: aus der Meldung allein nicht zu sagen.
 
-    Ohne eigenen VPN-Uplink nie. Mit VPN nur, wenn kein anderer HVB-Knoten
-    ueber ihn ins Netz geht. Das zeigt erst der Abgleich der Mesh-Wolke mit
-    den Kartendaten; bis dahin gilt ein VPN-Knoten mit Mesh-Nachbarn als
-    unklar."""
+def _macs(liste):
+    return {x.lower() for x in liste if isinstance(x, str)} if isinstance(liste, list) else set()
+
+
+def darf_gehen(m, andere):
+    """Regel E12 (adorfer 20.11.2026, Konzept 4.4 "Wer darf gehen?",
+    a2ac1fd) als Trockenlauf, allein aus den Meldungen; kein Abgleich mit
+    Kartendaten. m: letzte Meldung des Knotens X, andere: die letzten
+    Meldungen aller Knoten. Gibt (True/False/None, Grund) zurueck; None
+    heisst unklar, also nicht verschieben.
+
+    - X meldet vpn false: nein.
+    - Ein Knoten derselben Domain mit vpn false meldet als gw_nexthop eine
+      MAC aus den mesh_macs von X, geht also ueber X ins Netz: nein.
+    - Sonst ja. Ketten erledigen sich, weil jeder Knoten ohne VPN seinen
+      eigenen Next Hop meldet.
+    - Fehlen uplink, gw_nexthop oder mesh_macs: unklar."""
     u = m.get('uplink')
     if not isinstance(u, dict) or 'vpn' not in u:
         return None, 'kein Feld uplink in der Meldung'
     if not u['vpn']:
         return False, 'kein eigener VPN-Uplink (gw_via %s)' % u.get('gw_via', '?')
-    n = u.get('neighbours') or {}
-    mesh = (n.get('wifi') or 0) + (n.get('lan') or 0)
-    if mesh == 0:
-        return True, 'eigener VPN-Uplink, keine Mesh-Nachbarn'
-    return None, ('eigener VPN-Uplink, aber %d Mesh-Nachbarn (WLAN %d, LAN %d); '
-                  'ob einer nur ueber ihn ins Netz geht, zeigt erst der Abgleich mit den Kartendaten'
-                  % (mesh, n.get('wifi') or 0, n.get('lan') or 0))
+    if not u.get('gw_nexthop'):
+        return None, 'gw_nexthop fehlt'
+    eigene = _macs(u.get('mesh_macs'))
+    if not eigene:
+        return None, 'mesh_macs fehlen'
+    haengen = sorted(
+        a['node_id'] for a in andere
+        if a.get('node_id') != m['node_id'] and a.get('domain') == m.get('domain')
+        and isinstance(a.get('uplink'), dict) and a['uplink'].get('vpn') is False
+        and str(a['uplink'].get('gw_nexthop', '')).lower() in eigene)
+    if haengen:
+        return False, 'ueber ihn gehen ins Netz: ' + ', '.join(haengen)
+    return True, 'eigener VPN-Uplink, kein Knoten ohne VPN geht ueber ihn'

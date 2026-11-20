@@ -14,6 +14,14 @@ LIB=/usr/local/lib/locator
 
 [ "$(id -u)" = 0 ] || { echo "Bitte als root starten." >&2; exit 1; }
 
+# ecdsautils: Signieren des nodeplacer-Manifests (Konzept 4.5). Der
+# Schluessel /etc/locator/nodeplacer.secret (root, 0600) entsteht nicht
+# hier, sondern einmal von Hand (ecdsakeygen -s); er liegt nur auf der VM.
+# Pubkey f7eb4b7d27de7c6ebe36978ef6df9f6865ce00df1cea046991e975bdbb33027d
+# (20.11.2026), steht in der Domain-Datei von 25_hvb.
+DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ecdsautils >/dev/null
+install -d -m 0700 -o root -g root /etc/locator
+
 id locator >/dev/null 2>&1 || useradd --system --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin locator
 
 install -d -m 0755 "$LIB"

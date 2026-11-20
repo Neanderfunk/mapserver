@@ -160,7 +160,7 @@ dateien:
 Nicht im Vault, weil sie neu entstehen dürfen oder nur Bequemlichkeit sind:
 SSH-Hostschlüssel (Warnung beim ersten Login), `geheim.env` von
 VictoriaMetrics, `grafana.db`, `/etc/karte-en/kennung` (neue Serie heißt neue
-MACs am Broker, die Broker nehmen sie trotzdem), Konfiguration und alle Daten.
+MACs und neuer Name an fremden Brokern, siehe oben), Konfiguration und alle Daten.
 
 ## Abhängigkeiten außerhalb der VM
 

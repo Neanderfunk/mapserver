@@ -3,6 +3,9 @@
 # Als root: der Signierschluessel ist nur fuer root lesbar (adorfer 20.11.2026).
 [Unit]
 Description=HVB-Ortung: nodeplacer-Manifest erzeugen und signieren
+# erst die Position holen; schlaegt das fehl, kommt das Manifest trotzdem
+Wants=locator-orten.service
+After=locator-orten.service
 
 [Service]
 Type=oneshot

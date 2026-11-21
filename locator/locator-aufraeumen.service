@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# HVB-Ortung: Meldungen nach 14 Tagen loeschen (Konzept 4.4 Punkt 7)
+# HVB-Ortung: Meldungen und Positionen nach 14 Tagen loeschen (Konzept 4.4 Punkt 7)
 [Unit]
 Description=HVB-Ortung: Meldungen aelter als 14 Tage loeschen
 
@@ -7,3 +7,4 @@ Description=HVB-Ortung: Meldungen aelter als 14 Tage loeschen
 Type=oneshot
 ExecStart=/usr/bin/find /var/lib/locator/eingang -type f -name *.json -mtime +13 -delete
 ExecStart=/usr/bin/find /var/lib/locator/eingang -mindepth 1 -type d -empty -delete
+ExecStart=/usr/bin/find /var/lib/locator/position -type f -name *.json -mtime +13 -delete

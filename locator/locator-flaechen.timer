@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Woechentlich reicht (adorfer 21.11.2026)
+[Unit]
+Description=HVB-Ortung: Domainflaechen woechentlich neu
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

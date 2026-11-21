@@ -248,3 +248,144 @@ def test_manifest_koerper():
     assert z[3].startswith('COMMENT=')
     assert z[4] == 'aaaaaaaaaaa1 domain target=21_dias'
     assert t.endswith('\n') and '---' not in t
+
+
+# --- Teil 2: Position ---------------------------------------------------
+
+def _pt(lat, lon, dkm_n=0, dkm_o=0):
+    """Punkt dkm_n km noerdlich, dkm_o km oestlich von (lat, lon)."""
+    import math
+    return (lat + dkm_n / 111.2, lon + dkm_o / (111.2 * math.cos(math.radians(lat))))
+
+
+MITTE = (51.25, 6.95)   # Mitte Domain MITTE
+FL = {'01_vel': [_pt(*MITTE, i * 0.5) for i in range(5)],
+      '02_met': [_pt(*MITTE, i * 0.5, 30) for i in range(5)]}
+
+
+@pytest.mark.parametrize('lat,lon,ok', [
+    (51.2, 6.9, True), (0, 6.9, False), (51.2, 0, False), (7.0, 7.0, False),
+    (91, 6.9, False), ('51', 6.9, False), (None, None, False), (True, 6.9, False)])
+def test_ort_gueltig(lat, lon, ok):
+    assert ortung.ort_gueltig(lat, lon) is ok
+
+
+def test_kern_ballung_nah_und_extraterritorial():
+    ballung = [_pt(*MITTE, 0, i * 2) for i in range(3)]
+    nah = _pt(*MITTE, 20)
+    weit = _pt(*MITTE, 60)
+    k = ortung.kern(ballung + [nah, weit])
+    assert set(k) == set(ballung + [nah])
+    assert ortung.kern([nah, weit]) == []
+
+
+def test_position_im_kern():
+    z = ortung.position_ziel(_pt(*MITTE, 1), 20, FL)
+    assert z['ziel'] == '01_vel' and z['stufe_km'] == 3 and z['unklar'] is None
+
+
+def test_position_zwischen_zwei_unklar():
+    z = ortung.position_ziel(_pt(*MITTE, 1, 15), 20, FL)
+    assert z['ziel'] in ('01_vel', '02_met') and z['stufe_km'] == 20
+    assert z['unklar'] in ('01_vel', '02_met') and z['unklar'] != z['ziel']
+
+
+def test_position_ausserhalb_diaspora():
+    z = ortung.position_ziel(_pt(*MITTE, 0, -80), 20, FL)
+    assert z == {'ziel': '21_dias', 'stufe_km': None, 'feld': None, 'unklar': None}
+
+
+def test_genauigkeit_verbreitert():
+    # Randlage 26 km neben fuenf Knoten: ohne Messfehler knapp ausserhalb,
+    # mit 5 km Messfehler verschmiert der Kern und holt sie herein
+    p = _pt(*MITTE, 1, -26)
+    assert ortung.position_ziel(p, 0, FL)['ziel'] == '21_dias'
+    assert ortung.position_ziel(p, 5000, FL)['ziel'] == '01_vel'
+
+
+def test_positionsziele_ohne_lvr_unterkunft():
+    z = ortung.positionsziele(ortung.meshids_lesen(os.path.join(os.path.dirname(__file__), 'meshids.conf')))
+    assert '01_vel' in z and '43_bggl' in z
+    for d in ('11_lvr', '31_lvrno', '36_lvrsw', '12_dusuk', '24_dusukw', '21_dias', '25_hvb'):
+        assert d not in z
+
+
+def test_vergroebern_200m():
+    lat, lon = ortung.vergroebern(51.23456, 6.98765)
+    assert ortung.abstand_km((lat, lon), (51.23456, 6.98765)) < 0.15
+
+
+def _k(nid, m, datei='x.json'):
+    return {nid: {'meldungen': 1, 'lan_switch': None,
+                  'letzte': {'empfangen': '2026-11-21T10:00:00+00:00', 'datei': datei, 'meldung': m}}}
+
+
+def _vpn():
+    return {'vpn': True, 'gw_nexthop': 'aa:aa:aa:aa:aa:aa', 'mesh_macs': ['02:00:00:00:00:09']}
+
+
+def test_auswertung_koordinaten_des_knotens():
+    import auswertung
+    m = meldung(coordinates={'lat': _pt(*MITTE, 1)[0], 'lon': MITTE[1]}, uplink=_vpn())
+    a = auswertung.auswerten(_k('0123456789ab', m), MESHIDS, FL, None)[0]
+    assert a['ziel'] == '01_vel' and a['weg'] == 'Position' and a['klaerung'] is None
+
+
+def test_auswertung_genauigkeit_zu_gross_und_veraltet(tmp_path):
+    import auswertung
+    (tmp_path / '0123456789ab.json').write_text(json.dumps(
+        {'datei': 'x.json', 'quelle': 'beaconDB', 'lat': MITTE[0], 'lon': MITTE[1], 'genauigkeit': 6000}))
+    a = auswertung.auswerten(_k('0123456789ab', meldung()), MESHIDS, FL, str(tmp_path))[0]
+    assert a['ziel'] is None and a['klaerung'].startswith('Genauigkeit 6000')
+    a = auswertung.auswerten(_k('0123456789ab', meldung(), 'y.json'), MESHIDS, FL, str(tmp_path))[0]
+    assert a['klaerung'] == 'noch nicht geortet'
+
+
+def test_auswertung_e11_vor_position():
+    import auswertung
+    m = meldung(wifi=[w('1', 'met-mesh', -60)], coordinates={'lat': MITTE[0], 'lon': MITTE[1]})
+    a = auswertung.auswerten(_k('0123456789ab', m), MESHIDS, FL, None)[0]
+    assert a['ziel'] == '02_met' and a['weg'] == 'E11' and a['position'] is None
+
+
+def test_manifest_karte_hand_klaerung():
+    import datetime
+    import manifest
+    jetzt = datetime.datetime(2026, 11, 21, 12, tzinfo=datetime.timezone.utc)
+    aus = [dict(_a('aaaaaaaaaaa1'), ziel='01_vel', klaerung=None),
+           dict(_a('aaaaaaaaaaa2'), ziel=None, klaerung='noch nicht geortet'),
+           _a('aaaaaaaaaaa3'),
+           dict(_a('aaaaaaaaaaa4', darf=(False, 'x')))]
+    karte = {'aaaaaaaaaaa1': '25_hvb', 'aaaaaaaaaaa2': '25_hvb', 'aaaaaaaaaaa3': '21_dias'}
+    hand = {'aaaaaaaaaaa4': '21_dias', 'bbbbbbbbbbbb': '13_dusfl'}
+    assert manifest.auswahl(aus, jetzt, karte, hand) == [
+        ('aaaaaaaaaaa1', '01_vel'), ('aaaaaaaaaaa4', '21_dias'), ('bbbbbbbbbbbb', '13_dusfl')]
+
+
+def test_hand_ablauf(tmp_path):
+    import datetime
+    import manifest
+    p = tmp_path / 'hand.conf'
+    p.write_text('# x\naaaaaaaaaaa1 21_dias 2026-11-21T13:00:00+00:00\n'
+                 'aaaaaaaaaaa2 21_dias 2026-11-21T11:00:00+00:00\nkaputt\n')
+    jetzt = datetime.datetime(2026, 11, 21, 12, tzinfo=datetime.timezone.utc)
+    assert manifest.hand_gueltig(manifest.hand_lesen(str(p)), jetzt) == {'aaaaaaaaaaa1': '21_dias'}
+
+
+def test_anbieter_nur_fremde_wlans():
+    import orten
+    wifi = [{'bssid': 'A0:00:00:00:00:01', 'ssid': 'FRITZ!Box', 'mesh_id': '', 'signal': -70},
+            {'bssid': 'a0:00:00:00:00:02', 'ssid': 'Freifunk', 'mesh_id': '', 'signal': -60},
+            {'bssid': 'a0:00:00:00:00:03', 'ssid': '', 'mesh_id': 'vel-mesh', 'signal': -60},
+            {'bssid': 'a2:00:00:00:00:04', 'ssid': 'Handy', 'mesh_id': '', 'signal': -50}]
+    assert orten.netze_fuer_anbieter(wifi) == [{'macAddress': 'a0:00:00:00:00:01', 'signalStrength': -70}]
+
+
+def test_flaechen_berechnen():
+    import flaechen
+    k = [{'domain': '01_vel', 'is_online': True, 'location': {'latitude': p[0], 'longitude': p[1]}}
+         for p in FL['01_vel']]
+    k += [{'domain': '11_lvr', 'is_online': True, 'location': {'latitude': MITTE[0], 'longitude': MITTE[1]}}] * 3
+    k += [{'domain': '01_vel', 'is_online': False, 'location': {'latitude': 50.0, 'longitude': 7.0}}]
+    f = flaechen.berechnen(k, ['01_vel', '02_met'])
+    assert list(f) == ['01_vel'] and len(f['01_vel']) == 5

@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# HVB-Ortung Teil 2: Domainflaechen aus den Knotenpositionen (flaechen.py)
+[Unit]
+Description=HVB-Ortung: Domainflaechen berechnen
+
+[Service]
+Type=oneshot
+User=locator
+Group=locator
+ExecStart=/usr/bin/python3 /usr/local/lib/locator/flaechen.py
+ProtectSystem=strict
+ReadWritePaths=/var/lib/locator/flaechen
+PrivateTmp=true
+ProtectHome=true
+NoNewPrivileges=true

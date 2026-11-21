@@ -26,18 +26,30 @@ id locator >/dev/null 2>&1 || useradd --system --no-create-home --home-dir /none
 
 install -d -m 0755 "$LIB"
 install -m 0644 "$HIER/ortung.py" "$HIER/meshids.conf" "$LIB/"
-install -m 0755 "$HIER/annahme.py" "$HIER/auswertung.py" "$HIER/manifest.py" "$LIB/"
+install -m 0755 "$HIER/annahme.py" "$HIER/auswertung.py" "$HIER/manifest.py" \
+	"$HIER/orten.py" "$HIER/flaechen.py" "$LIB/"
 printf '#!/bin/sh\nexec /usr/bin/python3 %s/auswertung.py "$@"\n' "$LIB" > /usr/local/sbin/locator-auswertung
 chmod 0755 /usr/local/sbin/locator-auswertung
 printf '#!/bin/sh\nexec /usr/bin/python3 %s/manifest.py "$@"\n' "$LIB" > /usr/local/sbin/locator-manifest
 chmod 0755 /usr/local/sbin/locator-manifest
+# Teil 2: Positionen (beaconDB, 14 Tage) und Domainflaechen, als Dienstnutzer
+install -d -m 0700 -o locator -g locator /var/lib/locator/position
+install -d -m 0755 -o locator -g locator /var/lib/locator/flaechen
+for u in orten flaechen; do
+	printf '#!/bin/sh\nsystemctl start locator-%s.service && journalctl -u locator-%s.service -n 20 -o cat --since -2min\n' "$u" "$u" > /usr/local/sbin/locator-$u
+	chmod 0755 /usr/local/sbin/locator-$u
+done
 # Ausgeliefertes nodeplacer-Manifest (http, Konzept 4.5)
 install -d -m 0755 /var/www/locator /var/www/locator/hvb /var/www/locator/hvb/nodeplacer
 
 install -m 0644 "$HIER/locator.service" "$HIER/locator-aufraeumen.service" "$HIER/locator-aufraeumen.timer" \
-	"$HIER/locator-manifest.service" "$HIER/locator-manifest.timer" /etc/systemd/system/
+	"$HIER/locator-manifest.service" "$HIER/locator-manifest.timer" \
+	"$HIER/locator-orten.service" "$HIER/locator-flaechen.service" "$HIER/locator-flaechen.timer" \
+	/etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now locator-aufraeumen.timer
+systemctl start locator-flaechen.service
+systemctl enable --now locator-flaechen.timer
 # Manifest: ohne Schluessel kein Timer (Schluessel entsteht von Hand, s. o.)
 if [ -f /etc/locator/nodeplacer.secret ]; then
 	systemctl start locator-manifest.service

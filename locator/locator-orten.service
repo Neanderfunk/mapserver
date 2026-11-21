@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# HVB-Ortung Teil 2: Position beim Ortungsanbieter holen (orten.py). Laeuft vor
+# jedem Manifest-Lauf (Wants= in locator-manifest.service), als Dienstnutzer,
+# nicht als root: der Signierschluessel bleibt aussen vor.
+[Unit]
+Description=HVB-Ortung: Position aus dem WLAN-Scan holen (beaconDB)
+
+[Service]
+Type=oneshot
+User=locator
+Group=locator
+ExecStart=/usr/bin/python3 /usr/local/lib/locator/orten.py
+ProtectSystem=strict
+ReadWritePaths=/var/lib/locator/position
+PrivateTmp=true
+ProtectHome=true
+NoNewPrivileges=true

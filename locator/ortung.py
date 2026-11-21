@@ -8,6 +8,7 @@ lan_mesh/lan_switch: Knoten in 25_hvb mit LAN-Mesh-Nachbarn genau einer
 anderen Domain schalten selbst um (adorfer 20.11.2026, Konzept 4.3/4.4);
 dafuer keine Auswertung, kein Manifest, E12 gilt nicht.
 """
+import math
 import re
 
 FORMAT_VERSION = 1
@@ -140,3 +141,103 @@ def darf_gehen(m, andere):
     if haengen:
         return False, 'ueber ihn gehen ins Netz: ' + ', '.join(haengen)
     return True, 'eigener VPN-Uplink, kein Knoten ohne VPN geht ueber ihn'
+
+
+# --- Teil 2: Position zu Domain (adorfer 21.11.2026) ----------------------
+# Konzept 4.4 Schritte 2 bis 4. Domainflaechen als Feld aus Gauss-Kernen
+# ueber die Knoten je Ortsdomain, wie der Community-Finder von Mitfunken
+# (mitfunken docs/community-survey.md, "Community-Finder"); Kerne um den
+# Genauigkeitsradius verbreitert.
+
+DIASPORA = '21_dias'
+# Ueber die Position nie Ziel (Mesh-only, adorfer 20.11.), dazu Diaspora und
+# HVB selbst; alle anderen Domains aus meshids.conf sind Ortsdomains.
+POSITION_NIE = {'11_lvr', '31_lvrno', '32_lvrnw', '33_lvrmo', '34_lvrmw', '35_lvrso', '36_lvrsw',
+                '12_dusuk', '18_nefuk', '22_dusukn', '23_dusuks', '24_dusukw',
+                DIASPORA, '25_hvb'}
+SIGMAS_KM = (3, 8, 20)    # Stufen; was erst danach Feld haette, liegt ausserhalb
+MINFELD = 1.0
+UEBERLAPP = 0.35          # zweite Domain ab 35 % des Feldes: im Bericht als unklar
+MAX_GENAUIGKEIT = 5000    # E10, Meter; darueber oder ohne: Klaerung von Hand
+BALLUNG_KM = 6            # Nachbarschaft fuer Ballungen
+BALLUNG_MIN = 3           # Ballung ab so vielen Knoten ist Kerngebiet
+NAHE_KM = 25              # Einzelknoten so nah an einem Kern zaehlen mit
+RASTER_M = 200            # gespeicherte Positionen (Konzept 4.4 Punkt 7)
+
+
+def positionsziele(meshids):
+    return sorted(set(meshids.values()) - POSITION_NIE)
+
+
+def ort_gueltig(lat, lon):
+    """Falschkoordinaten wie Mitfunken sammeln.py ort(): Null Island,
+    lat == lon, ausserhalb des Gradbereichs."""
+    if not all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in (lat, lon)):
+        return False
+    return lat != 0 and lon != 0 and lat != lon and -90 <= lat <= 90 and -180 <= lon <= 180
+
+
+def abstand_km(a, b):
+    """Naeherung fuer kurze Strecken (lat, lon in Grad)."""
+    x = math.radians(b[1] - a[1]) * math.cos(math.radians((a[0] + b[0]) / 2))
+    y = math.radians(b[0] - a[0])
+    return 6371.0 * math.hypot(x, y)
+
+
+def vergroebern(lat, lon, raster_m=RASTER_M):
+    s = raster_m / 111320.0
+    t = s / max(math.cos(math.radians(lat)), 0.01)
+    return round(round(lat / s) * s, 5), round(round(lon / t) * t, 5)
+
+
+def kern(punkte):
+    """Kerngebiet einer Domain: Ballungen (Nachbarschaft BALLUNG_KM) ab
+    BALLUNG_MIN Knoten, dazu Einzelknoten bis NAHE_KM daneben. Weiter
+    entfernte gelten als extraterritorial und ziehen nicht."""
+    n = len(punkte)
+    gruppe = list(range(n))
+
+    def wurzel(i):
+        while gruppe[i] != i:
+            gruppe[i] = gruppe[gruppe[i]]
+            i = gruppe[i]
+        return i
+    for i in range(n):
+        for j in range(i + 1, n):
+            if abstand_km(punkte[i], punkte[j]) <= BALLUNG_KM:
+                gruppe[wurzel(i)] = wurzel(j)
+    groesse = {}
+    for i in range(n):
+        groesse[wurzel(i)] = groesse.get(wurzel(i), 0) + 1
+    gross = [p for i, p in enumerate(punkte) if groesse[wurzel(i)] >= BALLUNG_MIN]
+    nah = [p for i, p in enumerate(punkte) if groesse[wurzel(i)] < BALLUNG_MIN
+           and any(abstand_km(p, q) <= NAHE_KM for q in gross)]
+    return gross + nah
+
+
+def feld(p, punkte, sigma_km):
+    f = 0.0
+    for q in punkte:
+        d = abstand_km(p, q)
+        if d < 3 * sigma_km:
+            f += math.exp(-(d / sigma_km) ** 2)
+    return f
+
+
+def position_ziel(p, genauigkeit_m, flaechen):
+    """Domain zur Position p = (lat, lon). flaechen: {domain: [(lat, lon)]}
+    (Kerngebiete). Stufen SIGMAS_KM, jede um die Genauigkeit verbreitert
+    (sigma_eff = sqrt(sigma^2 + acc^2)); in der ersten Stufe mit Feld ab
+    MINFELD gewinnt das staerkste Feld. Kein Feld bis zur letzten Stufe:
+    ausserhalb unseres Gebiets, also 21_dias. Gibt ein dict mit ziel,
+    stufe_km (None ausserhalb), feld und unklar (zweite Domain ab
+    UEBERLAPP oder None)."""
+    acc = (genauigkeit_m or 0) / 1000.0
+    for s in SIGMAS_KM:
+        se = math.sqrt(s * s + acc * acc)
+        f = sorted(((feld(p, pk, se), d) for d, pk in flaechen.items()), reverse=True)
+        if f and f[0][0] >= MINFELD:
+            zweite = f[1] if len(f) > 1 and f[1][0] >= UEBERLAPP * f[0][0] else None
+            return {'ziel': f[0][1], 'stufe_km': s, 'feld': round(f[0][0], 2),
+                    'unklar': zweite[1] if zweite else None}
+    return {'ziel': DIASPORA, 'stufe_km': None, 'feld': None, 'unklar': None}

@@ -295,6 +295,19 @@ PANELS = KOPF + [
 # einmal, auch mit zwei Kanten.
 SN = 'is_gateway="true", nodeid=~"f2beef00[0-9]{2}$sn"'
 SN_KANTE = '"target.id"=~"f2beef00[0-9]{2}$sn"'
+
+# CPU aus statistics.stat: Jiffies seit dem Boot, Anteil = Rate des Feldes
+# durch die Summe der Raten aller Felder. Alle Instanzen eines Supernodes
+# melden dieselbe Maschine, also max ueber die Instanzen.
+CPU_FELDER = (('user', 'user'), ('nice', 'nice'), ('system', 'system'),
+              ('softirq', 'softirq'), ('irq', 'irq'), ('iowait', 'iowait'), ('steal', 'steal'))
+CPU_ALLE = 'user|nice|system|idle|iowait|irq|softirq|steal'
+
+
+def cpu_anteil(f):
+    return ('100 * max(rate({__name__="node_stat.cpu.%s", %s}[$__rate_interval])) / '
+            'max(sum by (nodeid) (rate({__name__=~"node_stat.cpu.(%s)", %s}[$__rate_interval])))'
+            % (f, SN, CPU_ALLE, SN))
 KANTE = ('max by (nodeid) (label_replace(last_over_time({__name__="link_tq", %s}[15m]),'
          ' "nodeid", "$1", "source.id", "(.*)"))' % SN_KANTE)
 DAHINTER = '%s * on(nodeid) group_left() (' + KANTE + ' * 0 + 1)'
@@ -449,10 +462,17 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
         beschreibung='Ein Sprung nach unten ist ein Neustart der Maschine '
                      '(23.09.2026 um 22:42 alle sechs, wegen batman-adv 2026.3).'),
 
+    panel(10, 'CPU der Maschine', [
+        ziel(cpu_anteil(f), name, chr(ord('A') + i)) for i, (f, name) in enumerate(CPU_FELDER)
+    ], 0, 37, w=24, einheit='percent', min_=0, stapeln=True, legende_rechts=True,
+        beschreibung='Anteile der CPU-Zeit aus /proc/stat (statistics.stat, seit 21.11.2026), '
+                     'gestapelt, ohne idle. steal ist Zeit, die der Hypervisor der VM '
+                     'vorenthalten hat: Sie fehlt dem Supernode, ohne dass loadavg sie zeigt.'),
+
     {
         'id': 9, 'title': 'Knoten an diesem Supernode', 'type': 'table', 'datasource': QUELLE,
         'description': 'Momentaufnahme mit Linkqualität, absteigend nach TQ.',
-        'gridPos': {'h': 10, 'w': 24, 'x': 0, 'y': 37},
+        'gridPos': {'h': 10, 'w': 24, 'x': 0, 'y': 45},
         'targets': [dict(ziel(kurzname('last_over_time({__name__="link_tq", %s}[15m])'
                                        % SN_KANTE, 'source.hostname'),
                               '', 'A'), instant=True, range=False, format='table')],

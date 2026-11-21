@@ -35,8 +35,9 @@ def berechnen(knoten, ziele):
     for n in knoten:
         loc = n.get('location') or {}
         lat, lon = loc.get('latitude'), loc.get('longitude')
-        if n.get('is_online') and n.get('domain') in ziele and ortung.ort_gueltig(lat, lon):
-            je_domain.setdefault(n['domain'], []).append((round(lat, 3), round(lon, 3)))
+        d = ortung.karten_domain(n)
+        if n.get('is_online') and not n.get('is_gateway') and d in ziele and ortung.ort_gueltig(lat, lon):
+            je_domain.setdefault(d, []).append((round(lat, 3), round(lon, 3)))
     return {d: [list(p) for p in ortung.kern(pk)] for d, pk in sorted(je_domain.items())
             if ortung.kern(pk)}
 

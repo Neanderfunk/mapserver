@@ -165,6 +165,14 @@ NAHE_KM = 25              # Einzelknoten so nah an einem Kern zaehlen mit
 RASTER_M = 200            # gespeicherte Positionen (Konzept 4.4 Punkt 7)
 
 
+def karten_domain(n):
+    """Domaincode eines Knotens aus meshviewer.json. Alte Knoten stehen dort
+    mit site_code wie nef-05_mon, Multi-Domain-Knoten mit dem Domaincode."""
+    d = n.get('domain') or ''
+    v, _, h = d.partition('-')
+    return h if h[:2].isdigit() else d
+
+
 def positionsziele(meshids):
     return sorted(set(meshids.values()) - POSITION_NIE)
 

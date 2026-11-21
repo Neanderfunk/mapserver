@@ -109,7 +109,7 @@ def hand_schreiben(h):
 def karte_lesen():
     """{node_id: domain} aus der Gesamtausgabe von yanic."""
     d = json.load(open(flaechen.QUELLE, encoding='utf-8'))
-    return {n['node_id']: n.get('domain') for n in d['nodes'] if n.get('node_id')}
+    return {n['node_id']: ortung.karten_domain(n) for n in d['nodes'] if n.get('node_id')}
 
 
 def koerper(zeilen, jetzt):

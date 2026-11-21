@@ -387,5 +387,6 @@ def test_flaechen_berechnen():
          for p in FL['01_vel']]
     k += [{'domain': '11_lvr', 'is_online': True, 'location': {'latitude': MITTE[0], 'longitude': MITTE[1]}}] * 3
     k += [{'domain': '01_vel', 'is_online': False, 'location': {'latitude': 50.0, 'longitude': 7.0}}]
+    k[0]['domain'] = 'nef-01_vel'
     f = flaechen.berechnen(k, ['01_vel', '02_met'])
     assert list(f) == ['01_vel'] and len(f['01_vel']) == 5

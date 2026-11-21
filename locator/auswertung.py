@@ -126,6 +126,8 @@ def auswerten(je_knoten, meshids, flaechen=None, positionen=None, karte=None):
         wifi = m.get('wifi') if isinstance(m.get('wifi'), list) else []
         partner = ortung.mesh_partner(wifi, meshids)
         ls = k.get('lan_switch')
+        if ls and not m.get('lan_switch') and m.get('domain') == '25_hvb' and e['empfangen'] > ls['zeit']:
+            ls = None   # spaeter wieder aus 25_hvb ohne lan_switch: ueberholt
         selbst = bool(m.get('lan_switch'))
         e11 = None if selbst else ortung.zieldomain(partner, SCHWELLE)
         pos = pz = klaerung = None

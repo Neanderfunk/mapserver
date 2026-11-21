@@ -198,6 +198,8 @@ def test_lan_switch_ohne_e11_e12_und_umgeschaltet():
     a = auswertung.auswerten({'0123456789ab': k}, MESHIDS)[0]
     assert a['darf_gehen'] is None and a['wuerde_verschieben'] is None
     assert not a['lan_umgeschaltet'] and a['lan_mesh'] == LM
+    a = auswertung.auswerten({'0123456789ab': k}, MESHIDS, karte={'0123456789ab': '21_dias'})[0]
+    assert a['lan_umgeschaltet']
     k['letzte'] = {'empfangen': '2026-11-20T11:00:00', 'meldung': meldung(domain='21_dias')}
     k['meldungen'] = 2
     a = auswertung.auswerten({'0123456789ab': k}, MESHIDS)[0]

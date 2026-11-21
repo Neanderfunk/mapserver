@@ -31,7 +31,6 @@ den Pubkey in der Domain-Datei von 25_hvb. Ausgeliefert per http unter
 --trocken: Manifest nur ausgeben, nicht signieren, nicht schreiben.
 """
 import datetime
-import json
 import os
 import subprocess
 import sys
@@ -106,12 +105,6 @@ def hand_schreiben(h):
     os.replace(tmp, HAND)
 
 
-def karte_lesen():
-    """{node_id: domain} aus der Gesamtausgabe von yanic."""
-    d = json.load(open(flaechen.QUELLE, encoding='utf-8'))
-    return {n['node_id']: ortung.karten_domain(n) for n in d['nodes'] if n.get('node_id')}
-
-
 def koerper(zeilen, jetzt):
     t = ['FORMAT=1',
          'DATE=' + zeitformat(jetzt),
@@ -168,11 +161,12 @@ def hand_befehl(args, jetzt):
 
 def erzeugen(jetzt, trocken=False):
     utc = jetzt.astimezone(datetime.timezone.utc)
+    karte = auswertung.karte_lesen()
     aus = auswertung.auswerten(auswertung.lesen(auswertung.ABLAGE),
                                ortung.meshids_lesen(auswertung.MESHIDS),
-                               flaechen.lesen(), auswertung.POSITIONEN)
+                               flaechen.lesen(), auswertung.POSITIONEN, karte)
     hand = hand_gueltig(hand_lesen(), utc)
-    zeilen = auswahl(aus, utc, karte_lesen(), hand)
+    zeilen = auswahl(aus, utc, karte, hand)
     text = koerper(zeilen, jetzt)
     if trocken:
         sys.stdout.write(text)

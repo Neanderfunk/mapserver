@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import auswertung  # noqa: E402
 import ortung  # noqa: E402
 
-QUELLE = os.environ.get('LOCATOR_KARTE', '/var/www/karte-en/sites/neander/alle/data/meshviewer.json')
+QUELLE = auswertung.KARTE
 ZIEL = os.environ.get('LOCATOR_FLAECHEN', '/var/lib/locator/flaechen/flaechen.json')
 
 

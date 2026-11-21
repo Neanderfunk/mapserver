@@ -36,6 +36,7 @@ import ortung  # noqa: E402
 
 ABLAGE = os.environ.get('LOCATOR_ABLAGE', '/var/lib/locator/eingang')
 POSITIONEN = os.environ.get('LOCATOR_POSITIONEN', '/var/lib/locator/position')
+KARTE = os.environ.get('LOCATOR_KARTE', '/var/www/karte-en/sites/neander/alle/data/meshviewer.json')
 MESHIDS = os.environ.get('LOCATOR_MESHIDS', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'meshids.conf'))
 SCHWELLE = -75  # E11, adorfer 20.11.2026
 
@@ -104,9 +105,17 @@ def absender_passt(xff, exit_ip):
     return exit_ip[familie] == xff
 
 
-def auswerten(je_knoten, meshids, flaechen=None, positionen=None):
+def karte_lesen(pfad=KARTE):
+    """{node_id: domain} aus der Gesamtausgabe von yanic."""
+    d = json.load(open(pfad, encoding='utf-8'))
+    return {n['node_id']: ortung.karten_domain(n) for n in d['nodes'] if n.get('node_id')}
+
+
+def auswerten(je_knoten, meshids, flaechen=None, positionen=None, karte=None):
     """flaechen/positionen: fuer den Weg ueber die Position (Teil 2); ohne
-    beides wie Teil 1, nur E11."""
+    beides wie Teil 1, nur E11. karte: {node_id: domain}; damit gilt ein
+    Knoten mit lan_switch als umgeschaltet, sobald er in der Zieldomain auf
+    der Karte steht (dort meldet er nicht mehr)."""
     aus = []
     letzte = [k['letzte']['meldung'] for k in je_knoten.values()]
     for nid, k in sorted(je_knoten.items()):
@@ -137,7 +146,8 @@ def auswerten(je_knoten, meshids, flaechen=None, positionen=None):
             'mesh': {mid: p for mid, p in sorted(partner.items(), key=lambda x: -x[1]['staerkster'])},
             'lan_mesh': ortung.lan_mesh(m),
             'lan_switch': ls,
-            'lan_umgeschaltet': bool(ls) and m.get('domain') == ls['ziel'],
+            'karte': (karte or {}).get(nid),
+            'lan_umgeschaltet': bool(ls) and ls['ziel'] in (m.get('domain'), (karte or {}).get(nid)),
             'wuerde_verschieben': e11,
             'position': pos,
             'position_ziel': pz,
@@ -153,8 +163,8 @@ def auswerten(je_knoten, meshids, flaechen=None, positionen=None):
 def text(aus):
     for a in aus:
         print('%s  %d Meldung(en), letzte %s' % (a['node_id'], a['meldungen'], a['letzte']))
-        print('  Domain %s, Release %s, %d Netze, Koordinaten %s' % (
-            a['domain'], a['release'], a['netze'], 'ja' if a['koordinaten'] else 'nein'))
+        print('  Domain %s (Karte: %s), Release %s, %d Netze, Koordinaten %s' % (
+            a['domain'], a['karte'] or '-', a['release'], a['netze'], 'ja' if a['koordinaten'] else 'nein'))
         print('  exit_ip %s, Absender %s (%s)' % (
             a['exit_ip'] or '-', a['absender'] or '-',
             {True: 'passt', False: 'passt NICHT', None: 'nicht vergleichbar'}[a['absender_passt']]))
@@ -171,7 +181,7 @@ def text(aus):
         if ls:
             print('  schaltet selbst um nach %s (LAN-Mesh, gemeldet %s): %s' % (
                 ls['ziel'], ls['zeit'],
-                'umgeschaltet, meldet aus der Zieldomain' if a['lan_umgeschaltet'] else 'noch nicht aus der Zieldomain gemeldet'))
+                'umgeschaltet, steht in der Zieldomain' if a['lan_umgeschaltet'] else 'noch nicht in der Zieldomain'))
         if a['darf_gehen'] is None:
             print('  E11/E12: entfaellt, Umschaltung per LAN-Mesh')
         else:
@@ -194,7 +204,7 @@ def text(aus):
 
 if __name__ == '__main__':
     import flaechen
-    aus = auswerten(lesen(ABLAGE), ortung.meshids_lesen(MESHIDS), flaechen.lesen(), POSITIONEN)
+    aus = auswerten(lesen(ABLAGE), ortung.meshids_lesen(MESHIDS), flaechen.lesen(), POSITIONEN, karte_lesen())
     if '--json' in sys.argv:
         json.dump(aus, sys.stdout, ensure_ascii=False, indent=1)
         print()

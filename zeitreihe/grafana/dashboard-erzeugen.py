@@ -723,6 +723,54 @@ TAG = 86400
 # ein eigenes Suffix bleibt deutsch.
 TAGE = 'suffix: Tage'
 
+# Domainhelper (statistics.neanderfunk.domainhelper, yanic-Fork dab4259).
+# from/to/peer_domain/follow_domain sind Domaincodes (21_dias), anders als
+# site. Die Reihen gibt es nur, solange ein Knoten den Teil meldet.
+DH_FENSTER = '[30d]'
+DH_WECHSEL = kurzname(
+    'max by (nodeid, hostname, from, to, how) (last_over_time('
+    '{__name__="nf_domainhelper_last_switch_time", from=~"${domain:regex}"}%(f)s)) * 1000 or '
+    'max by (nodeid, hostname, from, to, how) (last_over_time('
+    '{__name__="nf_domainhelper_last_switch_time", to=~"${domain:regex}"}%(f)s)) * 1000'
+    % {'f': DH_FENSTER})
+
+
+def dh_teil(metrik, art, labels):
+    return ('label_replace(max by (nodeid, hostname, %s) (last_over_time({__name__="%s", %s}%s)), '
+            '"art", "%s", "", "")' % (labels, metrik, AUSWAHL, FENSTER, art))
+
+
+DH_AKTIV = kurzname(' or '.join([
+    dh_teil('nf_domainhelper_bridge_age', 'Brücke', 'state, where, peer_domain, peer_node, note'),
+    dh_teil('nf_domainhelper_follow_age', 'follow', 'follow_domain, rule'),
+    dh_teil('nf_domainhelper_island_age', 'Insel', 'site'),
+]))
+
+
+def tabelle(nr, titel, ausdruck, x, y, w=24, h=8, beschreibung='', spalten=None,
+            sortieren=None, einheit_wert=''):
+    """Momentaufnahme als Tabelle. spalten: Label -> Ueberschrift, in dieser
+    Reihenfolge; alle anderen Labels fallen weg."""
+    spalten = spalten or {}
+    return {
+        'id': nr, 'title': titel, 'type': 'table', 'datasource': QUELLE,
+        'description': beschreibung,
+        'gridPos': {'h': h, 'w': w, 'x': x, 'y': y},
+        'targets': [dict(ziel(ausdruck, '', 'A'), instant=True, range=False, format='table')],
+        'transformations': [
+            {'id': 'filterFieldsByName', 'options': {'include': {'names': list(spalten)}}},
+            {'id': 'organize', 'options': {
+                'indexByName': {k: i for i, k in enumerate(spalten)},
+                'renameByName': spalten}},
+        ] + ([{'id': 'sortBy', 'options': {'fields': {}, 'sort': [
+            {'field': sortieren, 'desc': sortieren == 'Zeit'}]}}] if sortieren else []),
+        'options': {'showHeader': True},
+        # Die Einheit gilt nur fuer Zahlen, die Labelspalten sind Text
+        'fieldConfig': {'defaults': {'custom': {'align': 'auto'}, 'unit': einheit_wert},
+                        'overrides': []},
+    }
+
+
 COMMUNITY_PANELS = [
     # Erste Zeile: wer ist da
     zahl(100, 'Gluon-Knoten online', knoten(GLUON), 0, w=4,
@@ -847,6 +895,31 @@ COMMUNITY_PANELS = [
     panel(12, 'UniFi-APs: Modelle', [
         ziel(verteilung('model', UNIFI), '{{model}}', 'A'),
     ], 12, 64, min_=0, stapeln=True, sortieren=True),
+
+    tabelle(15, 'Domainwechsel', DH_WECHSEL, 0, 91, h=10,
+            beschreibung='Letzter Domainwechsel je Knoten laut neanderfunk-domainhelper '
+                         '(ab 0.12, Feed b99b4e6, also erst ab dem Build danach), aus den '
+                         'letzten 30 Tagen, neueste zuerst. Der Knoten merkt sich den Wechsel '
+                         'im Flash, er bleibt über Neustart und sysupgrade stehen. Die Zeit '
+                         'kommt vom Knoten: ohne NTP vor dem Wechsel kann sie falsch sein. '
+                         'Gefiltert wird über von oder nach.',
+            sortieren='Zeit',
+            spalten={'kurz': 'Knoten', 'from': 'von', 'to': 'nach', 'how': 'wodurch',
+                     'Value': 'Zeit', 'hostname': 'voller Name', 'nodeid': 'node_id'},
+            einheit_wert='dateTimeAsIso'),
+    tabelle(16, 'Domainhelper gerade aktiv', DH_AKTIV, 0, 101, h=8,
+            beschreibung='Was neanderfunk-domainhelper gerade tut, im Normalfall leer. '
+                         'Brücke: fremde Domain am Kabel, Zustand bridge (bleibt, Grund in '
+                         'Hinweis) oder cut (getrennt), Nachbar mit Domain und node_id. '
+                         'follow: das Netz kommt aus einer anderen Domain, Regel R1 (Kabel) '
+                         'oder R2 (nur fremde Gateways); gewechselt wird, wenn das Alter die '
+                         'Wartezeit erreicht. Insel: kein Gateway. Alter seit dem Ereignis.',
+            sortieren='Alter',
+            spalten={'art': 'Art', 'kurz': 'Knoten', 'state': 'Zustand', 'where': 'Port',
+                     'peer_domain': 'Nachbar-Domain', 'peer_node': 'Nachbar',
+                     'follow_domain': 'folgt', 'rule': 'Regel', 'note': 'Hinweis',
+                     'Value': 'Alter', 'hostname': 'voller Name', 'nodeid': 'node_id'},
+            einheit_wert='s'),
 ]
 
 

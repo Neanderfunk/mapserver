@@ -106,7 +106,7 @@ andere wird daraus erzeugt. Die Spalten erklärt der Kopf der Datei; wichtig:
 - `id` muss eindeutig sein und bleibt danach unverändert: sie wird zur
   lokalen Tunnel-ID und zum letzten Byte unserer MACs, also zu unserer
   Kennung im fremden Mesh. Vergeben: EN 1-8, Neanderfunk 64 plus
-  Domainnummer, Essen 129, Hildesheim 130 (reserviert).
+  Domainnummer, Essen 129, Hildesheim 130 (reserviert), Wuppertal 131.
 - `host` ist der Namensteil der Ortskarte unter `<community>.map.freifunk.space`
   (nur für Communities mit Ortskarten, Neanderfunk hat keine mehr).
 

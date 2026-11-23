@@ -45,7 +45,8 @@ Seite unter vielen Namen als doppelten Inhalt abwerten.
 - Grafana (`/grafana/`), `/nf/` und das Service-Menü liegen unter
   `karte.neanderfunk.de`; `neander.map.freifunk.space` leitet seit 05.11.2026
   wie alle alten Namen um.
-- Not-Karten: Freifunk Essen (`essen.map.freifunk.space`, per fastd).
+- Not-Karten: Freifunk Essen (`essen.map.freifunk.space`) und Freifunk
+  Wuppertal (`wupper.map.freifunk.space`, seit 23.11.2026), beide per fastd.
   Hildesheim wartet auf die Freischaltung unseres Schlüssels, Einbeck auf
   einen antwortenden Broker. Freifunk EN ruht und leitet auf die eigene
   Karte um.

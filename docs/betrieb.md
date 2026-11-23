@@ -412,6 +412,7 @@ was das Netz getan hat, solange wir hingesehen haben.
 **Stand 26.09.2026:** Freifunk EN ist im Standby, acht Tunnel, der Collector
 `yanic@en` und `karte-ziele.timer` sind abgeschaltet, neun Namen leiten auf
 `map.ff-en.de` um. Es laufen 48 Tunnel für Neanderfunk, einer für Essen und einer für Hildesheim (wartet auf Freischaltung).
+Seit 23.11.2026 dazu einer für Wuppertal (`yanic@wupper`, ohne Freischaltung angenommen).
 
 ## Überwachung
 

@@ -172,8 +172,8 @@ Bekannt und bewusst so:
   `/var/www/karte-en`, gemeint ist aber alles; umbenennen waere nur Kosmetik.
 - **VPN-Arten:** Tunneldigger und fastd (seit 25.09.2026, `tunnel/fastd.conf`).
   WireGuard fehlt noch. fastd geht einseitig nur, wenn die Gegenseite jeden
-  Schluessel annimmt (Essen); sonst per Anmeldung (Hildesheim, 26.09.2026
-  beantragt).
+  Schluessel annimmt (Essen, Wuppertal); sonst per Anmeldung (Hildesheim,
+  26.09.2026 beantragt).
 - **Gateways als Pseudoknoten.** Wuerde die blauen Uplink-Knoten bringen,
   erfindet aber Objekte. Bewusst offen gelassen.
 - **broker2.ff-en.de.** Falls er zurueckkommt, verdoppelt sich die

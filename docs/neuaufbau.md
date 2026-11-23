@@ -106,7 +106,7 @@ Bei gestoppten Diensten (`victoria-metrics`, `yanic@*`, `karte-service`,
 | Pfad auf der VM | Besitzer, Rechte | Zweck | Neu erzeugen? |
 | --- | --- | --- | --- |
 | `/etc/karte-en/kennung` | root, 0644 | Kennungsserie: viertes Byte unserer MACs und Teil des Namens am Broker | **erhalten**: neue Serie heißt neue MACs und neuer Name in jedem fremden Mesh |
-| `/etc/karte-en/fastd/<community>.secret` und `.pub` | root, 0600 / 0644 | fastd-Schlüssel je Community (Essen, Hildesheim) | **erhalten**: die Gegenstelle hat den öffentlichen Schlüssel freigeschaltet; ein neuer braucht eine neue Freischaltung |
+| `/etc/karte-en/fastd/<community>.secret` und `.pub` | root, 0600 / 0644 | fastd-Schlüssel je Community (Essen, Hildesheim, Wuppertal) | **erhalten**: die Gegenstelle hat den öffentlichen Schlüssel freigeschaltet; ein neuer braucht eine neue Freischaltung |
 | `/etc/karte-en/standby.conf` | root, 0644 | Communities im Standby (Betriebszustand) | erhalten, sonst gilt die Vorgabe aus dem Repo |
 | `/etc/wireguard/wg-ctl.conf` | root, 0600 | WireGuard zu UniFi-Controllern hinter NAT: eigener Schlüssel, Peers, Ziele | **erhalten**: jede Gegenstelle kennt unseren öffentlichen Schlüssel und hat ihre eigene Konfiguration |
 | `/etc/unifi_respondd/zugang` | root, 0600 | Zugang zum Haupt-Controller (Benutzer, Passwort, URL) | erhalten; neu nur mit neuem Konto am Controller |

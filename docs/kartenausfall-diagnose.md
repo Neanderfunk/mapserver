@@ -97,8 +97,17 @@ bestimmt (siehe unten).
 ## Schicht 4: respondd
 
 ```bash
-werkzeug/respondd-probe.py bat-<code>
+werkzeug/respondd-probe.py bat-<code>      # alle drei Gruppen, je 12 s
+werkzeug/respondd-probe.py -g ff02::1 bat-<code>
 ```
+
+**Falle: zu kurz gewartet.** Gluon startet respondd auf `br-client` mit
+`-t 10`: Antworten auf einen Rundruf kommen zufällig bis zu 10 Sekunden
+verzögert (auf einem Testknoten am 23.11.2026 gesehen: 2 und 4 Sekunden).
+Wer nur ein paar Sekunden lauscht, zählt zu wenig und hält eine gesunde
+Domain für halb kaputt. Die Probe wartet deshalb 12 Sekunden; eigene
+Mitschnitte genauso lange laufen lassen, und auf dem Knoten erst mitschneiden,
+dann fragen.
 
 **Falle: die Abfragegruppe.** Stock-Gluon bedient `ff05::2:1001` auf
 `br-client` und `ff02::2:1001` auf den Mesh-Schnittstellen. Im Neanderfunk
@@ -127,6 +136,41 @@ einer verschwundenen Schnittstelle haengt.
 
 Merksatz dazu: **erst von Hand fragen, dann dem Collector glauben.** Antwortet
 die Probe und yanic nicht, liegt es an unserer Seite.
+
+**Falle: der verschluckte Rundruf nach kurzem Lauf.** Alle Domains zugleich,
+Originatoren in voller Zahl, Unicast an einzelne Knoten heil, aber auf den
+Rundruf antwortet fast niemand. Auf einem Knoten mitgeschnitten kommt die
+Anfrage gar nicht erst an, obwohl sie unseren Tunnel als batman-Broadcast
+verlässt. Ursache ist die Nummerierung der Broadcasts in batman (der
+Mechanismus ist aus dem Verhalten von batman-adv abgeleitet, belegt ist die
+Wirkung des Gegenmittels unten): Jede
+bat-Instanz zählt ihre Broadcasts ab 1, sobald sie angelegt wird. Die
+Empfänger merken sich je Absender die letzte Nummer und die 64 davor. Eine
+Nummer, die dort schon markiert ist, gilt als Duplikat und wird verworfen.
+Liegt die neue Nummer weiter als 64 zurück, setzt der Empfänger sein Fenster
+zurück ("Other host probably restarted") und alles ist gut. Das ist der
+Normalfall nach langer Laufzeit.
+
+Schief geht es, wenn die Maschine vor dem Neustart nur kurz lief und dabei
+weniger als etwa 64 Broadcasts je Domain geschickt hatte. Ein Kartenserver
+schickt kaum eigene: einen Rundruf je yanic-Runde, dazu wenig
+Nachbarschaftsverkehr. Dann landen die neuen Nummern im alten Fenster, und
+die Knoten verwerfen yanics Rundruf, bis die Zählung den alten Stand überholt
+hat. Bei einem Rundruf alle 5 Minuten dauert das ungefähr so lange wie die
+Laufzeit davor. So am 23.11.2026: Neustart um 00:59 (Kernel), zweiter
+Neustart um 01:53 (Paketwechsel). Danach waren rund 900 von 1650 Knoten
+stumm, sichtbar blieben nur die, die yanic einzeln per Unicast fragt
+(UniFi-APs, einige Sackgassen-Knoten). Die Supernodes selbst trifft das
+nicht, sie schicken laufend ARP und Router Advertisements.
+
+Nachweis und Sofortmittel in einem: je bat-Instanz ein paar Dutzend Pakete
+an `ff02::1`, Port 9 (discard, niemand antwortet), danach erneut fragen. In
+02_met antwortete vorher 1 Knoten, nach 80 solchen Paketen 18. Seit dem
+23.11.2026 schickt `sammler/warten.sh` vor jedem Start von yanic 128 dieser
+Pakete je bat-Instanz. Dasselbe gilt für jeden anderen Sammler, der mit
+eigener bat-Instanz am Mesh hängt: Wer nach einem Neustart "erst nach dem
+dritten Neustart" Daten bekommt, hat sehr wahrscheinlich dieses Problem. Die
+weiteren Neustarts haben nur nebenbei die Zählung hochgetrieben.
 
 ## Schicht 5: Filter
 

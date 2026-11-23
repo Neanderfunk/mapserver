@@ -1,45 +1,76 @@
 #!/usr/bin/env python3
-"""Respondd-Probe: fragt eine batman-Instanz per Multicast ab und zaehlt, wer antwortet.
+"""Respondd-Probe: fragt eine batman-Instanz per Rundruf ab und zaehlt, wer antwortet.
 
-Das ist genau die Abfrage, die yanic spaeter macht: ff05::2:1001 ist
-site-local und wird von Stock-Gluon auf br-client bedient, also ueber bat0
-im ganzen Mesh verteilt. Antworten kommen per Unicast zurueck.
+  respondd-probe.py [-g GRUPPE ...] bat-<code> [...]
+
+Ohne -g gehen alle drei ueblichen Gruppen gleichzeitig hinaus, je ein eigener
+Socket, die Antworten werden getrennt gezaehlt:
+
+  ff05::2:1001   Stock-Gluon auf br-client (Neanderfunk 20.09.2026: nur der
+                 Supernode; 23.11.2026 in 05_mon 52 von 56 Knoten)
+  ff02::2:1001   Stock-Gluon auf den Mesh-Schnittstellen
+  ff02::1        Neanderfunk-Patch fix-respondd-rsk; das fragt yanic dort
+
+Antworten kommen per Unicast zurueck. Gewartet wird 12 Sekunden: Gluon
+startet respondd auf br-client mit -t 10 (MAXDELAY), Antworten auf einen
+Rundruf kommen also bis zu 10 Sekunden verzoegert (auf einem Testknoten
+am 23.11.2026 gesehen: 2 und 4 Sekunden).
 """
-import json, socket, struct, sys, time, zlib
+import argparse
+import json
+import select
+import socket
+import struct
+import time
+import zlib
 
-GRUPPE = 'ff05::2:1001'
+GRUPPEN = ('ff05::2:1001', 'ff02::2:1001', 'ff02::1')
 PORT = 1001
-WARTE = 6.0
+WARTE = 12.0
 
 
-def frage(iface, anfrage=b'nodeinfo'):
+def frage(iface, gruppen, anfrage=b'GET nodeinfo'):
     idx = socket.if_nametoindex(iface)
-    s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-    s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_IF, struct.pack('I', idx))
-    s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, 64)
-    s.bind(('::', 0))
-    s.sendto(anfrage, (GRUPPE, PORT, 0, idx))
-    s.settimeout(0.5)
-    antworten = {}
+    socks = {}
+    for g in gruppen:
+        s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_IF, struct.pack('I', idx))
+        s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, 64)
+        s.bind(('::', 0))
+        s.sendto(anfrage, (g, PORT, 0, idx))
+        socks[s] = g
+    antworten = {g: {} for g in gruppen}
     ende = time.time() + WARTE
     while time.time() < ende:
-        try:
+        bereit, _, _ = select.select(list(socks), [], [], max(0.0, ende - time.time()))
+        for s in bereit:
             daten, von = s.recvfrom(65536)
-        except socket.timeout:
-            continue
-        try:
-            j = json.loads(daten)
-        except ValueError:
             try:
-                j = json.loads(zlib.decompress(daten, -15))
-            except Exception:
-                j = None
-        antworten[von[0]] = j
-    s.close()
+                j = json.loads(daten)
+            except ValueError:
+                try:
+                    j = json.loads(zlib.decompress(daten, -15))
+                except Exception:
+                    j = None
+            if isinstance(j, dict):
+                j = j.get('nodeinfo', j)
+            antworten[socks[s]][von[0]] = j
+    for s in socks:
+        s.close()
     return antworten
 
 
-for iface in sys.argv[1:]:
-    a = frage(iface)
-    namen = sorted(v.get('hostname', '?') for v in a.values() if isinstance(v, dict))
-    print(f'{iface:12} {len(a):4} Antworten   z.B. {", ".join(namen[:3])}')
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
+    ap.add_argument('-g', '--gruppe', action='append',
+                    help='Abfragegruppe, mehrfach moeglich (Vorgabe: alle drei)')
+    ap.add_argument('iface', nargs='+')
+    a = ap.parse_args()
+    for iface in a.iface:
+        for g, an in frage(iface, a.gruppe or GRUPPEN).items():
+            namen = sorted(v.get('hostname', '?') for v in an.values() if isinstance(v, dict))
+            print(f'{iface:12} {g:13} {len(an):4} Antworten   z.B. {", ".join(namen[:3])}')
+
+
+if __name__ == '__main__':
+    main()

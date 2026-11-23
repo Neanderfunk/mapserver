@@ -7,7 +7,7 @@ umgesetzt oder ausführlich beschrieben ist. Die Einzelheiten stehen in
 [einrichtung.md](einrichtung.md) und [neuaufbau.md](neuaufbau.md); diese Datei
 ersetzt sie nicht, sie ist der Überblick.
 
-Stand 24.10.2026.
+Stand 23.11.2026.
 
 ## Stumme Domains: "läuft" heißt nicht "liefert"
 
@@ -40,6 +40,15 @@ weiter sieht. Diagnose von unten nach oben, Schicht für Schicht:
   `linux-image-*` vergleichen.
 - yanic wartet beim Start auf alle bat-Instanzen; ein Neustart von yanic
   kostet daher etwa zwei Minuten ohne frische Daten.
+- Zwei Neustarts kurz hintereinander (23.11.2026: 54 Minuten Abstand)
+  machten die Karte stumm, obwohl alles lief: Die neuen batman-Broadcasts
+  trugen Nummern, die die Knoten aus dem kurzen Lauf davor noch kannten, und
+  wurden als Duplikate verworfen. Regel: **Nach dem Neustart erst die
+  Broadcast-Zählung vorspulen, dann sammeln.** Umgesetzt in
+  `sammler/warten.sh` (128 Pakete an `ff02::1`, Port 9, je bat-Instanz),
+  ausführlich in [kartenausfall-diagnose.md](kartenausfall-diagnose.md),
+  Schicht 4. Hilft gegen das alte Muster "geht erst nach mehreren Neustarts
+  des Sammlers".
 
 ## Einspielen
 
@@ -150,6 +159,10 @@ Reihenfolge, zu erhaltende Dateien und Abhängigkeiten: [neuaufbau.md](neuaufbau
 - Erst messen, dann ändern: Ursachen wie die verschwundene Link-Local-Adresse
   waren nur per Mitschnitt (`tcpdump` auf der bat-Instanz) und Vergleich der
   Socket-Adresse mit der Schnittstelle zu finden.
+- Kommt eine Anfrage überhaupt an? Das beantwortet nur ein Mitschnitt auf
+  einem Testknoten (`tcpdump-mini` per opkg nachinstallieren). Am 23.11.2026
+  zeigte erst er, dass yanics Rundruf den Tunnel verließ, beim Knoten aber
+  nie ankam.
 - Ein Nachstellen an einer Test-Instanz (Dummy-Schnittstelle mit eigener
   bat-Instanz) ist auf der laufenden VM möglich, ohne fremde Netze zu
   berühren.

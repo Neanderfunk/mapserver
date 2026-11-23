@@ -34,7 +34,7 @@ in `betrieb.md`).
 | `tunnel/tunnel-start.sh` | `karte-en-tunnel` | `karte-en-tunnel@<code>.service` | startet Tunneldigger oder fastd einer Domain, Werte aus `domains.conf` |
 | `tunnel/tunnel-hook.sh` | `karte-en-hook` | Tunneldigger-Client | hängt die L2TP-Schnittstelle an batman, ohne Bridge, Clients oder Gateway |
 | `tunnel/waechter.sh` | `karte-en-waechter` | `karte-en-waechter.timer`, 5 min | startet Tunnel ohne Schnittstelle oder ohne batman-Nachbarn neu, dazu Collector und mesh-announce |
-| `sammler/warten.sh` | `karte-en-warten` | `ExecStartPre` von `yanic@` | wartet, bis die batman-Instanzen da sind |
+| `sammler/warten.sh` | `karte-en-warten` | `ExecStartPre` von `yanic@` | wartet, bis die batman-Instanzen da sind, und spult dann ihre Broadcast-Zählung vor (128 Pakete an `ff02::1`, Port 9), damit Knoten yanics Rundruf nach einem Neustart nicht als Duplikat verwerfen |
 | `sammler/yanic-conf.py` | `karte-en-yanic-conf` | `ExecStartPre` von `yanic@` | erzeugt `/etc/yanic-<community>.conf` |
 | `sammler/sitecodes-ermitteln.py` | `karte-en-sitecodes` | von Hand | misst, welche site_codes die Knoten je Domain melden |
 | `sammler/adressbuch.py` | `karte-adressbuch` | `karte-adressbuch@neander.timer`, 2 min | `targets.json` (node_id → Adressen) unter `/nf/` |
@@ -75,5 +75,5 @@ Aus der Arbeitskopie aufrufen. Wo sie in der Diagnose vorkommen, steht in
 | `werkzeug/site-lesen.py` | site.json aus den Firmware-Images einer Community lesen |
 | `werkzeug/domains-erzeugen.py` | aus dem Ergebnis eine `domains.conf` |
 | `werkzeug/broker-probe.py` | Tunneldigger-Broker per COOKIE anklopfen, ohne Tunnel |
-| `werkzeug/respondd-probe.py` | respondd-Rundruf auf einer batman-Instanz, zählt Antworten; auf der VM zusätzlich als `karte-en-respondd-probe` |
+| `werkzeug/respondd-probe.py` | respondd-Rundruf auf einer batman-Instanz an `ff05::2:1001`, `ff02::2:1001` und `ff02::1` gleichzeitig (oder `-g`), wartet 12 s, zählt Antworten je Gruppe; auf der VM zusätzlich als `karte-en-respondd-probe` |
 | `zeitreihe/grafana/dashboard-erzeugen.py` | Grafana-Dashboards; aufgerufen von `zeitreihe/einrichten.sh` |

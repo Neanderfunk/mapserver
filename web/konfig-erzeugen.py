@@ -33,7 +33,7 @@ EIGEN = 'map6.freifunk.space'
 # Daten je Domain liegen ohne Karte unter data/<code>/ der Gesamtkarte, die
 # Namen der Ortskarten leiten um (namen.conf). adorfer 04.11.2026: "Ich
 # moechte keine Ortskarten zum Ansehen. Alles soll auf die Hauptkarte gehen."
-ORTSKARTEN_AUS = {'neander'}
+ORTSKARTEN_AUS = {'neander', 'wupper'}
 INDEX = '/var/www/karte-index'
 # Linkvorschau (Mastodon, Messenger): die lesen kein Javascript, also stehen
 # Titel und og:-Angaben je Karte schon in der ausgelieferten index.html

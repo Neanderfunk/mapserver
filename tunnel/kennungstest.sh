@@ -24,7 +24,7 @@ DOMAINS="bat-ffha bat-ffwit bat-ffhat"
 sage() { echo "$(date '+%F %T') $*" >> "$LOG"; logger -t karte-en "$*"; }
 
 antworten() {
-	python3 "$PROBE" $DOMAINS 2>/dev/null | awk '{ s += $2 } END { print s + 0 }'
+	python3 "$PROBE" -g ff05::2:1001 $DOMAINS 2>/dev/null | awk '{ s += $3 } END { print s + 0 }'
 }
 
 sage "Probe nach Funkstille beginnt"

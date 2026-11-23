@@ -48,7 +48,10 @@ ABFRAGE = {'neander': 'ff02::1',
            # beantwortet nur der Supernode, ff02::2:1001 alle 36 Knoten.
            'essen': 'ff02::2:1001',
            # Hildesheim: angenommen wie Essen, nach der Freischaltung messen
-           'hildesheim': 'ff02::2:1001'}
+           'hildesheim': 'ff02::2:1001',
+           # Freifunk Wuppertal (Gluon v2016.1, 23.11.2026 gemessen bei 42
+           # Originatoren): ff05::2:1001 13, ff02::2:1001 30, ff02::1 33 Antworten
+           'wupper': 'ff02::1'}
 
 # Communities, in denen wir die Kontaktangabe der Knoten mit veroeffentlichen.
 # Nur das eigene Netz, siehe oben.
@@ -72,7 +75,7 @@ SERVICE = {'neander'}
 
 # Communities ohne Ortskarten (web/konfig-erzeugen.py): je Domain nur die
 # Daten unter alle/data/<code>/, keine meshviewer.json fuer eine Karte
-ORTSKARTEN_AUS = {'neander'}
+ORTSKARTEN_AUS = {'neander', 'wupper'}
 
 
 def gemeldete_codes():

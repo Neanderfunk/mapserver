@@ -27,7 +27,7 @@ WEB = '/var/www/karte-en'
 SUFFIX = 'map.freifunk.space'
 # Klarname je Community, fuer den Titel der Gesamtkarte.
 NAMEN = {'en': 'Freifunk EN', 'neander': 'Neanderfunk', 'essen': 'Freifunk Essen',
-         'hildesheim': 'Freifunk Hildesheim'}
+         'hildesheim': 'Freifunk Hildesheim', 'wupper': 'Freifunk Wuppertal'}
 EIGEN = 'map6.freifunk.space'
 # Communities ohne Ortskarten: nur die Gesamtkarte und Sammelkarten, die
 # Daten je Domain liegen ohne Karte unter data/<code>/ der Gesamtkarte, die

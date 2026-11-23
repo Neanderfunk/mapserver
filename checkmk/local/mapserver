@@ -76,7 +76,12 @@ alter_von() {           # Alter einer Datei in Sekunden, -1 wenn es sie nicht gi
 declare -A K_GES K_ON
 while read -r pfad ges on; do
     K_GES[$pfad]=$ges K_ON[$pfad]=$on
-done < <(python3 - $(if nur_domains; then echo "$WEB"/sites/*/*/data/meshviewer.json;
+# Je Domain zaehlt alle/data/<code>/nodes.json: die schreibt yanic fuer jede
+# Domain, mit oder ohne Ortskarte. Bis 23.11.2026 las die Rolle Domains die
+# meshviewer.json der Ortskarte; seit die neander-Ortskarten am 04.11.2026
+# abgeschaltet sind, lag dort nur noch ein alter Stand, und jede neander-Domain
+# stand auf CRIT (Datei 20 Tage alt).
+done < <(python3 - $(if nur_domains; then echo "$WEB"/sites/*/alle/data/*/nodes.json;
                     else echo "$WEB"/sites/*/alle/data/meshviewer.json; fi) <<'PY' 2>/dev/null
 import json, sys
 for pfad in sys.argv[1:]:
@@ -84,7 +89,9 @@ for pfad in sys.argv[1:]:
         n = json.load(open(pfad)).get('nodes') or []
     except (OSError, ValueError):
         n = []
-    print(pfad, len(n), sum(1 for x in n if x.get('is_online')))
+    # meshviewer.json: is_online; nodes.json (meshviewer v2): flags.online
+    print(pfad, len(n), sum(1 for x in n if x.get('is_online')
+                            or (x.get('flags') or {}).get('online')))
 PY
 )
 knoten_in() {           # Knoten und davon online aus einer meshviewer.json
@@ -264,7 +271,7 @@ grep -v '^#' "$KONF" | grep . | while read -r community code _ _ _ host _; do
     nachbarn=$(batctl meshif "bat-$code" neighbors 2>/dev/null | tail -n +3 | grep -c .)
     gws=$(batctl meshif "bat-$code" gwl 2>/dev/null | tail -n +3 | grep -c .)
     clients=$(batctl meshif "bat-$code" transglobal 2>/dev/null | grep -cE '\[[^]]*W[^]]*\]')
-    datei=$WEB/sites/$community/$host/data/meshviewer.json
+    datei=$WEB/sites/$community/alle/data/$code/nodes.json
     alter=$(alter_von "$datei")
     set -- $(knoten_in "$datei")
     ges=$1 on=$2

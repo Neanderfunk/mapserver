@@ -3,8 +3,8 @@
 """Liest einen UniFi-Controller (UniFi OS: UDM, Cloud Gateway) nur lesend aus
 und legt Geraete, Ports, Netze, WLANs und Clients als CSV und als gesaeuberte
 Rohdaten ab, etwa fuer ein IT-Inventar. Geheimnisse (WLAN-Schluessel,
-Passwoerter, RADIUS-Secrets, WireGuard-Schluessel, Tokens) werden vor dem
-Speichern durch "<entfernt>" ersetzt, SSID-Namen bleiben.
+Passwoerter, RADIUS-Secrets, WireGuard-Schluessel, Tokens, SNMP-Community)
+werden vor dem Speichern durch "<entfernt>" ersetzt, SSID-Namen bleiben.
 
 Der Controller ist meist nur von der Karten-VM aus erreichbar (WireGuard-Tunnel,
 siehe docs/unifi-sites.md). Dieses Skript laeuft deshalb lokal, schickt sich
@@ -37,10 +37,10 @@ import urllib.error
 import urllib.request
 
 SSH_VORGABE = 'ad-claude@map6.freifunk.space -p 62954'
-GEHEIM = re.compile(r'(pass|secret|psk|private|token|cert|^x_|_key$|^key$|keys$|^key_|_keys?_)', re.I)
+GEHEIM = re.compile(r'(pass|secret|psk|private|token|cert|community|^x_|_key$|^key$|keys$|^key_|_keys?_)', re.I)
 ABFRAGEN = [('device', 'stat/device'), ('networkconf', 'rest/networkconf'),
             ('wlanconf', 'rest/wlanconf'), ('portconf', 'rest/portconf'),
-            ('sta', 'stat/sta'), ('user', 'rest/user')]
+            ('sta', 'stat/sta'), ('user', 'rest/user'), ('setting', 'rest/setting')]
 
 
 def saeubern(o):
@@ -88,7 +88,12 @@ def holen():
         d = {}
         for name, pfad in ABFRAGEN:
             try:
-                d[name] = saeubern(anfrage('%s/s/%s/%s' % (n, s['name'], pfad))['data'])
+                roh = anfrage('%s/s/%s/%s' % (n, s['name'], pfad))['data']
+                d[name] = saeubern(roh)
+                if name == 'setting':
+                    # "key" ist hier der Name des Eintrags (mgmt, global_switch), kein Schluessel
+                    for e, r in zip(d[name], roh):
+                        e['key'] = r.get('key')
             except urllib.error.HTTPError as e:
                 d[name] = []
                 print('%s/%s: %s' % (s['name'], pfad, e), file=sys.stderr)

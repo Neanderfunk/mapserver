@@ -505,7 +505,9 @@ SSH_OPTS="-i SCHLUESSEL" werkzeug/unifi-auszug.py LOGINDATEI ZIEL --url https://
 - Die Login-Datei hat drei Zeilen: Benutzer, Passwort, URL. Steht dort die
   LAN-Adresse des Controllers, kommt die VM nicht hin (Timeouts); `--url`
   setzt die Tunneladresse.
-- Felder mit Passwort, PSK, Secret, Token, Zertifikat, privatem Schlüssel
-  oder `x_` im Namen werden zu `<entfernt>`, bevor sie die VM verlassen.
+- Felder mit Passwort, PSK, Secret, Token, Zertifikat, privatem Schlüssel,
+  SNMP-Community oder `x_` im Namen werden zu `<entfernt>`, bevor sie die VM
+  verlassen. Seit 23.11.2026 ist `rest/setting` dabei (`roh-setting.json`,
+  etwa `global_switch` mit den Snooping-Vorgaben).
 - Das Ziel wird mit 700 angelegt, die Dateien mit 600; der Kopf
   des Skripts erklärt alle Optionen.

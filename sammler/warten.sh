@@ -43,6 +43,36 @@ bereit() {
 	return $da
 }
 
+# batman-Broadcasts vorspulen. Jede bat-Instanz zaehlt ihre Broadcasts ab 1,
+# die Knoten merken sich je Originator die letzte Nummer und die 64 davor.
+# War die Maschine vorher nur kurz oben (23.11.2026: 54 Minuten, also nur
+# wenige Dutzend Broadcasts je Domain), liegen die neuen Nummern in diesem
+# Fenster und gelten als schon gesehen: die Knoten verwerfen yanics Rundruf
+# an ff02::1, bis die Nummern die alten ueberholt haben. Bei einem Rundruf
+# je 5 Minuten dauert das etwa so lange wie die Laufzeit davor; am 23.11.
+# blieben rund 900 von 1650 Knoten etwa 40 Minuten stumm, bis 80 Broadcasts
+# von Hand die Nummer ueber das Fenster hoben. Nach langer
+# Laufzeit tritt es nicht auf, dann liegt die neue Nummer weit genug zurueck
+# und batman setzt das Fenster zurueck ("Other host probably restarted").
+# 128 Pakete an den Discard-Port (9) heben die Nummer ueber jedes alte
+# Fenster; sie kosten nichts, niemand antwortet. Auch bei jedem Neustart von
+# yanic ohne Neustart der Maschine harmlos.
+vorspulen() {
+	python3 - "$@" <<'PY' || logger -t karte-en "yanic $COMMUNITY: Vorspulen der Broadcasts fehlgeschlagen"
+import socket, sys, time
+s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+for _ in range(128):
+    for c in sys.argv[1:]:
+        try:
+            i = socket.if_nametoindex('bat-' + c)
+            s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_IF, i)
+            s.sendto(b'x', ('ff02::1', 9, 0, i))
+        except OSError:
+            pass
+    time.sleep(0.01)
+PY
+}
+
 COMMUNITY=${1:?Community fehlt}
 codes=$(awk -v g="$COMMUNITY" '!/^#/ && NF && $1 == g { print $2 }' "$KONF")
 i=0
@@ -54,6 +84,7 @@ while [ "$i" -lt "$GEDULD" ]; do
 	done
 	if [ -z "$fehlen" ]; then
 		[ "$i" -gt 0 ] && logger -t karte-en "yanic $COMMUNITY: alle bat-Instanzen nach $i s bereit"
+		vorspulen $codes
 		exit 0
 	fi
 	sleep 2

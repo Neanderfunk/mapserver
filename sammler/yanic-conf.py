@@ -35,23 +35,33 @@ WEB = '/var/www/karte-en/sites'
 TAKT = '5m'
 OFFLINE = '20m'
 
-# Abfrageadresse je Community. Vorgabe ist ff05::2:1001, die Gruppe, die
-# Stock-Gluon auf br-client bedient.
+# Abfragegruppen je Community, eine Abfrage je Gruppe und batman-Instanz.
+# Vorgabe ist ff05::2:1001, die Gruppe, die Stock-Gluon auf br-client bedient.
 #
-# Im eigenen Netz antwortet darauf gemessen nur der Supernode, eine Antwort je
-# Domain. Auf ff02::1 antworten dagegen alle Knoten: genau diese Gruppe oeffnet
-# unser Patch fix-respondd-rsk zusaetzlich, die Rueckkehr zum Verhalten von
-# Gluon 2016. Ueber batman ist ff02::1 kein Nachteil, das ganze Mesh ist eine
-# Broadcast-Domain (gemessen 20.09.2026: ff05 eine Antwort, ff02::1 alle).
-ABFRAGE = {'neander': 'ff02::1',
+# Neanderfunk, Uebergang seit 24.11.2026: ff05::2:1001 und ff02::1. Bisher
+# fragten wir nur ff02::1, das oeffnet der Firmware-Patch fix-respondd-rsk
+# zusaetzlich. Der Patch entfaellt (adorfer 24.11.2026). Gemessen am
+# 24.11.2026 ueber alle 48 Domains: ff05 875, ff02::1 1076 Antworten.
+# 2025.1-Knoten antworten auf ff05 (744 von 752). Die Sackgasse 2021.1
+# antwortet dort nicht: im 2021.x-Patch hat ff05 keine Schnittstelle
+# (Tippfehler $clientdev); ohne Patch gilt wieder Gluons Zeile. Bis die
+# Sackgasse ohne Patch und die drei noch aelteren Knoten aus dem Feld sind,
+# bleibt ff02::1 dabei; danach nur noch ff05. Die alte Messung "auf ff05 nur
+# der Supernode" (20.09.2026) ist ueberholt.
+#
+# Wer auf beide Gruppen antwortet, wird je Lauf zweimal gespeichert, also
+# auch zwei Messpunkte im Abstand von Sekunden in der Zeitreihe. Die Graphen
+# aendert das nicht. ff02::2:1001 hilft ueber batman nicht: Stock-Gluon
+# lauscht darauf nur auf den Mesh-Schnittstellen.
+ABFRAGE = {'neander': ('ff05::2:1001', 'ff02::1'),
            # Freifunk Essen (Gluon v2019.1, 25.09.2026 gemessen): ff05::2:1001
            # beantwortet nur der Supernode, ff02::2:1001 alle 36 Knoten.
-           'essen': 'ff02::2:1001',
+           'essen': ('ff02::2:1001',),
            # Hildesheim: angenommen wie Essen, nach der Freischaltung messen
-           'hildesheim': 'ff02::2:1001',
+           'hildesheim': ('ff02::2:1001',),
            # Freifunk Wuppertal (Gluon v2016.1, 23.11.2026 gemessen bei 42
            # Originatoren): ff05::2:1001 13, ff02::2:1001 30, ff02::1 33 Antworten
-           'wupper': 'ff02::1'}
+           'wupper': ('ff02::1',)}
 
 # Communities, in denen wir die Kontaktangabe der Knoten mit veroeffentlichen.
 # Nur das eigene Netz, siehe oben.
@@ -211,16 +221,18 @@ def main():
             t.append(f'[respondd.sites.{c}]')
             t.append("domains = ['']")
     t.append('')
-    t.append('# Je batman-Instanz eine Abfrage. Ohne multicast_address nimmt yanic')
-    t.append('# ff05::2:1001, und genau darauf antwortet Stock-Gluon auf br-client.')
+    t.append('# Je batman-Instanz und Abfragegruppe eine Abfrage, jede mit eigenem')
+    t.append('# Socket. Ohne multicast_address nimmt yanic ff05::2:1001, und genau')
+    t.append('# darauf antwortet Stock-Gluon auf br-client.')
     vorhanden = [x for x in d if x not in fehlen] if '--alle' not in sys.argv else d
     for x in vorhanden:
         t.append('')
         t.append(f'# {x["name"]}')
-        t.append('[[respondd.interfaces]]')
-        t.append(f'ifname = "bat-{x["code"]}"')
-        if x['community'] in ABFRAGE:
-            t.append(f'multicast_address = "{ABFRAGE[x["community"]]}"')
+        for g in ABFRAGE.get(x['community'], (None,)):
+            t.append('[[respondd.interfaces]]')
+            t.append(f'ifname = "bat-{x["code"]}"')
+            if g:
+                t.append(f'multicast_address = "{g}"')
 
     t.append('')
     t.append('[webserver]')

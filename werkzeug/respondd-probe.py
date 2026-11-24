@@ -6,10 +6,12 @@
 Ohne -g gehen alle drei ueblichen Gruppen gleichzeitig hinaus, je ein eigener
 Socket, die Antworten werden getrennt gezaehlt:
 
-  ff05::2:1001   Stock-Gluon auf br-client (Neanderfunk 20.09.2026: nur der
-                 Supernode; 23.11.2026 in 05_mon 52 von 56 Knoten)
-  ff02::2:1001   Stock-Gluon auf den Mesh-Schnittstellen
-  ff02::1        Neanderfunk-Patch fix-respondd-rsk; das fragt yanic dort
+  ff05::2:1001   Stock-Gluon auf br-client (Neanderfunk 24.11.2026: 875 von
+                 1076, 2025.1 antwortet, die Sackgasse 2021.1 nicht)
+  ff02::2:1001   Stock-Gluon auf den Mesh-Schnittstellen; ueber batman nur
+                 mit dem Patch fix-respondd-rsk
+  ff02::1        Patch fix-respondd-rsk (entfaellt); yanic fragt im
+                 Uebergang ff05 und ff02::1
 
 Antworten kommen per Unicast zurueck. Gewartet wird 12 Sekunden: Gluon
 startet respondd auf br-client mit -t 10 (MAXDELAY), Antworten auf einen

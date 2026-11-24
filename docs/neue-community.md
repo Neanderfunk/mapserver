@@ -145,8 +145,8 @@ Erst wenn beides sitzt, lohnt der Blick auf die Karte. Wenn Originatoren da
 sind, respondd aber schweigt, liegt es fast immer an der Abfrageadresse:
 Stock-Gluon bedient `ff05::2:1001` auf `br-client` und `ff02::2:1001` auf den
 Mesh-Schnittstellen. Unsere eigene Flotte kennt zusaetzlich `ff02::1`, weil
-wir dort einen Patch fahren; fremde Netze haben den nicht, und yanic fragt
-von sich aus die richtige Adresse.
+wir dort einen Patch gefahren haben (entfaellt seit 24.11.2026); fremde Netze
+haben den nicht, und yanic fragt von sich aus die richtige Adresse.
 
 ## Schritt 6: in die Auswertung
 

@@ -110,11 +110,17 @@ Mitschnitte genauso lange laufen lassen, und auf dem Knoten erst mitschneiden,
 dann fragen.
 
 **Falle: die Abfragegruppe.** Stock-Gluon bedient `ff05::2:1001` auf
-`br-client` und `ff02::2:1001` auf den Mesh-Schnittstellen. Im Neanderfunk
-antwortet auf `ff05::2:1001` gemessen **nur der Supernode**, auf `ff02::1`
-dagegen alle Knoten, weil unser Patch `fix-respondd-rsk` diese Gruppe
-zusätzlich öffnet. Fragt der Collector die falsche Gruppe, kartiert man 48
-Supernodes und keinen Knoten.
+`br-client` und `ff02::2:1001` auf den Mesh-Schnittstellen; über batman
+erreicht der Collector nur `ff05::2:1001`. Unser Firmware-Patch
+`fix-respondd-rsk` öffnet zusätzlich `ff02::1` (und `ff02::2:1001` auf
+`br-client`); er entfällt seit 24.11.2026. Gemessen am 24.11.2026 über alle
+48 Domains: `ff05` 875, `ff02::1` 1076 Antworten. 2025.1-Knoten antworten
+auf `ff05` (744 von 752), die Sackgasse 2021.1 nicht, weil im 2021.x-Patch
+`ff05` keine Schnittstelle hat. Deshalb fragt yanic im Übergang beide
+Gruppen (`ABFRAGE` in `sammler/yanic-conf.py`). Die frühere Beobachtung
+"auf `ff05` antwortet nur der Supernode" (20.09.2026) stammt aus der Zeit,
+als das Netz noch überwiegend auf 2021.1 lief, und gilt nicht mehr. Fragt
+der Collector nur die falsche Gruppe, fehlen ganze Firmware-Generationen.
 
 **Falle: der Messtakt.** yanic sammelt nicht zur vollen Minute, sondern
 versetzt (`synchronize`). Zwei Mitschnitte zwischen den Läufen haben eine

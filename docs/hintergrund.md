@@ -85,7 +85,9 @@ unsere Identitaet in ihrem Netz.
 ## Der ff02::1-Patch, und warum er hier nichts nuetzt
 
 Unsere eigene Flotte faehrt einen Patch, der respondd zusaetzlich auf
-`ff02::1` lauschen laesst, eine Rueckkehr zum Verhalten von Gluon 2016. Ein
+`ff02::1` lauschen laesst, eine Rueckkehr zum Verhalten von Gluon 2016. Er
+entfaellt seit 24.11.2026; im Uebergang fragt unser yanic im eigenen Netz
+`ff05::2:1001` und `ff02::1` (`ABFRAGE` in `sammler/yanic-conf.py`). Ein
 Collector, der darauf ausgelegt ist, sieht in fremden Netzen nichts: Stock-Gluon
 bedient nur `ff05::2:1001` auf `br-client` und `ff02::2:1001` auf den
 Mesh-Schnittstellen. yanic fragt von sich aus `ff05::2:1001`, deshalb

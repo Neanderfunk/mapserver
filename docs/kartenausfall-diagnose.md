@@ -116,8 +116,9 @@ erreicht der Collector nur `ff05::2:1001`. Unser Firmware-Patch
 `br-client`); er entfällt seit 24.11.2026. Gemessen am 24.11.2026 über alle
 48 Domains: `ff05` 875, `ff02::1` 1076 Antworten. 2025.1-Knoten antworten
 auf `ff05` (744 von 752), die Sackgasse 2021.1 nicht, weil im 2021.x-Patch
-`ff05` keine Schnittstelle hat. Deshalb fragt yanic im Übergang beide
-Gruppen (`ABFRAGE` in `sammler/yanic-conf.py`). Die frühere Beobachtung
+`ff05` keine Schnittstelle hat. Deshalb fragt yanic beide Gruppen
+(`ABFRAGE` in `sammler/yanic-conf.py`), und zwar dauerhaft: Alte Knoten mit
+dem Patch wird es im Feld immer geben. Die frühere Beobachtung
 "auf `ff05` antwortet nur der Supernode" (20.09.2026) stammt aus der Zeit,
 als das Netz noch überwiegend auf 2021.1 lief, und gilt nicht mehr. Fragt
 der Collector nur die falsche Gruppe, fehlen ganze Firmware-Generationen.

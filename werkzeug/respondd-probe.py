@@ -10,8 +10,8 @@ Socket, die Antworten werden getrennt gezaehlt:
                  1076, 2025.1 antwortet, die Sackgasse 2021.1 nicht)
   ff02::2:1001   Stock-Gluon auf den Mesh-Schnittstellen; ueber batman nur
                  mit dem Patch fix-respondd-rsk
-  ff02::1        Patch fix-respondd-rsk (entfaellt); yanic fragt im
-                 Uebergang ff05 und ff02::1
+  ff02::1        Patch fix-respondd-rsk (entfaellt, alte Knoten haben ihn
+                 weiter); yanic fragt dauerhaft ff05 und ff02::1
 
 Antworten kommen per Unicast zurueck. Gewartet wird 12 Sekunden: Gluon
 startet respondd auf br-client mit -t 10 (MAXDELAY), Antworten auf einen

@@ -38,20 +38,20 @@ OFFLINE = '20m'
 # Abfragegruppen je Community, eine Abfrage je Gruppe und batman-Instanz.
 # Vorgabe ist ff05::2:1001, die Gruppe, die Stock-Gluon auf br-client bedient.
 #
-# Neanderfunk, Uebergang seit 24.11.2026: ff05::2:1001 und ff02::1. Bisher
+# Neanderfunk seit 24.11.2026: ff05::2:1001 und ff02::1, beide dauerhaft. Bisher
 # fragten wir nur ff02::1, das oeffnet der Firmware-Patch fix-respondd-rsk
 # zusaetzlich. Der Patch entfaellt (adorfer 24.11.2026). Gemessen am
 # 24.11.2026 ueber alle 48 Domains: ff05 875, ff02::1 1076 Antworten.
 # 2025.1-Knoten antworten auf ff05 (744 von 752). Die Sackgasse 2021.1
 # antwortet dort nicht: im 2021.x-Patch hat ff05 keine Schnittstelle
-# (Tippfehler $clientdev); ohne Patch gilt wieder Gluons Zeile. Bis die
-# Sackgasse ohne Patch und die drei noch aelteren Knoten aus dem Feld sind,
-# bleibt ff02::1 dabei; danach nur noch ff05. Die alte Messung "auf ff05 nur
-# der Supernode" (20.09.2026) ist ueberholt.
+# (Tippfehler $clientdev); ohne Patch gilt wieder Gluons Zeile. ff02::1
+# bleibt trotzdem dabei: alte Knoten mit dem Patch wird es im Feld immer
+# geben, das ist kein Zwischenzustand (adorfer 24.11.2026). Die alte Messung
+# "auf ff05 nur der Supernode" (20.09.2026) ist ueberholt.
 #
 # Wer auf beide Gruppen antwortet, wird je Lauf zweimal gespeichert, also
 # auch zwei Messpunkte im Abstand von Sekunden in der Zeitreihe. Die Graphen
-# aendert das nicht. ff02::2:1001 hilft ueber batman nicht: Stock-Gluon
+# aendert das nicht, und die Abfragelast im eigenen Netz ist gering. ff02::2:1001 hilft ueber batman nicht: Stock-Gluon
 # lauscht darauf nur auf den Mesh-Schnittstellen.
 ABFRAGE = {'neander': ('ff05::2:1001', 'ff02::1'),
            # Freifunk Essen (Gluon v2019.1, 25.09.2026 gemessen): ff05::2:1001

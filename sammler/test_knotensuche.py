@@ -21,6 +21,8 @@ ZIELE = {'community': 'neander', 'generated': '2026-11-25T08:00:00Z', 'source': 
                      'addresses': ['2001:db8:1:715:aa:bbff:fe00:1', 'fd00:1::aa:bbff:fe00:1']},
     '02aabb000002': {'hostname': 'zwei', 'site_code': 'nef-21_dias', 'domain': '21_dias', 'online': False,
                      'last_seen': '2026-11-20T10:00:00Z', 'addresses': []},
+    '02aabb0000aa': {'hostname': 'supernode', 'domain': '10_wlf', 'online': True,
+                     'last_seen': '2026-11-25T07:59:00Z', 'addresses': ['2001:db8:1:715::1']},
 }}
 
 
@@ -67,6 +69,17 @@ def test_altes_praefix_findet_knoten(bestand):
     assert [n['node_id'] for n in o['nodes']] == ['02aabb000001']
     assert o['nodes'][0]['match'] == 'interface-id'
     assert o['nodes'][0]['addresses'][0].startswith('2001:db8:1:715:')
+
+
+def test_von_hand_vergeben_nur_genau(bestand):
+    s, o = ks.antwort(bestand, 'neander', 'ip=2001:db8:1:715::1')
+    assert s == 200 and o['nodes'][0]['hostname'] == 'supernode' and o['nodes'][0]['match'] == 'address'
+    assert ks.antwort(bestand, 'neander', 'ip=2001:db8:9:315::1')[0] == 404
+
+
+def test_genaue_adresse_zuerst(bestand):
+    o = ks.antwort(bestand, 'neander', 'ip=2001:db8:1:715:aa:bbff:fe00:1')[1]
+    assert [(n['node_id'], n['match']) for n in o['nodes']] == [('02aabb000001', 'address')]
 
 
 def test_ohne_adresse_ueber_eui64(bestand):

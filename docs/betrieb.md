@@ -577,9 +577,11 @@ curl -s 'https://karte.neanderfunk.de/nf/lookup?node_id=02aabb000001'
 curl -s 'https://karte.neanderfunk.de/nf/lookup?mac=02:aa:bb:00:00:01'
 ```
 
-- `ip`: verglichen werden die unteren 64 Bit (Interface-ID) mit allen
-  Adressen im Adressbuch, das Präfix ist egal (öffentlich, ULA,
-  Link-Local, auch mit `%zone`, `[...]` oder `/64`). Kennt das Adressbuch
+- `ip`: erst genau diese Adresse (`match: address`), dann die unteren 64 Bit
+  (Interface-ID) gegen alle Adressen im Adressbuch, das Präfix ist egal
+  (öffentlich, ULA, Link-Local, auch mit `%zone`, `[...]` oder `/64`). Von
+  Hand vergebene Interface-IDs unter 2^32, etwa `::1` der Supernodes, zählen
+  nur bei genau gleicher Adresse, sonst käme jeder Supernode. Kennt das Adressbuch
   die Interface-ID nicht und ist sie eine EUI-64, geht es über die MAC zur
   node_id (`match: eui64`).
 - `node_id` und `mac` in beliebiger Schreibweise; die node_id ist die

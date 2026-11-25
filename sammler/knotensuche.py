@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 """Knotensuche: alte Adresse, node_id oder MAC -> aktuelle Adressen.
 
-  GET /nf/lookup?ip=<IPv6>      untere 64 Bit (Interface-ID) gegen alle
-                                bekannten Adressen, Praefix egal (oeffentlich,
-                                ULA, Link-Local)
+  GET /nf/lookup?ip=<IPv6>      genau diese Adresse, sonst die unteren 64 Bit
+                                (Interface-ID) gegen alle bekannten Adressen,
+                                Praefix egal (oeffentlich, ULA, Link-Local)
   GET /nf/lookup?node_id=<hex>  12 Hex-Zeichen, Trennzeichen egal
   GET /nf/lookup?mac=<MAC>      Schreibweise egal (aa:bb.., AA-BB.., aabb.cc..)
 
@@ -18,8 +18,11 @@ Quelle ist das Adressbuch (sammler/adressbuch.py, alle zwei Minuten neu):
 nichts darueber hinaus. Ein Knoten faellt dort nie heraus; ein ausgefallener
 steht mit online false und der zuletzt bekannten Adresse da.
 
-Findet die Interface-ID keine bekannte Adresse und ist sie eine EUI-64, wird
-daraus die MAC und damit die node_id (Gluon: node_id = primaere MAC).
+Von Hand vergebene Interface-IDs (unter 2^32, etwa ::1 der Supernodes) gibt
+es in jedem Praefix; sie zaehlen nur bei genau gleicher Adresse, sonst kaeme
+fuer ::1 jeder Supernode zurueck. Findet die Interface-ID keine bekannte
+Adresse und ist sie eine EUI-64, wird daraus die MAC und damit die node_id
+(Gluon: node_id = primaere MAC).
 
 Antwort JSON: {"query", "generated", "nodes": [{node_id, hostname, domain,
 site_code, addresses, online, last_seen, match}]}; bei mehreren Treffern alle,
@@ -42,6 +45,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 API = '/var/www/karte-en/api'
 PFAD = '/nf/lookup'
 MASKE64 = (1 << 64) - 1
+VON_HAND = 1 << 32  # Interface-IDs darunter nur bei genau gleicher Adresse
 
 
 def hex12(text):
@@ -90,20 +94,21 @@ class Bestand:
         with open(pfad, encoding='utf-8') as f:
             d = json.load(f)
         nodes = d.get('nodes') or {}
-        iid = {}
+        iid, adresse = {}, {}
         for nid, n in nodes.items():
             for a in n.get('addresses') or []:
                 x = ipv6(a)
                 if x:
+                    adresse.setdefault(int(x), set()).add(nid)
                     iid.setdefault(int(x) & MASKE64, set()).add(nid)
-        index = {'generated': d.get('generated'), 'nodes': nodes, 'iid': iid}
+        index = {'generated': d.get('generated'), 'nodes': nodes, 'iid': iid, 'adresse': adresse}
         with self.sperre:
             self.stand[community] = (mtime, index)
         return index
 
 
 def suchen(index, ip=None, node_id=None, mac=None):
-    """-> Liste (node_id, match). Reihenfolge: Interface-ID, EUI-64, node_id, mac."""
+    """-> Liste (node_id, match). Reihenfolge: Adresse, Interface-ID, EUI-64, node_id, mac."""
     nodes, treffer = index['nodes'], []
 
     def dazu(nid, wie):
@@ -111,9 +116,12 @@ def suchen(index, ip=None, node_id=None, mac=None):
             treffer.append((nid, wie))
 
     if ip is not None:
+        for nid in sorted(index['adresse'].get(int(ip), ())):
+            dazu(nid, 'address')
         i = int(ip) & MASKE64
-        for nid in sorted(index['iid'].get(i, ())):
-            dazu(nid, 'interface-id')
+        if i >= VON_HAND:
+            for nid in sorted(index['iid'].get(i, ())):
+                dazu(nid, 'interface-id')
         if not treffer:
             m = eui64_mac(i)
             if m:

@@ -56,6 +56,9 @@ install -m 0755 "$HIER/ziele-ernten.py" /usr/local/sbin/karte-ziele-ernten
 install -m 0644 "$HIER/systemd/karte-ziele.service" "$HIER/systemd/karte-ziele.timer" /etc/systemd/system/
 # Adressbuch node_id -> Adressen fuer Sammler ausserhalb, bisher nur neander
 install -m 0755 "$HIER/adressbuch.py" /usr/local/sbin/karte-adressbuch
+# Knotensuche darauf: alte Adresse, node_id oder MAC -> aktuelle Adressen (/nf/lookup)
+install -m 0755 "$HIER/knotensuche.py" /usr/local/sbin/karte-knotensuche
+install -m 0644 "$HIER/systemd/karte-knotensuche.service" /etc/systemd/system/
 # Clients je Domain aus der Uebersetzungstabelle, genauer als die Summe der
 # respondd-Antworten (siehe clients-zaehlen.py)
 install -m 0755 "$HIER/clients-zaehlen.py" /usr/local/sbin/karte-clients
@@ -96,6 +99,8 @@ for g in $communities; do
 	systemctl enable --now "yanic@$g.service"
 done
 systemctl enable --now karte-adressbuch@neander.timer karte-clients@neander.timer karte-verlauf.timer karte-kennzahlen.timer karte-traffic-domaenen.timer
+systemctl enable karte-knotensuche.service
+systemctl restart karte-knotensuche.service
 sleep 20
 for g in $communities; do
 	printf '  %-10s %s, %s Schnittstellen\n' "$g" \

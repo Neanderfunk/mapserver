@@ -766,6 +766,15 @@ API = """	location /nf/ {
 		add_header Cache-Control "no-cache";
 		add_header Access-Control-Allow-Origin "*";
 	}
+	# Knotensuche (sammler/knotensuche.py): alte Adresse, node_id oder MAC ->
+	# aktuelle Adressen, aus targets.json oben. Ohne Adressbuch der Community
+	# antwortet sie mit 404.
+	location = /nf/lookup {
+		limit_except GET { deny all; }
+		proxy_pass http://127.0.0.1:8782;
+		proxy_set_header Host $host;
+		proxy_set_header X-Karte-Community %(community)s;
+	}
 	# Zeitreihen, falls fuer diese Community eingerichtet (zeitreihe/). Das
 	# Muster mit Stern macht das include optional.
 	include /etc/nginx/karte-en/prom-%(community)s*.conf;

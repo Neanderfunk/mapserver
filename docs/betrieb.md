@@ -456,6 +456,7 @@ Beide lassen sich von Hand aufrufen und geben ihre Zeilen direkt aus.
 | `mapserver-EN-<ort>` | kein Nachbar, keine Originatoren, kein Gateway oder alte Datei |
 | `mapserver-nginx-konfig` | `nginx -t` scheitert; der laufende nginx merkt das erst beim Neustart |
 | `mapserver-adressbuch-<community>` | `targets.json` älter als 7 bzw. 15 Minuten oder leer |
+| `mapserver-knotensuche` | `/nf/lookup` über nginx antwortet nicht mit 200 |
 | `mapserver-zeitreihe` | VictoriaMetrics antwortet nicht, keine frischen Werte, oder die Platte wird knapp |
 | `mapserver-kennung` | eine bat- oder td-Schnittstelle nicht die MAC aus dem Schema trägt |
 | `mapserver-Web` | eine der neun Karten oder ihre Daten nicht mit 200 antworten |
@@ -563,6 +564,32 @@ Supernode.
 - Erzeugt von `karte-adressbuch@neander.timer` alle zwei Minuten aus
   `nodes.json`. Eigener Bestand in `/var/lib/karte/adressbuch/`: wen yanic
   vergisst, der bleibt mit altem `last_seen` und `online: false` stehen.
+
+### Knotensuche
+
+`https://karte.neanderfunk.de/nf/lookup`, seit 25.11.2026 (Auftrag adorfer
+über die Packages-Session). Macht aus einer gemerkten, veralteten Adresse die
+aktuellen. Lesend, ohne Anmeldung, dieselben Daten wie das Adressbuch.
+
+```
+curl -s 'https://karte.neanderfunk.de/nf/lookup?ip=2001:db8:1:315:aa:bbff:fe00:1'
+curl -s 'https://karte.neanderfunk.de/nf/lookup?node_id=02aabb000001'
+curl -s 'https://karte.neanderfunk.de/nf/lookup?mac=02:aa:bb:00:00:01'
+```
+
+- `ip`: verglichen werden die unteren 64 Bit (Interface-ID) mit allen
+  Adressen im Adressbuch, das Präfix ist egal (öffentlich, ULA,
+  Link-Local, auch mit `%zone`, `[...]` oder `/64`). Kennt das Adressbuch
+  die Interface-ID nicht und ist sie eine EUI-64, geht es über die MAC zur
+  node_id (`match: eui64`).
+- `node_id` und `mac` in beliebiger Schreibweise; die node_id ist die
+  primäre MAC.
+- Antwort `{"query", "generated", "nodes": [{node_id, hostname, domain,
+  site_code, addresses, online, last_seen, match}]}`, bei mehreren Treffern
+  alle; kein Treffer 404, unbrauchbare Anfrage 400.
+- Dienst `karte-knotensuche` (`sammler/knotensuche.py`, 127.0.0.1:8782,
+  DynamicUser), nginx reicht `location = /nf/lookup` mit der Community als
+  Kopfzeile durch. Liest `targets.json` neu, sobald es sich ändert.
 
 ### Zeitreihen
 

@@ -336,6 +336,19 @@ for datei in "$WEB"/api/*/targets.json; do
     echo "$z mapserver-adressbuch-$c alter_s=$a;420;900|knoten=$n $n Knoten, ${a}s alt"
 done
 
+# --- Knotensuche ---------------------------------------------------------------
+# https://karte.neanderfunk.de/nf/lookup (sammler/knotensuche.py) auf dem
+# Adressbuch. Geprueft ueber nginx mit einer node_id aus targets.json, also
+# Dienst, Proxy und Datei zusammen.
+if systemctl is-enabled -q karte-knotensuche 2>/dev/null; then
+    nid=$(python3 -c "import json,sys; print(next(iter(json.load(open(sys.argv[1]))['nodes'])))" "$WEB/api/neander/targets.json" 2>/dev/null)
+    code=$(curl -s -m 10 -o /dev/null -w '%{http_code}' -H 'Host: karte.neanderfunk.de' \
+        "http://127.0.0.1/nf/lookup?node_id=$nid" 2>/dev/null)
+    if [ "$code" = 200 ]; then echo "0 mapserver-knotensuche - /nf/lookup antwortet"
+    else echo "2 mapserver-knotensuche - /nf/lookup antwortet mit ${code:-nichts} statt 200"
+    fi
+fi
+
 # --- Zeitreihen --------------------------------------------------------------
 # yanic -> VictoriaMetrics, oeffentlich lesend unter /nf/prom/. Gezaehlt
 # werden Knoten mit einem Wert aus der letzten Viertelstunde, dazu Platte.

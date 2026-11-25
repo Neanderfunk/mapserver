@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Knotensuche: alte Adresse, node_id oder MAC -> aktuelle Adressen
+# (sammler/knotensuche.py), hinter nginx unter /nf/lookup. Liest nur
+# /var/www/karte-en/api/<community>/targets.json.
+[Unit]
+Description=Karte: Knotensuche /nf/lookup
+After=network.target
+
+[Service]
+DynamicUser=yes
+ExecStart=/usr/bin/python3 /usr/local/sbin/karte-knotensuche --port 8782
+Restart=on-failure
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+MemoryMax=128M
+
+[Install]
+WantedBy=multi-user.target

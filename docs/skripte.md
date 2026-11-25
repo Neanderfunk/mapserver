@@ -38,6 +38,7 @@ in `betrieb.md`).
 | `sammler/yanic-conf.py` | `karte-en-yanic-conf` | `ExecStartPre` von `yanic@` | erzeugt `/etc/yanic-<community>.conf` |
 | `sammler/sitecodes-ermitteln.py` | `karte-en-sitecodes` | von Hand | misst, welche site_codes die Knoten je Domain melden |
 | `sammler/adressbuch.py` | `karte-adressbuch` | `karte-adressbuch@neander.timer`, 2 min | `targets.json` (node_id → Adressen) unter `/nf/` |
+| `sammler/knotensuche.py` | `karte-knotensuche` | `karte-knotensuche.service`, 127.0.0.1:8782 | `/nf/lookup`: alte Adresse, node_id oder MAC → aktuelle Adressen aus `targets.json` |
 | `sammler/clients-zaehlen.py` | `karte-clients` | `karte-clients@neander.timer`, 5 min | Clients und dunkle Knoten je Domain aus der batman-Übersetzungstabelle in die Zeitreihen, `dunkel.json` |
 | `sammler/verlauf.py` | `karte-verlauf` | `karte-verlauf.timer`, 5 min | eine Zeile je Domain in `/var/lib/karte/verlauf.csv` |
 | `sammler/kennzahlen.py` | `karte-kennzahlen` | `karte-kennzahlen.timer`, 5 min | Router und Clients jetzt und stuendlich ueber 7 Tage, `/nf/kennzahlen.json` fuer neanderfunk.de |

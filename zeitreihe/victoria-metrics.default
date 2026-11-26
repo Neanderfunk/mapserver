@@ -13,4 +13,16 @@
 # memory.allowedPercent: die VM hat 2,4 GB, yanic und nginx brauchen auch
 # etwas. Die Grenzen fuer Abfragen bleiben, sie schuetzen die Karte vor einer
 # oeffentlichen Abfrage, die alles auf einmal will.
-ARGS="-storageDataPath=/var/lib/victoria-metrics -httpListenAddr=127.0.0.1:8428 -retentionPeriod=1300d -memory.allowedPercent=30 -relabelConfig=/etc/victoria-metrics/relabel.yml -search.maxConcurrentRequests=4 -search.maxQueueDuration=10s -search.maxQueryDuration=30s -search.maxUniqueTimeseries=50000 -search.maxPointsPerTimeseries=30000 -search.maxSamplesPerQuery=100000000"
+#
+# dedup.minScrapeInterval=1ms: Punkte einer Reihe mit genau demselben
+# Zeitstempel werden zu einem (adorfer 26.11.2026). Seit 24.11.2026 fragt
+# yanic zwei Gruppen ab (sammler/yanic-conf.py, ABFRAGE); ein Knoten, der auf
+# beide antwortet, kam zweimal mit gleichem Zeitstempel und leicht
+# verschiedenem Zaehler an, und rate() teilte dann durch null Sekunden (+Inf,
+# Luecken in Grafana und in den Diagrammen der Karte). Gemessen am
+# 26.11.2026: alle Duplikate haben exakt denselben Zeitstempel, der kleinste
+# echte Abstand aller Schreiber ist 60 s (yanic global_*), die Altdaten von
+# der alten Karte haben 300 s. 1ms trifft also nur die Duplikate. Wirkt bei
+# Abfragen sofort, auch rueckwirkend, und beim Zusammenfuehren im
+# Hintergrund dauerhaft.
+ARGS="-storageDataPath=/var/lib/victoria-metrics -httpListenAddr=127.0.0.1:8428 -retentionPeriod=1300d -memory.allowedPercent=30 -relabelConfig=/etc/victoria-metrics/relabel.yml -search.maxConcurrentRequests=4 -search.maxQueueDuration=10s -search.maxQueryDuration=30s -search.maxUniqueTimeseries=50000 -search.maxPointsPerTimeseries=30000 -search.maxSamplesPerQuery=100000000 -dedup.minScrapeInterval=1ms"

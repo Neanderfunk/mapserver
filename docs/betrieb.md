@@ -718,10 +718,12 @@ davon rechnet beim Öffnen über alle Knoten:
   schreibt ihn als `nf_karte:verkehr_bps{richtung=...}` zurück, fünf Reihen
   (Download, Upload, weitergeleitet, Verwaltung empfangen/gesendet). Dieselbe
   Summe über die Gluon-Knoten wie Panel 3 "Verkehr" der Gesamtsicht in
-  Grafana, aber ohne Knoten, deren `rate()` gerade `+Inf` ist: Seit dem
-  24.11.2026 stehen Knoten, die auf beide Abfragegruppen antworten, zweimal
+  Grafana, aber ohne Knoten, deren `rate()` gerade `+Inf` ist. Vom 24. bis
+  26.11.2026 standen Knoten, die auf beide Abfragegruppen antworten, zweimal
   mit gleichem Zeitstempel in der Datenbank, und ein einziger solcher Knoten
-  machte die Summe `+Inf`. Regeln und Begründung:
+  machte die Summe `+Inf`. Seitdem legt VictoriaMetrics solche Punkte
+  zusammen (`-dedup.minScrapeInterval=1ms`, Begründung und Messung in
+  `zeitreihe/victoria-metrics.default`); der Filter bleibt als Schutz. Regeln:
   `zeitreihe/vmalert-regeln.yml`. Die erste Fassung ohne diesen Filter
   schrieb `nf_netz:verkehr_bps` (nur am 26.11.2026, samt `+Inf`); die Reihe
   wird nicht mehr geschrieben und ist von nichts mehr benutzt.

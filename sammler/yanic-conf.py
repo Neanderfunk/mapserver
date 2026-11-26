@@ -49,10 +49,14 @@ OFFLINE = '20m'
 # geben, das ist kein Zwischenzustand (adorfer 24.11.2026). Die alte Messung
 # "auf ff05 nur der Supernode" (20.09.2026) ist ueberholt.
 #
-# Wer auf beide Gruppen antwortet, wird je Lauf zweimal gespeichert, also
-# auch zwei Messpunkte im Abstand von Sekunden in der Zeitreihe. Die Graphen
-# aendert das nicht, und die Abfragelast im eigenen Netz ist gering. ff02::2:1001 hilft ueber batman nicht: Stock-Gluon
-# lauscht darauf nur auf den Mesh-Schnittstellen.
+# Wer auf beide Gruppen antwortet, wird je Lauf zweimal gespeichert, mit
+# demselben Zeitstempel und leicht verschiedenen Zaehlern. Die Annahme vom
+# 24.11.2026, das aendere die Graphen nicht, war falsch: rate() teilte bei
+# solchen Paaren durch null Sekunden (+Inf, Luecken). Seit 26.11.2026 legt
+# VictoriaMetrics sie zusammen (zeitreihe/victoria-metrics.default,
+# dedup.minScrapeInterval). Die Abfragelast im eigenen Netz ist gering.
+# ff02::2:1001 hilft ueber batman nicht: Stock-Gluon lauscht darauf nur auf
+# den Mesh-Schnittstellen.
 ABFRAGE = {'neander': ('ff05::2:1001', 'ff02::1'),
            # Freifunk Essen (Gluon v2019.1, 25.09.2026 gemessen): ff05::2:1001
            # beantwortet nur der Supernode, ff02::2:1001 alle 36 Knoten.

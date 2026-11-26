@@ -19,11 +19,13 @@
 #
 # rate() je Knoten ohne +Inf: Seit 24.11.2026 fragt yanic zwei Gruppen ab
 # (sammler/yanic-conf.py, ABFRAGE), und ein Knoten, der auf beide antwortet,
-# steht zweimal mit demselben Zeitstempel und leicht verschiedenem Zaehler in
-# der Datenbank. Fehlt ihm davor eine Runde, teilt rate() durch null Sekunden,
-# und ein einziger solcher Knoten macht die ganze Summe +Inf (am 26.11.2026
-# 94 von 2305 Punkten in acht Tagen, je zwei oder drei Knoten). "< +Inf"
-# laesst diese Knoten fuer den einen Punkt weg.
+# kam zweimal mit demselben Zeitstempel und leicht verschiedenem Zaehler an.
+# Fehlte ihm davor eine Runde, teilte rate() durch null Sekunden, und ein
+# einziger solcher Knoten machte die ganze Summe +Inf (am 26.11.2026 94 von
+# 2305 Punkten in acht Tagen, je zwei oder drei Knoten). Seit dem Abend des
+# 26.11.2026 legt VictoriaMetrics solche Punkte zusammen
+# (dedup.minScrapeInterval in victoria-metrics.default). "< +Inf" bleibt als
+# Schutz: ein einziger Ausreisser soll nie wieder die ganze Summe kippen.
 #
 # Name nf_karte:, nicht nf_netz:. Die erste Fassung vom 26.11.2026 ohne
 # Filter schrieb nf_netz:verkehr_bps, samt der +Inf-Punkte; sie wird nicht

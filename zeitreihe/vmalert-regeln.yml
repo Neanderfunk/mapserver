@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Vorberechnete Reihen fuer die Diagramme im Reiter "Statistiken" der Karte
+# (web/konfig-erzeugen.py, STATISTIKDIAGRAMME). Installiert von
+# zeitreihe/vmalert-einrichten.sh nach /etc/victoria-metrics/, ausgewertet von
+# karte-vmalert.service.
+#
+# Der Datenverkehr des ganzen Netzes ist eine Summe ueber alle Gluon-Knoten,
+# rund 1600 Reihen. Beim Oeffnen der Karte jedes Mal sieben Tage davon
+# zusammenzurechnen, waere unnoetige Last (adorfer 26.11.2026: "schon
+# gecached"). vmalert rechnet die Summe alle fuenf Minuten einmal, im Takt
+# der Sammelrunde von yanic, und schreibt sie als eigene Reihe zurueck. Das
+# Diagramm liest dann nur noch fuenf Reihen.
+#
+# Dieselbe Rechnung wie Panel 3 "Verkehr" der Gesamtsicht in Grafana
+# (zeitreihe/grafana/dashboard-erzeugen.py, verkehr()): Summe ueber die
+# Gluon-Knoten aus deren Sicht. UniFi-APs zaehlen nicht, ihr Verkehr laeuft
+# auch ueber das LAN ihres Routers; die Gateways saehen alles noch einmal.
+#
+# Router und Clients brauchen hier nichts: yanic schreibt sie in jeder Runde
+# schon als Gesamtzahl (global_nodes, global_gateways, global_clients.total).
+
+groups:
+  - name: karte-statistik
+    interval: 5m
+    rules:
+      - record: nf_netz:verkehr_bps
+        expr: sum(rate({__name__="node_traffic.rx.bytes", db="neander", firmware_base=~"gluon.*"}[10m])) * 8
+        labels:
+          db: neander
+          richtung: Download
+      - record: nf_netz:verkehr_bps
+        expr: sum(rate({__name__="node_traffic.tx.bytes", db="neander", firmware_base=~"gluon.*"}[10m])) * 8
+        labels:
+          db: neander
+          richtung: Upload
+      - record: nf_netz:verkehr_bps
+        expr: sum(rate({__name__="node_traffic.forward.bytes", db="neander", firmware_base=~"gluon.*"}[10m])) * 8
+        labels:
+          db: neander
+          richtung: weitergeleitet
+      - record: nf_netz:verkehr_bps
+        expr: sum(rate({__name__="node_traffic.mgmt_rx.bytes", db="neander", firmware_base=~"gluon.*"}[10m])) * 8
+        labels:
+          db: neander
+          richtung: Verwaltung empfangen
+      - record: nf_netz:verkehr_bps
+        expr: sum(rate({__name__="node_traffic.mgmt_tx.bytes", db="neander", firmware_base=~"gluon.*"}[10m])) * 8
+        labels:
+          db: neander
+          richtung: Verwaltung gesendet

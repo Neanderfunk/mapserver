@@ -367,6 +367,22 @@ if systemctl is-enabled -q victoria-metrics 2>/dev/null; then
     echo "$z mapserver-zeitreihe knoten=$n|groesse_mb=$mb|platte_pct=${voll:-0};80;90 $t"
 fi
 
+# --- Vorberechnete Reihen ----------------------------------------------------
+# vmalert (zeitreihe/vmalert-regeln.yml) rechnet den Datenverkehr fuer das
+# Diagramm im Reiter Statistiken alle fuenf Minuten vor. Steht es, friert nur
+# dieses Diagramm ein, die Karte laeuft weiter: WARN.
+if systemctl is-enabled -q karte-vmalert 2>/dev/null; then
+    a=$(curl -s -m 10 http://127.0.0.1:8428/api/v1/query \
+        --data-urlencode 'query=time() - tlast_over_time(nf_netz:verkehr_bps{richtung="Download"}[1h])' 2>/dev/null |
+        python3 -c "import json,sys; r=json.load(sys.stdin)['data']['result']; print(int(float(r[0]['value'][1])) if r else -1)" 2>/dev/null || echo -1)
+    if ! systemctl is-active -q karte-vmalert; then z=1; t="karte-vmalert laeuft nicht"
+    elif [ "$a" -lt 0 ];   then z=1; t="seit ueber einer Stunde kein vorberechneter Verkehr"
+    elif [ "$a" -gt 900 ]; then z=1; t="letzter vorberechneter Verkehr ${a}s alt"
+    else z=0; t="Verkehr vorberechnet, ${a}s alt"
+    fi
+    echo "$z mapserver-vorberechnet alter_s=$(( a < 0 ? 3600 : a ));900 $t"
+fi
+
 # --- Kennung -----------------------------------------------------------------
 # Unsere MACs in fremden Netzen folgen einem Schema (docs/hintergrund.md), damit
 # man uns dort zuordnen kann. Am 22.09.2026 trug bat-42_siwil stattdessen eine

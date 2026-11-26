@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Vorberechnete Reihen fuer die Karte, siehe zeitreihe/vmalert-regeln.yml.
+# Nur Aufzeichnungsregeln, keine Alarme, deshalb kein Notifier.
+[Unit]
+Description=vmalert: vorberechnete Reihen fuer die Karte
+After=victoria-metrics.service
+Wants=victoria-metrics.service
+
+[Service]
+DynamicUser=yes
+ExecStart=/usr/bin/vmalert \
+	-rule=/etc/victoria-metrics/vmalert-regeln.yml \
+	-datasource.url=http://127.0.0.1:8428 \
+	-remoteWrite.url=http://127.0.0.1:8428 \
+	-httpListenAddr=127.0.0.1:8880 \
+	-loggerLevel=WARN
+Restart=on-failure
+RestartSec=30
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target

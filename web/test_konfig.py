@@ -85,6 +85,16 @@ def test_statistik_links_sammelkarte():
     assert 'var-domain=11_lvr' in konfig.statistik_links('neander/lvr-hph', alle)[0]['href']
 
 
+def test_statistikdiagramme_nur_gesamtkarte():
+    d = konfig.statistikdiagramme('neander/alle')
+    assert [x['name'] for x in d] == ['Router online', 'Geräte verbunden', 'Datenverkehr']
+    assert all(x['datasourceType'] == 'prometheus-direct' and x['from'] == 'now-7d' for x in d)
+    # $from/$to setzt die Karte ein, $__all bleibt fuer Grafana stehen
+    assert all('from=$from&to=$to' in x['href'] and '$__all' in x['href'] for x in d)
+    assert 'nf_netz:verkehr_bps' in d[2]['query']
+    assert konfig.statistikdiagramme('neander/lvr') == []
+
+
 # Kopf aus dem meshviewer-Build (Stand 13.2.0), gekuerzt
 BUILD_KOPF = '''<!doctype html>
 <html itemscope itemtype="http://schema.org/WebPage">

@@ -84,3 +84,6 @@ systemctl daemon-reload
 for d in $(systemctl list-units --no-legend 'yanic@*.service' | awk '{ print $1 }'); do
 	systemctl restart "$d"
 done
+
+# Vorberechnete Reihen fuer den Reiter "Statistiken" der Karte
+"$HIER/vmalert-einrichten.sh"

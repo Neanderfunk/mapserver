@@ -458,6 +458,7 @@ Beide lassen sich von Hand aufrufen und geben ihre Zeilen direkt aus.
 | `mapserver-adressbuch-<community>` | `targets.json` älter als 7 bzw. 15 Minuten oder leer |
 | `mapserver-knotensuche` | `/nf/lookup` über nginx antwortet nicht mit 200 |
 | `mapserver-zeitreihe` | VictoriaMetrics antwortet nicht, keine frischen Werte, oder die Platte wird knapp |
+| `mapserver-vorberechnet` | WARN: `karte-vmalert` läuft nicht oder der vorberechnete Verkehr ist älter als 15 Minuten; nur das Verkehrsdiagramm in der Statistik friert ein |
 | `mapserver-kennung` | eine bat- oder td-Schnittstelle nicht die MAC aus dem Schema trägt |
 | `mapserver-Web` | eine der neun Karten oder ihre Daten nicht mit 200 antworten |
 
@@ -703,6 +704,39 @@ andere unter `/nf/prom/` gibt 403.
   `127.0.0.1:8428`, die Paketvorgabe wäre `0.0.0.0` gewesen.
 - Einrichtung: `sudo ./zeitreihe/einrichten.sh`. Das Skript richtet auch
   Grafana ein.
+
+### Vorberechnete Reihen (vmalert)
+
+Die Diagramme oben im Reiter "Statistiken" der Gesamtkarte zeigen sieben Tage
+Router online, Geräte verbunden und Datenverkehr (adorfer 26.11.2026). Keins
+davon rechnet beim Öffnen über alle Knoten:
+
+- Router und Clients zählt yanic in jeder Runde schon zusammen:
+  `global_nodes − global_gateways` und `global_clients.total`. Das ist bis auf
+  ein oder zwei Knoten dieselbe Zahl wie in `kennzahlen.json`.
+- Den Datenverkehr rechnet `karte-vmalert.service` alle fünf Minuten vor und
+  schreibt ihn als `nf_netz:verkehr_bps{richtung=...}` zurück, fünf Reihen
+  (Download, Upload, weitergeleitet, Verwaltung empfangen/gesendet). Dieselbe
+  Summe über die Gluon-Knoten wie Panel 3 "Verkehr" der Gesamtsicht in
+  Grafana. Regeln: `zeitreihe/vmalert-regeln.yml`.
+
+vmalert stammt aus dem Debian-Paket `victoria-metrics`, lauscht auf
+`127.0.0.1:8880` und schreibt ohne Schlüssel (den braucht nur die
+Verwaltung). Einrichtung: `sudo ./zeitreihe/vmalert-einrichten.sh`, auch
+am Ende von `zeitreihe/einrichten.sh`. Gibt es die Reihe noch nicht, rechnet
+das Skript die letzten acht Tage einmal nach (Replay).
+
+Eine neue Regel nachträglich für die Vergangenheit füllen:
+
+```bash
+sudo vmalert -rule=/etc/victoria-metrics/vmalert-regeln.yml \
+  -datasource.url=http://127.0.0.1:8428 -remoteWrite.url=http://127.0.0.1:8428 \
+  -replay.timeFrom=2026-11-18T00:00:00Z -replay.timeTo=2026-11-26T00:00:00Z
+```
+
+Das rechnet alle Regeln der Datei nach. Nur Zeiträume angeben, für die es
+noch keine Punkte gibt; ob VictoriaMetrics doppelte Zeitpunkte ohne
+`-dedup.minScrapeInterval` zusammenlegt, ist nicht geprüft.
 
 ### Vorgeschichte aus der alten Karte
 

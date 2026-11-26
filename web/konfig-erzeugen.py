@@ -391,6 +391,43 @@ def statistik_links(pfad, alle):
              'href': GESAMTSICHT % '&var-domain='.join(codes)}]
 
 
+# Verlaeufe fuers ganze Netz oben im Reiter Statistik, wie der Kasten "Gerade
+# im Netz" auf neanderfunk.de, dazu der Datenverkehr aus Panel 3 der
+# Gesamtsicht (adorfer 26.11.2026). Fest sieben Tage, ohne Zeitraumleiste;
+# ein Klick oeffnet das Panel in Grafana. Upstream globalCharts, mit dem Fork
+# oben statt unten (globalChartsOnTop).
+#
+# Keine Abfrage rechnet beim Oeffnen ueber alle Knoten: Router und Clients
+# zaehlt yanic in jeder Runde schon zusammen (global_*), den Verkehr rechnet
+# vmalert alle fuenf Minuten vor (zeitreihe/vmalert-regeln.yml). Router wie
+# im Kasten: alle Knoten ausser den Gateway-Instanzen der Supernodes.
+# avg_over_time ohne Fenster nimmt den Schritt des Diagramms als Fenster
+# (Erweiterung von VictoriaMetrics), so faellt keine Spitze zwischen zwei
+# Punkte.
+_PANEL = ('https://karte.neanderfunk.de/grafana/d/nf-community/community'
+          '?var-domain=$__all&from=$from&to=$to&viewPanel=panel-%d')
+STATISTIKDIAGRAMME = [
+    {'name': 'Router online',
+     'query': 'sum(global_nodes{db="neander"}) - sum(global_gateways{db="neander"})',
+     'legendFormat': 'Router', 'format': ',.0f', 'integer': True, 'href': _PANEL % 1},
+    {'name': 'Geräte verbunden',
+     'query': 'sum({__name__="global_clients.total", db="neander"})',
+     'legendFormat': 'Clients', 'format': ',.0f', 'integer': True, 'href': _PANEL % 2},
+    {'name': 'Datenverkehr',
+     'query': 'avg_over_time(nf_netz:verkehr_bps{db="neander"})',
+     'legendFormat': '{{richtung}}', 'unitSuffix': 'bit/s', 'format': '.2~s',
+     'href': _PANEL % 3},
+]
+
+
+def statistikdiagramme(pfad):
+    if pfad.partition('/')[2] != 'alle':
+        return []
+    return [dict(d, datasourceType='prometheus-direct', datasourceUid='vm',
+                 **{'from': 'now-7d', 'to': 'now', 'maxDataPoints': 300})
+            for d in STATISTIKDIAGRAMME]
+
+
 # Diagramme im Verbindungsfenster (Fork, linkCharts mit Zeitraumleiste).
 # yanic schreibt link_tq je Richtung und je Paar von Schnittstellen; zwischen
 # zwei Knoten laufen oft zwei Paare (2,4 und 5 GHz). Eine Linie je Richtung,
@@ -447,6 +484,7 @@ def konfig(titel, pfad, alle):
             'chartRanges': ZEITRAEUME, 'nodeInfos': VERTIEFUNG,
             'nodeAttr': ATTRIBUTE, 'airtime': AIRTIME,
             'statisticsLinks': statistik_links(pfad, alle),
+            'globalCharts': statistikdiagramme(pfad), 'globalChartsOnTop': True,
             # Zahnrad im Knotenfenster zum Service-Menue (Fork, serviceLink);
             # auch von den Ortskarten aus auf die Gesamtkarte, nur dort gibt es
             # das Menue

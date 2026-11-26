@@ -23,7 +23,8 @@ in `betrieb.md`).
 | `sammler/unifi-einrichten.sh` | unifi_respondd mit Zuordnung AP → Router; setzt `/etc/unifi_respondd/zugang` voraus. |
 | `sammler/controller-tunnel.sh` | WireGuard-Peer an `wg-ctl` für einen UniFi-Controller hinter NAT; gibt die Client-Konfiguration aus. |
 | `web/einrichten.sh` | meshviewer-Build aus dem Fork, Gerätebilder, Konfigurationen und nginx-Vhosts. |
-| `zeitreihe/einrichten.sh` | VictoriaMetrics, Grafana samt Dashboards, nginx-Zugang `/nf/prom/`. |
+| `zeitreihe/einrichten.sh` | VictoriaMetrics, Grafana samt Dashboards, nginx-Zugang `/nf/prom/`, am Ende vmalert. |
+| `zeitreihe/vmalert-einrichten.sh` | vmalert mit den vorberechneten Reihen für die Statistik der Karte; rechnet beim ersten Mal acht Tage nach. |
 | `service/einrichten.sh` | Service-Menü hinter Anmeldung. |
 | `checkmk/installieren.sh` | Local checks für den Checkmk-Agenten. |
 

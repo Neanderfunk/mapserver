@@ -708,7 +708,7 @@ andere unter `/nf/prom/` gibt 403.
 ### Vorberechnete Reihen (vmalert)
 
 Die Diagramme oben im Reiter "Statistiken" der Gesamtkarte zeigen sieben Tage
-Router online, Geräte verbunden und Datenverkehr (adorfer 26.11.2026). Keins
+Clients verbunden, Datenverkehr und Router online (adorfer 26.11.2026). Keins
 davon rechnet beim Öffnen über alle Knoten:
 
 - Router und Clients zählt yanic in jeder Runde schon zusammen:

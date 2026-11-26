@@ -87,12 +87,12 @@ def test_statistik_links_sammelkarte():
 
 def test_statistikdiagramme_nur_gesamtkarte():
     d = konfig.statistikdiagramme('neander/alle')
-    assert [x['name'] for x in d] == ['Router online', 'Geräte verbunden', 'Datenverkehr']
+    assert [x['name'] for x in d] == ['Clients verbunden', 'Datenverkehr', 'Router online']
     assert all(x['datasourceType'] == 'prometheus-direct' and x['from'] == 'now-7d' for x in d)
     # $from/$to setzt die Karte ein, $__all bleibt fuer Grafana stehen
     assert all('from=$from&to=$to' in x['href'] and '$__all' in x['href'] for x in d)
-    assert 'nf_karte:verkehr_bps' in d[2]['query']
-    assert '"Management $1"' in d[2]['query']
+    assert 'nf_karte:verkehr_bps' in d[1]['query']
+    assert '"Management $1"' in d[1]['query']
     assert konfig.statistikdiagramme('neander/lvr') == []
 
 

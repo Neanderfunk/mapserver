@@ -407,11 +407,9 @@ def statistik_links(pfad, alle):
 _PANEL = ('https://karte.neanderfunk.de/grafana/d/nf-community/community'
           '?var-domain=$__all&from=$from&to=$to&viewPanel=panel-%d')
 # Zahlen ohne Tausendertrenner: d3 setzt sonst englisch "1,605".
+# Reihenfolge Clients, Verkehr, Router (adorfer 26.11.2026).
 STATISTIKDIAGRAMME = [
-    {'name': 'Router online',
-     'query': 'sum(global_nodes{db="neander"}) - sum(global_gateways{db="neander"})',
-     'legendFormat': 'Router', 'format': '.0f', 'integer': True, 'href': _PANEL % 1},
-    {'name': 'Geräte verbunden',
+    {'name': 'Clients verbunden',
      'query': 'sum({__name__="global_clients.total", db="neander"})',
      'legendFormat': 'Clients', 'format': '.0f', 'integer': True, 'href': _PANEL % 2},
     {'name': 'Datenverkehr',
@@ -421,6 +419,9 @@ STATISTIKDIAGRAMME = [
                ' "richtung", "Management $1", "richtung", "Verwaltung (.*)")'),
      'legendFormat': '{{richtung}}', 'unitSuffix': 'bit/s', 'format': '.2~s',
      'href': _PANEL % 3},
+    {'name': 'Router online',
+     'query': 'sum(global_nodes{db="neander"}) - sum(global_gateways{db="neander"})',
+     'legendFormat': 'Router', 'format': '.0f', 'integer': True, 'href': _PANEL % 1},
 ]
 
 

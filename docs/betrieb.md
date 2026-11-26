@@ -716,8 +716,8 @@ davon rechnet beim Öffnen über alle Knoten:
   ein oder zwei Knoten dieselbe Zahl wie in `kennzahlen.json`.
 - Den Datenverkehr rechnet `karte-vmalert.service` alle fünf Minuten vor und
   schreibt ihn als `nf_karte:verkehr_bps{richtung=...}` zurück, fünf Reihen
-  (Download, Upload, weitergeleitet, Verwaltung empfangen/gesendet; die Karte
-  zeigt "Verwaltung" als "Management"). Dieselbe
+  (Download, Upload, weitergeleitet, Verwaltung empfangen/gesendet; Karte und
+  Grafana zeigen "Verwaltung" als "Management"). Dieselbe
   Summe über die Gluon-Knoten wie Panel 3 "Verkehr" der Gesamtsicht in
   Grafana, aber ohne Knoten, deren `rate()` gerade `+Inf` ist. Vom 24. bis
   26.11.2026 standen Knoten, die auf beide Abfragegruppen antworten, zweimal

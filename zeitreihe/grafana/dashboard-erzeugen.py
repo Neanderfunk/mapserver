@@ -175,13 +175,13 @@ PANELS = KOPF + [
         ziel('sum(rate({__name__="node_traffic.tx.bytes", nodeid="$node"}[$__rate_interval])) * 8',
              'gesendet', 'B'),
         ziel('sum(rate({__name__="node_traffic.mgmt_rx.bytes", nodeid="$node"}[$__rate_interval])) * 8',
-             'Verwaltung empfangen', 'C'),
+             'Management empfangen', 'C'),
         ziel('sum(rate({__name__="node_traffic.mgmt_tx.bytes", nodeid="$node"}[$__rate_interval])) * 8',
-             'Verwaltung gesendet', 'D'),
+             'Management gesendet', 'D'),
         ziel('sum(rate({__name__="node_traffic.forward.bytes", nodeid="$node"}[$__rate_interval])) * 8',
              'weitergereicht', 'E'),
     ], 12, 5, einheit='bps', min_=0,
-        beschreibung='Alle Beträge positiv. Verwaltung ist der batman-eigene Verkehr '
+        beschreibung='Alle Beträge positiv. Management ist der batman-eigene Verkehr '
                      '(OGMs und Nachbarschaft), weitergereicht ist Verkehr für andere '
                      'Knoten im Mesh.'),
 
@@ -421,8 +421,8 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
         ziel(summe('forward'), 'weitergereicht', 'A'),
         ziel(summe('rx'), 'empfangen', 'B'),
         ziel(summe('tx'), 'gesendet', 'C'),
-        ziel(summe('mgmt_rx'), 'Verwaltung empfangen', 'D'),
-        ziel(summe('mgmt_tx'), 'Verwaltung gesendet', 'E'),
+        ziel(summe('mgmt_rx'), 'Management empfangen', 'D'),
+        ziel(summe('mgmt_tx'), 'Management gesendet', 'E'),
     ], 0, 13, einheit='bps', min_=0,
         beschreibung='Summe über alle Domaininstanzen des Supernodes. Empfangen und '
                      'gesendet ist der Verkehr zwischen Mesh und Internet, weitergereicht '
@@ -431,8 +431,8 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
     panel(4, 'Verkehr der Knoten in seinen Domains', [
         ziel(dahinter('rx'), 'empfangen', 'A'),
         ziel(dahinter('tx'), 'gesendet', 'B'),
-        ziel(dahinter('mgmt_rx'), 'Verwaltung empfangen', 'C'),
-        ziel(dahinter('mgmt_tx'), 'Verwaltung gesendet', 'D'),
+        ziel(dahinter('mgmt_rx'), 'Management empfangen', 'C'),
+        ziel(dahinter('mgmt_tx'), 'Management gesendet', 'D'),
     ], 12, 13, einheit='bps', min_=0,
         beschreibung='Summe über die Gluon-Knoten der Domains, die der Supernode gerade '
                      'trägt, aus deren Sicht. Empfangen der Knoten sollte etwa gesendet des '
@@ -593,12 +593,12 @@ DOMAIN_PANELS = [
         ziel(je_domain('rate({__name__="node_traffic.tx.bytes"}[$__rate_interval])') + ' * 8',
              'gesendet', 'B'),
         ziel(je_domain('rate({__name__="node_traffic.mgmt_rx.bytes"}[$__rate_interval])') + ' * 8',
-             'Verwaltung empfangen', 'C'),
+             'Management empfangen', 'C'),
         ziel(je_domain('rate({__name__="node_traffic.mgmt_tx.bytes"}[$__rate_interval])') + ' * 8',
-             'Verwaltung gesendet', 'D'),
+             'Management gesendet', 'D'),
     ], 0, 13, einheit='bps', min_=0,
         beschreibung='Summe über alle Knoten der Domain, aus deren Sicht. Alle Beträge '
-                     'positiv; Verwaltung ist der batman-eigene Verkehr.'),
+                     'positiv; Management ist der batman-eigene Verkehr.'),
 
     panel(4, 'Datenmenge je Tag', [
         ziel(je_domain('increase({__name__="node_traffic.rx.bytes"}[1d])'), 'empfangen', 'A', '1d'),
@@ -817,10 +817,10 @@ COMMUNITY_PANELS = [
         ziel(verkehr('rx'), 'Download', 'A'),
         ziel(verkehr('tx'), 'Upload', 'B'),
         ziel(verkehr('forward'), 'weitergeleitet', 'C'),
-        ziel(verkehr('mgmt_rx'), 'Verwaltung empfangen', 'D'),
-        ziel(verkehr('mgmt_tx'), 'Verwaltung gesendet', 'E'),
+        ziel(verkehr('mgmt_rx'), 'Management empfangen', 'D'),
+        ziel(verkehr('mgmt_tx'), 'Management gesendet', 'E'),
     ], 0, 18, einheit='bps', min_=0,
-        beschreibung='Summe über die Gluon-Knoten, aus deren Sicht. Verwaltung ist der '
+        beschreibung='Summe über die Gluon-Knoten, aus deren Sicht. Management ist der '
                      'batman-eigene Verkehr.'),
     # Was ein Knoten empfaengt, hat ein Gateway gesendet, und umgekehrt: beide
     # Summen muessen fast gleich sein (am 25.09.2026: 764 zu 771 Mbit/s und

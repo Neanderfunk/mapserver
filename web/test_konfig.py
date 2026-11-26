@@ -91,7 +91,7 @@ def test_statistikdiagramme_nur_gesamtkarte():
     assert all(x['datasourceType'] == 'prometheus-direct' and x['from'] == 'now-7d' for x in d)
     # $from/$to setzt die Karte ein, $__all bleibt fuer Grafana stehen
     assert all('from=$from&to=$to' in x['href'] and '$__all' in x['href'] for x in d)
-    assert 'nf_netz:verkehr_bps' in d[2]['query']
+    assert 'nf_karte:verkehr_bps' in d[2]['query']
     assert konfig.statistikdiagramme('neander/lvr') == []
 
 

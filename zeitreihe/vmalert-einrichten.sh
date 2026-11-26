@@ -21,17 +21,17 @@ install -m 0644 "$HIER/vmalert-regeln.yml" "$REGELN"
 install -m 0644 "$HIER/karte-vmalert.service" /etc/systemd/system/karte-vmalert.service
 systemctl daemon-reload
 
-anzahl=$(curl -sf --get "$VM/api/v1/series" --data-urlencode 'match[]=nf_netz:verkehr_bps' \
+anzahl=$(curl -sf --get "$VM/api/v1/series" --data-urlencode 'match[]=nf_karte:verkehr_bps' \
 	--data-urlencode "start=$(( $(date +%s) - 30 * 86400 ))" \
 	| python3 -c 'import json, sys; print(len(json.load(sys.stdin)["data"]))')
 if [ "$anzahl" = 0 ]; then
-	echo "  nf_netz:verkehr_bps neu, rechne acht Tage nach"
+	echo "  nf_karte:verkehr_bps neu, rechne acht Tage nach"
 	/usr/bin/vmalert -rule="$REGELN" -datasource.url="$VM" -remoteWrite.url="$VM" \
 		-replay.timeFrom="$(date -u -d '8 days ago' +%Y-%m-%dT%H:%M:%SZ)" \
 		-replay.timeTo="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
 		-replay.disableProgressBar -loggerLevel=WARN
 else
-	echo "  nf_netz:verkehr_bps vorhanden ($anzahl Reihen), kein Nachrechnen"
+	echo "  nf_karte:verkehr_bps vorhanden ($anzahl Reihen), kein Nachrechnen"
 fi
 
 systemctl enable --quiet karte-vmalert.service

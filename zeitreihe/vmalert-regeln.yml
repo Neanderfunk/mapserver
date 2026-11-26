@@ -17,6 +17,18 @@
 # Gluon-Knoten aus deren Sicht. UniFi-APs zaehlen nicht, ihr Verkehr laeuft
 # auch ueber das LAN ihres Routers; die Gateways saehen alles noch einmal.
 #
+# rate() je Knoten ohne +Inf: Seit 24.11.2026 fragt yanic zwei Gruppen ab
+# (sammler/yanic-conf.py, ABFRAGE), und ein Knoten, der auf beide antwortet,
+# steht zweimal mit demselben Zeitstempel und leicht verschiedenem Zaehler in
+# der Datenbank. Fehlt ihm davor eine Runde, teilt rate() durch null Sekunden,
+# und ein einziger solcher Knoten macht die ganze Summe +Inf (am 26.11.2026
+# 94 von 2305 Punkten in acht Tagen, je zwei oder drei Knoten). "< +Inf"
+# laesst diese Knoten fuer den einen Punkt weg.
+#
+# Name nf_karte:, nicht nf_netz:. Die erste Fassung vom 26.11.2026 ohne
+# Filter schrieb nf_netz:verkehr_bps, samt der +Inf-Punkte; sie wird nicht
+# mehr geschrieben.
+#
 # Router und Clients brauchen hier nichts: yanic schreibt sie in jeder Runde
 # schon als Gesamtzahl (global_nodes, global_gateways, global_clients.total).
 
@@ -24,28 +36,28 @@ groups:
   - name: karte-statistik
     interval: 5m
     rules:
-      - record: nf_netz:verkehr_bps
-        expr: sum(rate({__name__="node_traffic.rx.bytes", db="neander", firmware_base=~"gluon.*"}[10m])) * 8
+      - record: nf_karte:verkehr_bps
+        expr: sum(rate({__name__="node_traffic.rx.bytes", db="neander", firmware_base=~"gluon.*"}[10m]) < +Inf) * 8
         labels:
           db: neander
           richtung: Download
-      - record: nf_netz:verkehr_bps
-        expr: sum(rate({__name__="node_traffic.tx.bytes", db="neander", firmware_base=~"gluon.*"}[10m])) * 8
+      - record: nf_karte:verkehr_bps
+        expr: sum(rate({__name__="node_traffic.tx.bytes", db="neander", firmware_base=~"gluon.*"}[10m]) < +Inf) * 8
         labels:
           db: neander
           richtung: Upload
-      - record: nf_netz:verkehr_bps
-        expr: sum(rate({__name__="node_traffic.forward.bytes", db="neander", firmware_base=~"gluon.*"}[10m])) * 8
+      - record: nf_karte:verkehr_bps
+        expr: sum(rate({__name__="node_traffic.forward.bytes", db="neander", firmware_base=~"gluon.*"}[10m]) < +Inf) * 8
         labels:
           db: neander
           richtung: weitergeleitet
-      - record: nf_netz:verkehr_bps
-        expr: sum(rate({__name__="node_traffic.mgmt_rx.bytes", db="neander", firmware_base=~"gluon.*"}[10m])) * 8
+      - record: nf_karte:verkehr_bps
+        expr: sum(rate({__name__="node_traffic.mgmt_rx.bytes", db="neander", firmware_base=~"gluon.*"}[10m]) < +Inf) * 8
         labels:
           db: neander
           richtung: Verwaltung empfangen
-      - record: nf_netz:verkehr_bps
-        expr: sum(rate({__name__="node_traffic.mgmt_tx.bytes", db="neander", firmware_base=~"gluon.*"}[10m])) * 8
+      - record: nf_karte:verkehr_bps
+        expr: sum(rate({__name__="node_traffic.mgmt_tx.bytes", db="neander", firmware_base=~"gluon.*"}[10m]) < +Inf) * 8
         labels:
           db: neander
           richtung: Verwaltung gesendet

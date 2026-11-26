@@ -715,10 +715,16 @@ davon rechnet beim Öffnen über alle Knoten:
   `global_nodes − global_gateways` und `global_clients.total`. Das ist bis auf
   ein oder zwei Knoten dieselbe Zahl wie in `kennzahlen.json`.
 - Den Datenverkehr rechnet `karte-vmalert.service` alle fünf Minuten vor und
-  schreibt ihn als `nf_netz:verkehr_bps{richtung=...}` zurück, fünf Reihen
+  schreibt ihn als `nf_karte:verkehr_bps{richtung=...}` zurück, fünf Reihen
   (Download, Upload, weitergeleitet, Verwaltung empfangen/gesendet). Dieselbe
   Summe über die Gluon-Knoten wie Panel 3 "Verkehr" der Gesamtsicht in
-  Grafana. Regeln: `zeitreihe/vmalert-regeln.yml`.
+  Grafana, aber ohne Knoten, deren `rate()` gerade `+Inf` ist: Seit dem
+  24.11.2026 stehen Knoten, die auf beide Abfragegruppen antworten, zweimal
+  mit gleichem Zeitstempel in der Datenbank, und ein einziger solcher Knoten
+  machte die Summe `+Inf`. Regeln und Begründung:
+  `zeitreihe/vmalert-regeln.yml`. Die erste Fassung ohne diesen Filter
+  schrieb `nf_netz:verkehr_bps` (nur am 26.11.2026, samt `+Inf`); die Reihe
+  wird nicht mehr geschrieben und ist von nichts mehr benutzt.
 
 vmalert stammt aus dem Debian-Paket `victoria-metrics`, lauscht auf
 `127.0.0.1:8880` und schreibt ohne Schlüssel (den braucht nur die

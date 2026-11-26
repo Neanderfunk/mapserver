@@ -415,7 +415,10 @@ STATISTIKDIAGRAMME = [
      'query': 'sum({__name__="global_clients.total", db="neander"})',
      'legendFormat': 'Clients', 'format': '.0f', 'integer': True, 'href': _PANEL % 2},
     {'name': 'Datenverkehr',
-     'query': 'avg_over_time(nf_karte:verkehr_bps{db="neander"})',
+     # "Management" statt "Verwaltung" (adorfer 26.11.2026); die Reihen
+     # behalten ihr Label, umbenannt wird nur fuer die Anzeige
+     'query': ('label_replace(avg_over_time(nf_karte:verkehr_bps{db="neander"}),'
+               ' "richtung", "Management $1", "richtung", "Verwaltung (.*)")'),
      'legendFormat': '{{richtung}}', 'unitSuffix': 'bit/s', 'format': '.2~s',
      'href': _PANEL % 3},
 ]

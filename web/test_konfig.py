@@ -92,6 +92,7 @@ def test_statistikdiagramme_nur_gesamtkarte():
     # $from/$to setzt die Karte ein, $__all bleibt fuer Grafana stehen
     assert all('from=$from&to=$to' in x['href'] and '$__all' in x['href'] for x in d)
     assert 'nf_karte:verkehr_bps' in d[2]['query']
+    assert '"Management $1"' in d[2]['query']
     assert konfig.statistikdiagramme('neander/lvr') == []
 
 

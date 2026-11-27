@@ -370,6 +370,24 @@ PANELS = KOPF + [
                      'Mesh wiederholt in Inseln.'),
 ]
 
+# --- Domainnummer der Knoten -------------------------------------------------
+# Supernode- und Domain-Dashboard ordnen Knoten ueber die Nummer der Domain
+# zu (05 aus nef-05_mon). Sie steht im site_code, den jeder Knoten meldet.
+#
+# Knoten mit Multidomain-Firmware (ab RC 26112621sta) melden als site_code nur
+# "ffnef", die Domain steht im Label domain (21_dias). Fuer sie kommt die
+# Nummer aus domain (gefunden am 27.11.2026: alle 74 RC-Knoten fehlten im
+# Domain-Dashboard, im Supernode-Dashboard bei den Clients und beim Verkehr
+# dahinter). Nur bei site "ffnef": domain tragen auch die Domaininstanzen der
+# Supernodes (ihr Verkehr zaehlte sonst doppelt), die UniFi-APs (dort steht
+# der site_code) und die Instanzen des Kartenservers (Debian, is_gateway
+# false, ohne site). Die zaehlten nach dem ersten Umbau am 27.11.2026 ein
+# paar Stunden lang im Domain-Dashboard als Knoten mit, je Domain einer.
+MULTIDOMAIN_SITE = 'ffnef'
+DNUM_KNOTEN = ('label_replace(label_join(label_replace(%s, "dnum", "$1", "site", '
+               '".*?([0-9]+)_.*"), "site_domain", "/", "site", "domain"), '
+               '"dnum", "$1", "site_domain", "' + MULTIDOMAIN_SITE + '/([0-9]+)_.*")')
+
 # --- Supernodes -------------------------------------------------------------
 # Ein Supernode ist kein Knoten wie die anderen: kein WLAN, keine Airtime,
 # keine Clients an ihm selbst. Interessant ist, was an ihm haengt. Je Domain
@@ -413,8 +431,8 @@ SEINE_DOMAINS = ('(max by (dnum) (label_replace(last_over_time({__name__="node_l
 
 
 def in_seinen_domains(ausdruck):
-    return ('sum(max by (nodeid, dnum) (label_replace(%s, "dnum", "$1", "site", ".*?([0-9]+)_.*"))'
-            ' * on(dnum) group_left() %s)' % (ausdruck, SEINE_DOMAINS))
+    return ('sum(max by (nodeid, dnum) (%s) * on(dnum) group_left() %s)'
+            % (DNUM_KNOTEN % ausdruck, SEINE_DOMAINS))
 
 SUPERNODES = ('query_result(topk by (ss) (1, max by (sn, ss) (label_replace(label_replace('
               'tlast_over_time(node_load{is_gateway="true"}[$__range]), '
@@ -594,16 +612,7 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
 # Domaincode (05_mon). Gemeinsam ist beiden die Nummer, also wird sie per
 # label_replace herausgezogen und darueber verbunden.
 #
-# Knoten mit Multidomain-Firmware (ab RC 26112621sta) melden als site_code nur
-# "ffnef", die Domain steht im Label domain (21_dias). Fuer sie kommt die
-# Nummer aus domain (gefunden am 27.11.2026: alle 74 RC-Knoten fehlten im
-# Domain-Dashboard). Nur fuer Nicht-Gateways: die Domaininstanzen der
-# Supernodes tragen domain ebenfalls, ihr Verkehr zaehlte sonst doppelt.
-# UniFi-APs tragen in domain den site_code (lvrmo-33_lvrmo), der passt nicht
-# auf den Anfang und aendert nichts.
-DNUM_KNOTEN = ('label_replace(label_join(label_replace(%s, "dnum", "$1", "site", '
-               '".*?([0-9]+)_.*"), "gw_domain", "/", "is_gateway", "domain"), '
-               '"dnum", "$1", "gw_domain", "false/([0-9]+)_.*")')
+# DNUM_KNOTEN steht oben bei "Domainnummer der Knoten".
 DNUM_TT = ('label_replace(%s, "dnum", "$1", "domain", "([0-9]+)_.*")')
 
 
@@ -826,18 +835,43 @@ DOMAIN = {
 # Verkehr nur ueber die Gluon-Knoten: was ein AP uebertraegt, laeuft auch ueber
 # das LAN seines Routers, und die Gateways sehen alles noch einmal.
 #
-# $domain waehlt Domains aus (mehrere, oder alle). Die Knoten tragen den
-# gemeldeten site_code (nef-05_mon, lvrso-35_lvrso_EOL), die Auswahl den
-# Domaincode (05_mon); der steckt in jedem site_code.
+# $domain waehlt Domains aus (mehrere, oder alle), als Domaincode (05_mon).
+# Zwei Wege fuehren in die Auswahl: Knoten mit einer Firmware je Domain und
+# UniFi-APs tragen den site_code (nef-05_mon, lvrso-35_lvrso_EOL), darin steckt
+# der Domaincode. Knoten mit Multidomain-Firmware melden als site nur "ffnef";
+# sie zaehlen in der Domain, in der sie gerade funken, und die steht im Label
+# domain (adorfer 27.11.2026). Ein Selektor bekommt deshalb zwei or-Zweige,
+# jeder mit allen uebrigen Filtern (MetricsQL: {a, b or a, c}). Bei "All"
+# passt der erste Zweig auf alles, der zweite liefert nur dieselben Reihen.
 FENSTER = '[10m]'   # yanic fragt alle 5 Minuten
-AUSWAHL = 'site=~".*(${domain:regex}).*"'
-GLUON = 'firmware_base=~"gluon.*", ' + AUSWAHL
-UNIFI = 'firmware_base="UniFi", ' + AUSWAHL
+
+
+class Oder(tuple):
+    """Filter, von denen einer passen muss, je einer ein or-Zweig."""
+
+
+AUSWAHL = Oder(('site=~".*(${domain:regex}).*"',
+                'site="%s", domain=~"${domain:regex}"' % MULTIDOMAIN_SITE))
+GLUON = ('firmware_base=~"gluon.*"', AUSWAHL)
+UNIFI = ('firmware_base="UniFi"', AUSWAHL)
+# Gluon-Knoten und APs; ohne die Supernodes, die ihre Clients nicht kennen
+CLIENTS = ('is_gateway="false"', AUSWAHL)
 GATEWAY = 'is_gateway="true"'
 
 
+def reihen(metrik, filter_):
+    """Selektor {__name__="metrik", ...}. filter_: ein Filter (Text oder
+    Oder) oder ein Tupel davon; jede Oder-Gruppe vervielfacht die Zweige."""
+    teile = (filter_,) if isinstance(filter_, (str, Oder)) else filter_
+    zweige = ['__name__="%s"' % metrik]
+    for teil in teile:
+        wahl = teil if isinstance(teil, Oder) else (teil,)
+        zweige = [z + ', ' + w for z in zweige for w in wahl]
+    return '{' + ' or '.join(zweige) + '}'
+
+
 def jetzt(metrik, filter_):
-    return 'last_over_time({__name__="%s", %s}%s)' % (metrik, filter_, FENSTER)
+    return 'last_over_time(%s%s)' % (reihen(metrik, filter_), FENSTER)
 
 
 def knoten(filter_):
@@ -869,8 +903,8 @@ def je_supernode():
 
 
 def verkehr(richtung):
-    return ('sum(rate({__name__="node_traffic.%s.bytes", %s}[$__rate_interval])) * 8'
-            % (richtung, GLUON))
+    return ('sum(rate(%s[$__rate_interval])) * 8'
+            % reihen('node_traffic.%s.bytes' % richtung, GLUON))
 
 
 COMMUNITY_VARIABLEN = [
@@ -901,8 +935,8 @@ DH_WECHSEL = kurzname(
 
 
 def dh_teil(metrik, art, labels):
-    return ('label_replace(max by (nodeid, hostname, %s) (last_over_time({__name__="%s", %s}%s)), '
-            '"art", "%s", "", "")' % (labels, metrik, AUSWAHL, FENSTER, art))
+    return ('label_replace(max by (nodeid, hostname, %s) (%s), '
+            '"art", "%s", "", "")' % (labels, jetzt(metrik, AUSWAHL), art))
 
 
 DH_AKTIV = kurzname(' or '.join([
@@ -961,8 +995,8 @@ def domaintabelle(nr, titel, spalten, x, y, w=24, h=8, beschreibung=''):
     }
 
 
-# ddhcpd laeuft nur auf Multidomain-Firmware, und die meldet als site nur
-# "ffnef": ausgewaehlt wird hier ueber das Label domain, nicht ueber AUSWAHL.
+# ddhcpd laeuft nur auf Multidomain-Firmware, die Tabelle gruppiert nach
+# deren Label domain; ausgewaehlt wird deshalb direkt darueber.
 DD_AUSWAHL = 'domain=~"${domain:regex}"'
 
 
@@ -1002,8 +1036,8 @@ COMMUNITY_PANELS = [
     # Erste Zeile: wer ist da
     zahl(100, 'Gluon-Knoten online', knoten(GLUON), 0, w=4,
          beschreibung='Gluon-Knoten, die in den letzten 10 Minuten geantwortet haben.'),
-    zahl(101, 'Knoten offline', 'count(count by (nodeid) (last_over_time({__name__="node_load", '
-         + GLUON + '}[7d]))) - ' + knoten(GLUON), 4, w=4,
+    zahl(101, 'Knoten offline', 'count(count by (nodeid) (last_over_time('
+         + reihen('node_load', GLUON) + '[7d]))) - ' + knoten(GLUON), 4, w=4,
          farbe='text',
          beschreibung='In den letzten 7 Tagen gesehen, jetzt nicht.'),
     zahl(102, 'UniFi-APs online', knoten(UNIFI), 8, w=4,
@@ -1013,7 +1047,7 @@ COMMUNITY_PANELS = [
     zahl(109, 'Gateway-Instanzen', knoten(GATEWAY), 16, w=4,
          beschreibung='Je Domain eine Instanz auf einem Supernode. Unabhängig von der '
                       'Domainauswahl.'),
-    zahl(104, 'Clients', 'sum(' + jetzt('node_clients.total', 'is_gateway="false", ' + AUSWAHL) + ')',
+    zahl(104, 'Clients', 'sum(' + jetzt('node_clients.total', CLIENTS) + ')',
          20, w=4,
          beschreibung='Summe über Knoten und APs; Clients an einem AP zählen nur dort, '
                       'nicht noch einmal beim Router.'),
@@ -1034,10 +1068,10 @@ COMMUNITY_PANELS = [
         ziel(supernodes(), 'Supernodes', 'D'),
     ], 0, 10, min_=0),
     panel(2, 'Clients', [
-        ziel('sum(' + jetzt('node_clients.total', 'is_gateway="false", ' + AUSWAHL) + ')', 'gesamt', 'A'),
+        ziel('sum(' + jetzt('node_clients.total', CLIENTS) + ')', 'gesamt', 'A'),
         ziel('sum(' + jetzt('node_clients.total', UNIFI) + ')', 'davon an UniFi-APs', 'B'),
-        ziel('sum(' + jetzt('node_clients.wifi24', 'is_gateway="false", ' + AUSWAHL) + ')', '2,4 GHz', 'C'),
-        ziel('sum(' + jetzt('node_clients.wifi5', 'is_gateway="false", ' + AUSWAHL) + ')', '5 GHz', 'D'),
+        ziel('sum(' + jetzt('node_clients.wifi24', CLIENTS) + ')', '2,4 GHz', 'C'),
+        ziel('sum(' + jetzt('node_clients.wifi5', CLIENTS) + ')', '5 GHz', 'D'),
     ], 12, 10, min_=0),
 
     panel(3, 'Verkehr', [
@@ -1076,8 +1110,8 @@ COMMUNITY_PANELS = [
                      'gesendet), zusammen 100 %. Verschiebt sich, wenn Domains umziehen. '
                      'Gilt für alle Domains, unabhängig von der Auswahl.'),
     panel(4, 'Datenmenge je Tag', [
-        ziel('sum(increase({__name__="node_traffic.rx.bytes", %s}[1d]))' % GLUON, 'Download', 'A', '1d'),
-        ziel('sum(increase({__name__="node_traffic.tx.bytes", %s}[1d]))' % GLUON, 'Upload', 'B', '1d'),
+        ziel('sum(increase(%s[1d]))' % reihen('node_traffic.rx.bytes', GLUON), 'Download', 'A', '1d'),
+        ziel('sum(increase(%s[1d]))' % reihen('node_traffic.tx.bytes', GLUON), 'Upload', 'B', '1d'),
     ], 12, 18, einheit='bytes', min_=0, balken=True, stapeln=True),
 
     panel(5, 'Laufzeit', [

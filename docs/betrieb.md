@@ -1248,12 +1248,17 @@ stehen Tagesbilanzen als Balken, freie Zeiträume und die Werte aus
   den Namen aus dem Hostnamen, damit der Verlauf Umbenennungen und
   Domainwechsel übersteht.
   Multidomain-Firmware (ab RC 26112621sta) meldet als `site` nur `ffnef`,
-  die Domain steht im Label `domain`. Das Domain-Dashboard nimmt die
-  Domainnummer seit 27.11.2026 für Nicht-Gateways auch aus `domain`, vorher
-  fehlten diese Knoten dort ganz. Die Domainauswahl im Community-Dashboard
-  filtert noch über `site`: bei einer einzelnen Domain fehlen sie dort, bei
-  "All" sind sie dabei. Nur die Tabelle "ddhcpd je Domain" wählt über
-  `domain`.
+  die Domain steht im Label `domain`. Seit 27.11.2026 zählen diese Knoten in
+  allen Dashboards in der Domain, in der sie gerade funken; vorher fehlten
+  sie im Domain-Dashboard ganz, im Supernode-Dashboard bei Clients und
+  Verkehr dahinter und im Community-Dashboard bei jeder einzelnen Domain
+  (bei "All" waren sie dabei). Community wählt dazu mit zwei or-Zweigen im
+  Selektor: `site` enthält den Domaincode, oder `site="ffnef"` und `domain`
+  ist der Domaincode. `domain` allein reicht nicht, das Label tragen auch
+  die Gateway-Instanzen, die Instanzen des Kartenservers (Debian, ohne
+  `site`) und die UniFi-APs. Am 27.11.2026 zählten deshalb von etwa 12 bis
+  14:30 Uhr die Kartenserver-Instanzen im Domain-Dashboard als Knoten mit,
+  je Domain eine (Laufzeit im Mittel etwas zu hoch).
   Änderungen in der Oberfläche sind nicht möglich und wären beim nächsten Lauf
   weg.
 - nginx reicht `/grafana/` **ohne** Schrägstrich am Ende weiter

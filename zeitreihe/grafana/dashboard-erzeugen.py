@@ -635,6 +635,10 @@ def dd_domain_summe(schluessel):
     return 'sum(max by (nodeid) (' + in_domain(dd_domain(schluessel)) + '))'
 
 
+DD_FREI_MEDIAN = ('quantile(0.5, max by (nodeid) ('
+                  + in_domain(dd_domain('blocks.free')) + '))')
+
+
 def dd_domain_stunde(schluessel):
     return je_domain('rate({__name__="node_nf.ddhcpd.%s"}[$__rate_interval])'
                      % schluessel) + ' * 3600'
@@ -749,13 +753,15 @@ DOMAIN_PANELS = [
     ], 12, 21, einheit='s', min_=0,
         beschreibung='Fällt die kürzeste Laufzeit ständig, startet dort etwas immer wieder neu.'),
 
-    # Die Blocktabelle kennt jeder Knoten der Domain, aber aus seiner Sicht:
-    # max by domain ist der optimistischste Knoten. Sieht selbst der keinen
-    # freien Block mehr, ist der Pool leer (Packages-Session 27.11.2026).
+    # Die Blocktabelle kennt jeder Knoten der Domain, aber aus seiner Sicht.
+    # Die Packages-Session riet zu max (der optimistischste Knoten). Ein
+    # gerade gestarteter Knoten sieht aber kurz fast alles frei: am
+    # 27.11.2026 sprang max in 21_dias von 490 auf 511, "belegt" fiel auf 0.
+    # Der Median bleibt ruhig (486 bis 496 ueber einen Tag).
     panel(7, 'ddhcpd: Blöcke und Leases', [
-        ziel(je_domain(dd_domain('blocks.free'), 'max'), 'Blöcke frei', 'A'),
-        ziel(je_domain(dd_domain('blocks.total'), 'max') + ' - '
-             + je_domain(dd_domain('blocks.free'), 'max'), 'Blöcke belegt', 'B'),
+        ziel(DD_FREI_MEDIAN, 'Blöcke frei', 'A'),
+        ziel(je_domain(dd_domain('blocks.total'), 'max') + ' - ' + DD_FREI_MEDIAN,
+             'Blöcke belegt', 'B'),
         ziel(dd_domain_summe('blocks.ours'), 'davon gemeldet', 'C'),
         ziel(dd_domain_summe('leases.leased'), 'Leases vergeben', 'D'),
         ziel(dd_domain_summe('leases.away'), 'davon Client woanders', 'E'),
@@ -763,8 +769,9 @@ DOMAIN_PANELS = [
              'Knoten mit ddhcpd', 'F'),
     ], 0, 29, min_=0, abweichend=[achse_rechts('Blöcke frei')],
         beschreibung='Verteilter DHCP (ddhcpd), nur Knoten mit dem Paket '
-                     'neanderfunk-ddhcpd. Blöcke frei (Achse rechts): die Sicht des '
-                     'Knotens, der am meisten frei sieht; bei 0 ist der Pool leer. '
+                     'neanderfunk-ddhcpd. Blöcke frei (Achse rechts): Median über die '
+                     'Knoten; ein gerade gestarteter Knoten sieht kurz fast alles frei. '
+                     'Bei 0 ist der Pool leer. '
                      'Liegt "davon gemeldet" unter "belegt", gehören die übrigen Blöcke '
                      'Knoten, die nichts melden (alte Firmware), oder es sind Ansprüche, '
                      'die noch nicht abgelaufen sind (300 s). "Client woanders": Lease '
@@ -959,11 +966,11 @@ def domaintabelle(nr, titel, spalten, x, y, w=24, h=8, beschreibung=''):
 DD_AUSWAHL = 'domain=~"${domain:regex}"'
 
 
-def dd_jetzt(schluessel, art='sum'):
+def dd_jetzt(schluessel, art='sum', parameter=''):
     """ddhcpd-Momentaufnahme je Domain; je Knoten erst einmal zusammengefasst,
     ein Firmwarewechsel macht fuer ein paar Minuten zwei Reihen daraus."""
-    return '%s by (domain) (max by (domain, nodeid) (%s))' % (
-        art, jetzt('node_nf.ddhcpd.' + schluessel, DD_AUSWAHL))
+    return '%s by (domain) (%smax by (domain, nodeid) (%s))' % (
+        art, parameter, jetzt('node_nf.ddhcpd.' + schluessel, DD_AUSWAHL))
 
 
 def dd_tag(schluessel):
@@ -977,8 +984,10 @@ DD_TABELLE = [
     # "or ... * 0": eine 0 statt eines leeren Feldes, solange alle laufen
     ('Daemon aus', 'count by (domain) (%s == 0) or count by (domain) (%s) * 0'
      % (DD_LAEUFT, DD_LAEUFT)),
-    ('Blöcke frei', dd_jetzt('blocks.free', 'max')),
-    ('Blöcke belegt', dd_jetzt('blocks.total', 'max') + ' - ' + dd_jetzt('blocks.free', 'max')),
+    # Median statt max, siehe Domain-Dashboard
+    ('Blöcke frei', dd_jetzt('blocks.free', 'quantile', '0.5, ')),
+    ('Blöcke belegt', dd_jetzt('blocks.total', 'max') + ' - '
+     + dd_jetzt('blocks.free', 'quantile', '0.5, ')),
     ('Leases vergeben', dd_jetzt('leases.leased')),
     ('Client woanders', dd_jetzt('leases.away')),
     ('Clients mit ddhcpd-Adresse', 'sum by (domain) (max by (domain, nodeid) (%s))'
@@ -1142,8 +1151,8 @@ COMMUNITY_PANELS = [
     domaintabelle(17, 'ddhcpd je Domain', DD_TABELLE, 0, 109, h=10,
                   beschreibung='Verteilter DHCP, nur Domains mit Knoten, die das Paket '
                                'neanderfunk-ddhcpd haben. Daemon aus: Knoten, deren ddhcpd '
-                               'nicht antwortet. Blöcke frei: die Sicht des Knotens, der am '
-                               'meisten frei sieht; bei 0 ist der Pool leer. Weitergeleitete '
+                               'nicht antwortet. Blöcke frei: Median über die Knoten der '
+                               'Domain; bei 0 ist der Pool leer. Weitergeleitete '
                                'Verlängerungen zählen jede Verlängerung einer Adresse aus '
                                'einem fremden Block, keine Wechsel. Zähler beginnen bei '
                                'jedem Start des Daemons bei 0.'),

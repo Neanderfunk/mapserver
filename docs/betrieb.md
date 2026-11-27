@@ -631,8 +631,11 @@ andere unter `/nf/prom/` gibt 403.
 
   ddhcpd (verteilter DHCP) kommt nur mit 2025.1-next-Images (Fork-Commit
   "statistics.neanderfunk.ddhcpd und clients_ipv4 lesen"). Die Blocktabelle
-  ist auf allen Knoten einer Domain gleich, für den Domainwert genügt
-  `max by (domain)`; es gilt total = free + ours + claiming + foreign +
+  ist auf allen Knoten einer Domain fast gleich, jeder sieht sie aus seiner
+  Sicht. Für den Domainwert von `blocks.free` den Median nehmen, nicht
+  `max by (domain)`: ein gerade gestarteter Knoten sieht kurz fast alles
+  frei (27.11.2026 in 21_dias: max sprang von 490 auf 511, der Median blieb
+  zwischen 486 und 496). Es gilt total = free + ours + claiming + foreign +
   releasing. `releasing` sind Blöcke, die der Knoten nach Inselbetrieb in
   einem Konflikt verloren hat und deren Leases er noch übergibt;
   `conflicts.handover_nak` zählt Leases, die auf beiden Inseln vergeben

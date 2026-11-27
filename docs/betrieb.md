@@ -635,7 +635,11 @@ andere unter `/nf/prom/` gibt 403.
   Sicht. Für den Domainwert von `blocks.free` den Median nehmen, nicht
   `max by (domain)`: ein gerade gestarteter Knoten sieht kurz fast alles
   frei (27.11.2026 in 21_dias: max sprang von 490 auf 511, der Median blieb
-  zwischen 486 und 496). Es gilt total = free + ours + claiming + foreign +
+  zwischen 486 und 496). Grund laut Packages-Session: Nach den 30 s
+  Lernphase meldet er die Blöcke schon, die Claims der anderen hört er aber
+  erst, wenn sie im Takt von `block_timeout` (300 s) neu angekündigt werden;
+  bis zu etwa 5 Minuten sieht er zu viele freie Blöcke. Ein Alarm "Pool
+  leer" also auf den Median, und erst wenn er mindestens 10 Minuten anliegt. Es gilt total = free + ours + claiming + foreign +
   releasing. `releasing` sind Blöcke, die der Knoten nach Inselbetrieb in
   einem Konflikt verloren hat und deren Leases er noch übergibt;
   `conflicts.handover_nak` zählt Leases, die auf beiden Inseln vergeben

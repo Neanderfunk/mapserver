@@ -50,6 +50,15 @@ def ziel(expr, legende='', refid='A', schritt=''):
     return z
 
 
+def achse_rechts(name):
+    """Override: diese Reihe auf eigener Achse rechts, sonst wie die anderen.
+    Fuer einen Bestand neben kleinen Zahlen (500 freie Bloecke neben 20
+    belegten)."""
+    return {'matcher': {'id': 'byName', 'options': name}, 'properties': [
+        {'id': 'custom.axisPlacement', 'value': 'right'},
+    ]}
+
+
 def linie_rechts(name):
     """Override: diese Reihe als Linie auf eigener Achse rechts, nicht
     gestapelt. Fuer eine Groesse, die um Groessenordnungen neben den Balken
@@ -161,6 +170,37 @@ KOPF = [
                         'calcs': ['lastNotNull'], 'fields': '', 'values': False}},
     },
 ]
+
+# ddhcpd, der verteilte DHCP (Paket neanderfunk-ddhcpd, nur Images mit dem
+# Feed fuer 2025.1-next). Welche Werte etwas sagen, hat die Packages-Session
+# am 27.11.2026 beantwortet (Belege Neanderfunk/ddhcpd c4b7245):
+# - roaming.in zaehlt weitergeleitete Verlaengerungen (DHCPREQUEST fuer eine
+#   Adresse aus einem fremden Block), keine Roaming-Ereignisse: ein Client,
+#   der woanders bleibt, zaehlt bei jeder Verlaengerung neu. roaming.out
+#   zaehlt beim Eigner und dazu die Uebergaben nach einem Konflikt, also
+#   out >= in. Fuer Summen nur in nehmen.
+# - discover deutlich ueber offer ueber laengere Zeit: der Knoten bedient
+#   seine Clients nicht. dhcp.nak ist Rauschen (Client mit Adresse aus einem
+#   anderen Netz) und enthaelt die Ablehnungen durch den Eigner;
+#   roaming.nak_received waechst stetig nur, wenn ein Client in einem
+#   Konflikt pendelt.
+# - learning=1 dauert ab Werk 30 s; ueber mehrere Proben heisst es: der
+#   Daemon startet im Kreis neu. Waehrend der Lernphase fehlt der Block
+#   "blocks" ganz, die Werte sind dann nicht 0.
+# - Alle Zaehler beginnen bei jedem Start des Daemons bei 0 (Neustart,
+#   Domainwechsel, Respawn). Ueberlaeufe kommen nicht vor, rate() reicht.
+# Weggelassen: dhcp.inform, dhcp.release, roaming.ack_*, conflicts.won (nur
+# eine Untergrenze).
+JE_STUNDE = 'suffix: /h'
+
+
+def dd(schluessel, filter_='nodeid="$node"'):
+    return '{__name__="node_nf.ddhcpd.%s", %s}' % (schluessel, filter_)
+
+
+def je_stunde(auswahl):
+    return 'sum(rate(%s[$__rate_interval])) * 3600' % auswahl
+
 
 PANELS = KOPF + [
     panel(1, 'Clients', [
@@ -276,6 +316,58 @@ PANELS = KOPF + [
         ziel('max({__name__="node_nf.zram.ram", nodeid="$node"}) * 1024', 'im RAM', 'B'),
     ], 12, 45, einheit='bytes', min_=0,
         beschreibung='Wie viel komprimiert im Speicher liegt. Braucht das Paket neanderfunk-respondd.'),
+
+    panel(14, 'ddhcpd: Adressen', [
+        ziel('max(%s)' % dd('leases.total'), 'in eigenen Blöcken', 'A'),
+        ziel('max(%s)' % dd('leases.leased'), 'vergeben', 'B'),
+        ziel('max(%s)' % dd('leases.offered'), 'angeboten', 'C'),
+        ziel('max(%s)' % dd('leases.away'), 'davon Client woanders', 'D'),
+        ziel('max({__name__="node_nf.clients_ipv4.total", nodeid="$node"})',
+             'Clients mit IPv4', 'E'),
+        ziel('max({__name__="node_nf.clients_ipv4.ddhcpd", nodeid="$node"})',
+             'davon von ddhcpd', 'F'),
+    ], 12, 53, min_=0,
+        beschreibung='Verteilter DHCP (ddhcpd), nur auf Images mit dem Paket '
+                     'neanderfunk-ddhcpd. Die Leases zählen nur die eigenen Blöcke des '
+                     'Knotens. "Client woanders": eigene Lease, deren Client gerade an '
+                     'einem anderen Knoten hängt oder seit 300 s still ist. Clients mit '
+                     'IPv4 sind die lokalen Clients mit bekannter Adresse; was nicht von '
+                     'ddhcpd kommt, hat der Kea des Supernodes vergeben.'),
+
+    panel(15, 'ddhcpd: Anfragen je Stunde', [
+        ziel(je_stunde(dd('dhcp.discover')), 'DISCOVER', 'A'),
+        ziel(je_stunde(dd('dhcp.offer')), 'OFFER', 'B'),
+        ziel(je_stunde(dd('dhcp.ack')), 'ACK', 'C'),
+        ziel(je_stunde(dd('dhcp.nak')), 'NAK an Clients', 'D'),
+        ziel(je_stunde(dd('roaming.in')), 'Verlängerung weitergeleitet', 'E'),
+        ziel(je_stunde(dd('roaming.out')), 'Verlängerung für eigene Blöcke', 'F'),
+        ziel(je_stunde(dd('roaming.nak_received')), 'vom Eigner abgelehnt', 'G'),
+    ], 0, 61, einheit=JE_STUNDE, min_=0,
+        beschreibung='Bleibt OFFER länger deutlich unter DISCOVER, bekommen die Clients '
+                     'an diesem Knoten keine Adresse. NAK an Clients ist normales Rauschen '
+                     '(Client mit einer Adresse aus einem anderen Netz) und enthält die '
+                     'Ablehnungen durch den Eigner. Weitergeleitet: Verlängerung für eine '
+                     'Adresse aus dem Block eines anderen Knotens, einmal je Verlängerung, '
+                     'also kein Zählwerk für Roaming. Für eigene Blöcke: die Gegenseite, '
+                     'dazu Übergaben nach einem Konflikt. Steigt "vom Eigner abgelehnt" '
+                     'stetig, pendelt ein Client in einem Konflikt.'),
+
+    panel(16, 'ddhcpd: Blöcke und Zustand', [
+        ziel('max(%s)' % dd('blocks.ours'), 'eigene Blöcke', 'A'),
+        ziel('max(%s)' % dd('blocks.claiming'), 'im Anspruch', 'B'),
+        ziel('max(%s)' % dd('blocks.releasing'), 'in Übergabe', 'C'),
+        ziel('max(%s)' % dd('running'), 'Daemon läuft', 'D'),
+        ziel('max(%s)' % dd('learning'), 'Lernphase', 'E'),
+        ziel('max(%s)' % dd('conflicts.lost'), 'Konflikte verloren', 'F'),
+    ], 12, 61, min_=0,
+        beschreibung='Daemon läuft 0: ddhcpd ist tot, die anderen Werte fehlen dann. '
+                     'Lernphase 1 über mehrere Proben (sie dauert nur 30 s): der Daemon '
+                     'startet im Kreis neu. In der Lernphase fehlen die Blockwerte, sie '
+                     'sind dann nicht 0. Eigene Blöcke 0, obwohl Clients mit IPv4 da '
+                     'sind: der Knoten hat keinen Block bekommen. "In Übergabe" hält nur '
+                     'eine Runde und ist im 5-Minuten-Raster fast immer 0. Konflikte '
+                     'verloren zählt seit dem Start des Daemons; steigt er, zerfällt das '
+                     'Mesh wiederholt in Inseln.'),
 ]
 
 # --- Supernodes -------------------------------------------------------------
@@ -501,7 +593,17 @@ SUPERNODE_PANELS = SUPERNODE_KOPF + [
 # (nef-05_mon, dus-30_sol_EOL), die Werte aus der Uebersetzungstabelle den
 # Domaincode (05_mon). Gemeinsam ist beiden die Nummer, also wird sie per
 # label_replace herausgezogen und darueber verbunden.
-DNUM_KNOTEN = ('label_replace(%s, "dnum", "$1", "site", ".*?([0-9]+)_.*")')
+#
+# Knoten mit Multidomain-Firmware (ab RC 26112621sta) melden als site_code nur
+# "ffnef", die Domain steht im Label domain (21_dias). Fuer sie kommt die
+# Nummer aus domain (gefunden am 27.11.2026: alle 74 RC-Knoten fehlten im
+# Domain-Dashboard). Nur fuer Nicht-Gateways: die Domaininstanzen der
+# Supernodes tragen domain ebenfalls, ihr Verkehr zaehlte sonst doppelt.
+# UniFi-APs tragen in domain den site_code (lvrmo-33_lvrmo), der passt nicht
+# auf den Anfang und aendert nichts.
+DNUM_KNOTEN = ('label_replace(label_join(label_replace(%s, "dnum", "$1", "site", '
+               '".*?([0-9]+)_.*"), "gw_domain", "/", "is_gateway", "domain"), '
+               '"dnum", "$1", "gw_domain", "false/([0-9]+)_.*")')
 DNUM_TT = ('label_replace(%s, "dnum", "$1", "domain", "([0-9]+)_.*")')
 
 
@@ -509,11 +611,33 @@ def dnum(ausdruck, tt=False):
     return (DNUM_TT if tt else DNUM_KNOTEN) % ausdruck
 
 
-def je_domain(ausdruck):
-    """Summe ueber die Knoten einer Domain, ausgewaehlt ueber $domain."""
-    return ('sum(' + dnum(ausdruck) + ' * on(dnum) group_left() ('
+def in_domain(ausdruck):
+    """Die Knotenreihen der Domain, ausgewaehlt ueber $domain."""
+    return (dnum(ausdruck) + ' * on(dnum) group_left() ('
             + dnum('last_over_time(tt_clients{domain="$domain"}[15m])', tt=True)
-            + ' * 0 + 1))')
+            + ' * 0 + 1)')
+
+
+def je_domain(ausdruck, art='sum'):
+    """Summe (oder max, min ...) ueber die Knoten einer Domain."""
+    return art + '(' + in_domain(ausdruck) + ')'
+
+
+def dd_domain(schluessel):
+    """Momentaufnahme eines ddhcpd-Wertes, je Knoten der Domain."""
+    return 'last_over_time({__name__="node_nf.ddhcpd.%s"}[15m])' % schluessel
+
+
+def dd_domain_summe(schluessel):
+    """Summe ueber die Knoten, je Knoten einmal: nach einem Firmwarewechsel
+    liefert ein Knoten 15 Minuten lang zwei Reihen (gesehen beim Ausrollen
+    des RC am 27.11.2026: 30 gemeldete Bloecke bei 22 belegten)."""
+    return 'sum(max by (nodeid) (' + in_domain(dd_domain(schluessel)) + '))'
+
+
+def dd_domain_stunde(schluessel):
+    return je_domain('rate({__name__="node_nf.ddhcpd.%s"}[$__rate_interval])'
+                     % schluessel) + ' * 3600'
 
 
 DOMAIN_VARIABLEN = [
@@ -624,6 +748,40 @@ DOMAIN_PANELS = [
              'im Mittel', 'B'),
     ], 12, 21, einheit='s', min_=0,
         beschreibung='Fällt die kürzeste Laufzeit ständig, startet dort etwas immer wieder neu.'),
+
+    # Die Blocktabelle kennt jeder Knoten der Domain, aber aus seiner Sicht:
+    # max by domain ist der optimistischste Knoten. Sieht selbst der keinen
+    # freien Block mehr, ist der Pool leer (Packages-Session 27.11.2026).
+    panel(7, 'ddhcpd: Blöcke und Leases', [
+        ziel(je_domain(dd_domain('blocks.free'), 'max'), 'Blöcke frei', 'A'),
+        ziel(je_domain(dd_domain('blocks.total'), 'max') + ' - '
+             + je_domain(dd_domain('blocks.free'), 'max'), 'Blöcke belegt', 'B'),
+        ziel(dd_domain_summe('blocks.ours'), 'davon gemeldet', 'C'),
+        ziel(dd_domain_summe('leases.leased'), 'Leases vergeben', 'D'),
+        ziel(dd_domain_summe('leases.away'), 'davon Client woanders', 'E'),
+        ziel('count(count by (nodeid) (' + in_domain(dd_domain('running') + ' == 1') + '))',
+             'Knoten mit ddhcpd', 'F'),
+    ], 0, 29, min_=0, abweichend=[achse_rechts('Blöcke frei')],
+        beschreibung='Verteilter DHCP (ddhcpd), nur Knoten mit dem Paket '
+                     'neanderfunk-ddhcpd. Blöcke frei (Achse rechts): die Sicht des '
+                     'Knotens, der am meisten frei sieht; bei 0 ist der Pool leer. '
+                     'Liegt "davon gemeldet" unter "belegt", gehören die übrigen Blöcke '
+                     'Knoten, die nichts melden (alte Firmware), oder es sind Ansprüche, '
+                     'die noch nicht abgelaufen sind (300 s). "Client woanders": Lease '
+                     'eines Knotens, deren Client gerade an einem anderen hängt.'),
+
+    panel(8, 'ddhcpd: Anfragen je Stunde', [
+        ziel(dd_domain_stunde('roaming.in'), 'Verlängerungen weitergeleitet', 'A'),
+        ziel(dd_domain_stunde('dhcp.ack'), 'ACK an Clients', 'B'),
+        ziel(dd_domain_stunde('dhcp.nak'), 'NAK an Clients', 'C'),
+        ziel(dd_domain_stunde('roaming.nak_received'), 'vom Eigner abgelehnt', 'D'),
+        ziel(dd_domain_stunde('conflicts.lost'), 'Konflikte verloren', 'E'),
+    ], 12, 29, einheit=JE_STUNDE, min_=0,
+        beschreibung='Summe über die Knoten der Domain. Weitergeleitet: Verlängerung '
+                     'einer Adresse aus dem Block eines anderen Knotens, einmal je '
+                     'Verlängerung; das misst, wie viel Roaming es gibt, zählt aber keine '
+                     'Wechsel. NAK an Clients ist normales Rauschen. Konflikte entstehen, '
+                     'wenn die Domain in Inseln zerfiel und wieder zusammenwächst.'),
 ]
 
 
@@ -769,6 +927,66 @@ def tabelle(nr, titel, ausdruck, x, y, w=24, h=8, beschreibung='', spalten=None,
         'fieldConfig': {'defaults': {'custom': {'align': 'auto'}, 'unit': einheit_wert},
                         'overrides': []},
     }
+
+
+def domaintabelle(nr, titel, spalten, x, y, w=24, h=8, beschreibung=''):
+    """Eine Zeile je Domain, eine Spalte je Abfrage. spalten: Liste von
+    (Ueberschrift, Ausdruck), jeder Ausdruck aggregiert by (domain)."""
+    namen = {'domain': 'Domain'}
+    namen.update({'Value #%s' % chr(65 + i): n for i, (n, _) in enumerate(spalten)})
+    return {
+        'id': nr, 'title': titel, 'type': 'table', 'datasource': QUELLE,
+        'description': beschreibung,
+        'gridPos': {'h': h, 'w': w, 'x': x, 'y': y},
+        'targets': [dict(ziel(a, '', chr(65 + i)), instant=True, range=False, format='table')
+                    for i, (_, a) in enumerate(spalten)],
+        'transformations': [
+            {'id': 'merge', 'options': {}},
+            {'id': 'filterFieldsByName', 'options': {'include': {'names': list(namen)}}},
+            {'id': 'organize', 'options': {
+                'indexByName': {k: i for i, k in enumerate(namen)},
+                'renameByName': namen}},
+            {'id': 'sortBy', 'options': {'fields': {}, 'sort': [{'field': 'Domain'}]}},
+        ],
+        'options': {'showHeader': True},
+        'fieldConfig': {'defaults': {'custom': {'align': 'auto'}, 'decimals': 0},
+                        'overrides': []},
+    }
+
+
+# ddhcpd laeuft nur auf Multidomain-Firmware, und die meldet als site nur
+# "ffnef": ausgewaehlt wird hier ueber das Label domain, nicht ueber AUSWAHL.
+DD_AUSWAHL = 'domain=~"${domain:regex}"'
+
+
+def dd_jetzt(schluessel, art='sum'):
+    """ddhcpd-Momentaufnahme je Domain; je Knoten erst einmal zusammengefasst,
+    ein Firmwarewechsel macht fuer ein paar Minuten zwei Reihen daraus."""
+    return '%s by (domain) (max by (domain, nodeid) (%s))' % (
+        art, jetzt('node_nf.ddhcpd.' + schluessel, DD_AUSWAHL))
+
+
+def dd_tag(schluessel):
+    return ('sum by (domain) (increase({__name__="node_nf.ddhcpd.%s", %s}[1d]))'
+            % (schluessel, DD_AUSWAHL))
+
+
+DD_LAEUFT = 'max by (domain, nodeid) (%s)' % jetzt('node_nf.ddhcpd.running', DD_AUSWAHL)
+DD_TABELLE = [
+    ('Knoten mit ddhcpd', 'count by (domain) (%s == 1)' % DD_LAEUFT),
+    # "or ... * 0": eine 0 statt eines leeren Feldes, solange alle laufen
+    ('Daemon aus', 'count by (domain) (%s == 0) or count by (domain) (%s) * 0'
+     % (DD_LAEUFT, DD_LAEUFT)),
+    ('Blöcke frei', dd_jetzt('blocks.free', 'max')),
+    ('Blöcke belegt', dd_jetzt('blocks.total', 'max') + ' - ' + dd_jetzt('blocks.free', 'max')),
+    ('Leases vergeben', dd_jetzt('leases.leased')),
+    ('Client woanders', dd_jetzt('leases.away')),
+    ('Clients mit ddhcpd-Adresse', 'sum by (domain) (max by (domain, nodeid) (%s))'
+     % jetzt('node_nf.clients_ipv4.ddhcpd', DD_AUSWAHL)),
+    ('Verlängerungen weitergeleitet 24 h', dd_tag('roaming.in')),
+    ('NAK an Clients 24 h', dd_tag('dhcp.nak')),
+    ('Konflikte verloren 24 h', dd_tag('conflicts.lost')),
+]
 
 
 COMMUNITY_PANELS = [
@@ -920,6 +1138,15 @@ COMMUNITY_PANELS = [
                      'follow_domain': 'folgt', 'rule': 'Regel', 'note': 'Hinweis',
                      'Value': 'Alter', 'hostname': 'voller Name', 'nodeid': 'node_id'},
             einheit_wert='s'),
+
+    domaintabelle(17, 'ddhcpd je Domain', DD_TABELLE, 0, 109, h=10,
+                  beschreibung='Verteilter DHCP, nur Domains mit Knoten, die das Paket '
+                               'neanderfunk-ddhcpd haben. Daemon aus: Knoten, deren ddhcpd '
+                               'nicht antwortet. Blöcke frei: die Sicht des Knotens, der am '
+                               'meisten frei sieht; bei 0 ist der Pool leer. Weitergeleitete '
+                               'Verlängerungen zählen jede Verlängerung einer Adresse aus '
+                               'einem fremden Block, keine Wechsel. Zähler beginnen bei '
+                               'jedem Start des Daemons bei 0.'),
 ]
 
 

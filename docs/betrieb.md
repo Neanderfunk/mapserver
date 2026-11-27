@@ -641,7 +641,23 @@ andere unter `/nf/prom/` gibt 403.
   Untergrenze, weil der Gewinner nichts erfährt, wenn der andere zuerst
   nachgibt. won == lost gilt nicht. `handover_ack`/`_nak` sind exakt (eine
   Antwort je Lease). `blocks.releasing` hält nur eine Übergaberunde und ist
-  im 5-Minuten-Raster fast immer 0, daraus keinen Konfliktalarm bauen. yanic nimmt jede Gruppe und jede Zahl, wie sie kommt
+  im 5-Minuten-Raster fast immer 0, daraus keinen Konfliktalarm bauen.
+  `roaming.in` zählt weitergeleitete Verlängerungen (DHCPREQUEST für eine
+  Adresse aus einem fremden Block, beim Knoten, an dem der Client hängt),
+  keine Wechsel: ein Client, der woanders bleibt, zählt bei jeder
+  Verlängerung neu. `roaming.out` zählt beim Eigner und dazu die Übergaben
+  nach einem Konflikt, also `out` >= `in`; für Summen nur `in` nehmen.
+  Wie viele Clients gerade woanders hängen, zeigt `leases.away`. `dhcp.nak`
+  ist Rauschen und enthält die Ablehnungen durch den Eigner;
+  `roaming.nak_received` steigt nur stetig, wenn ein Client in einem
+  Konflikt pendelt. Bleibt `dhcp.offer` länger deutlich unter
+  `dhcp.discover`, bedient der Knoten seine Clients nicht. Die Lernphase
+  dauert ab Werk 30 s, `learning` = 1 über mehrere Proben heißt: der Daemon
+  startet im Kreis neu. Alle Zähler beginnen bei jedem Start des Daemons
+  bei 0, Überläufe kommen nicht vor (Packages-Session 27.11.2026). Grafana
+  zeigt das im Knoten-Dashboard (Adressen, Anfragen je Stunde, Blöcke und
+  Zustand), im Domain-Dashboard (Blöcke und Leases, Anfragen je Stunde) und
+  im Community-Dashboard als Tabelle "ddhcpd je Domain". yanic nimmt jede Gruppe und jede Zahl, wie sie kommt
   (`nf.ddhcpd.<gruppe>.<schlüssel>`), neue Gruppen brauchen keinen neuen
   yanic.
   `leases` zählt nur die eigenen Blöcke, `leases.away` sind eigene vergebene
@@ -1224,6 +1240,13 @@ stehen Tagesbilanzen als Balken, freie Zeiträume und die Werte aus
   wählt über den hinteren Teil der `node_id` (`f2beef00<dd><ss>`) und zeigt
   den Namen aus dem Hostnamen, damit der Verlauf Umbenennungen und
   Domainwechsel übersteht.
+  Multidomain-Firmware (ab RC 26112621sta) meldet als `site` nur `ffnef`,
+  die Domain steht im Label `domain`. Das Domain-Dashboard nimmt die
+  Domainnummer seit 27.11.2026 für Nicht-Gateways auch aus `domain`, vorher
+  fehlten diese Knoten dort ganz. Die Domainauswahl im Community-Dashboard
+  filtert noch über `site`: bei einer einzelnen Domain fehlen sie dort, bei
+  "All" sind sie dabei. Nur die Tabelle "ddhcpd je Domain" wählt über
+  `domain`.
   Änderungen in der Oberfläche sind nicht möglich und wären beim nächsten Lauf
   weg.
 - nginx reicht `/grafana/` **ohne** Schrägstrich am Ende weiter
